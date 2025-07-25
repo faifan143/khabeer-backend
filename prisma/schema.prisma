@@ -1,0 +1,131 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  image     String
+  titleAr   String
+  titleEn   String
+  state     String
+  services  Service[]
+}
+
+model Service {
+  id          Int      @id @default(autoincrement())
+  image       String
+  title       String
+  description String
+  commission  Float
+  whatsapp    String
+  category    Category? @relation(fields: [categoryId], references: [id])
+  categoryId  Int?
+  providerServices ProviderService[]
+  offers      Offer[]
+  orders      Order[]
+}
+
+model Provider {
+  id                Int      @id @default(autoincrement())
+  name              String
+  image             String
+  description       String
+  state             String
+  phone             String
+  isActive          Boolean  @default(false)
+  officialDocuments String?
+  providerServices  ProviderService[]
+  orders            Order[]
+  joinRequests      ProviderJoinRequest[]
+  offers            Offer[]
+  ratings           ProviderRating[]
+}
+
+model User {
+  id                Int      @id @default(autoincrement())
+  name              String
+  email             String   @unique
+  password          String
+  role              String   @default("USER")
+  image             String
+  address           String
+  phone             String
+  state             String
+  isActive          Boolean  @default(false)
+  officialDocuments String?
+  orders            Order[]
+  ratings           ProviderRating[]
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  provider    Provider @relation(fields: [providerId], references: [id])
+  providerId  Int
+  service     Service  @relation(fields: [serviceId], references: [id])
+  serviceId   Int
+  status      String
+  orderDate   DateTime @default(now())
+  invoice     Invoice?
+}
+
+model Invoice {
+  id           Int      @id @default(autoincrement())
+  order        Order    @relation(fields: [orderId], references: [id])
+  orderId      Int      @unique
+  paymentDate  DateTime
+  totalAmount  Float
+  discount     Float
+}
+
+model ProviderJoinRequest {
+  id           Int      @id @default(autoincrement())
+  provider     Provider @relation(fields: [providerId], references: [id])
+  providerId   Int
+  requestDate  DateTime @default(now())
+  status       String
+}
+
+model ProviderService {
+  id          Int      @id @default(autoincrement())
+  provider    Provider @relation(fields: [providerId], references: [id])
+  providerId  Int
+  service     Service  @relation(fields: [serviceId], references: [id])
+  serviceId   Int
+}
+
+model Offer {
+  id          Int      @id @default(autoincrement())
+  provider    Provider @relation(fields: [providerId], references: [id])
+  providerId  Int
+  service     Service  @relation(fields: [serviceId], references: [id])
+  serviceId   Int
+  startDate   DateTime
+  endDate     DateTime
+  price       Float
+  description String
+}
+
+model ProviderRating {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  provider    Provider @relation(fields: [providerId], references: [id])
+  providerId  Int
+  rating      Float
+  comment     String?
+  ratingDate  DateTime @default(now())
+}
