@@ -12,6 +12,7 @@ const config_1 = require("@nestjs/config");
 const auth_service_1 = require("./auth.service");
 const auth_controller_1 = require("./auth.controller");
 const users_module_1 = require("../users/users.module");
+const providers_module_1 = require("../providers/providers.module");
 const jwt_1 = require("@nestjs/jwt");
 const passport_1 = require("@nestjs/passport");
 const jwt_strategy_1 = require("./jwt.strategy");
@@ -28,6 +29,7 @@ exports.AuthModule = AuthModule = __decorate([
             config_1.ConfigModule,
             files_module_1.FilesModule,
             users_module_1.UsersModule,
+            providers_module_1.ProvidersModule,
             passport_1.PassportModule,
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],

@@ -40,17 +40,24 @@ model Service {
 model Provider {
   id                Int      @id @default(autoincrement())
   name              String
+  email             String?  @unique
+  password          String?  // Added password field for authentication
   image             String
   description       String
   state             String
   phone             String
   isActive          Boolean  @default(false)
+  isVerified        Boolean  @default(false)
+  location          Json?    // GPS coordinates {lat: number, lng: number}
   officialDocuments String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
   providerServices  ProviderService[]
   orders            Order[]
   joinRequests      ProviderJoinRequest[]
   offers            Offer[]
   ratings           ProviderRating[]
+  verification      ProviderVerification?
 }
 
 model User {
@@ -65,30 +72,54 @@ model User {
   state             String
   isActive          Boolean  @default(false)
   officialDocuments String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
   orders            Order[]
   ratings           ProviderRating[]
 }
 
 model Order {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      Int
-  provider    Provider @relation(fields: [providerId], references: [id])
-  providerId  Int
-  service     Service  @relation(fields: [serviceId], references: [id])
-  serviceId   Int
-  status      String
-  orderDate   DateTime @default(now())
-  invoice     Invoice?
+  id                Int      @id @default(autoincrement())
+  bookingId         String   @unique @default(cuid())
+  user              User     @relation(fields: [userId], references: [id])
+  userId            Int
+  provider          Provider @relation(fields: [providerId], references: [id])
+  providerId        Int
+  service           Service  @relation(fields: [serviceId], references: [id])
+  serviceId         Int
+  status            String   @default("pending") // pending, accepted, in_progress, completed, cancelled
+  orderDate         DateTime @default(now())
+  scheduledDate     DateTime?
+  location          String?  // Home, Work, Other
+  locationDetails   String?
+  providerLocation  Json?    // GPS coordinates when order accepted
+  quantity          Int      @default(1)
+  totalAmount       Float
+  providerAmount    Float
+  commissionAmount  Float
+  invoice           Invoice?
 }
 
 model Invoice {
   id           Int      @id @default(autoincrement())
   order        Order    @relation(fields: [orderId], references: [id])
   orderId      Int      @unique
-  paymentDate  DateTime
+  paymentDate  DateTime?
   totalAmount  Float
-  discount     Float
+  discount     Float    @default(0)
+  paymentStatus String  @default("pending") // pending, paid, failed, refunded
+  paymentMethod String?
+}
+
+model ProviderVerification {
+  id          String   @id @default(cuid())
+  providerId  Int      @unique
+  status      String   @default("pending") // pending, approved, rejected
+  documents   String[] // document URLs
+  adminNotes  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  provider    Provider @relation(fields: [providerId], references: [id])
 }
 
 model ProviderJoinRequest {
@@ -96,7 +127,8 @@ model ProviderJoinRequest {
   provider     Provider @relation(fields: [providerId], references: [id])
   providerId   Int
   requestDate  DateTime @default(now())
-  status       String
+  status       String   @default("pending") // pending, approved, rejected
+  adminNotes   String?
 }
 
 model ProviderService {
@@ -105,6 +137,8 @@ model ProviderService {
   providerId  Int
   service     Service  @relation(fields: [serviceId], references: [id])
   serviceId   Int
+  price       Float    @default(0)
+  isActive    Boolean  @default(true)
 }
 
 model Offer {
@@ -115,8 +149,10 @@ model Offer {
   serviceId   Int
   startDate   DateTime
   endDate     DateTime
-  price       Float
+  originalPrice Float
+  offerPrice   Float
   description String
+  isActive    Boolean  @default(true)
 }
 
 model ProviderRating {
@@ -125,6 +161,7 @@ model ProviderRating {
   userId      Int
   provider    Provider @relation(fields: [providerId], references: [id])
   providerId  Int
+  orderId     Int?     // Reference to the completed order
   rating      Float
   comment     String?
   ratingDate  DateTime @default(now())

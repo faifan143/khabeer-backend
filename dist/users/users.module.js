@@ -18,7 +18,8 @@ exports.UsersModule = UsersModule = __decorate([
     (0, common_1.Module)({
         controllers: [users_controller_1.UsersController],
         providers: [users_service_1.UsersService],
-        imports: [files_module_1.FilesModule]
+        imports: [files_module_1.FilesModule],
+        exports: [users_service_1.UsersService]
     })
 ], UsersModule);
 //# sourceMappingURL=users.module.js.map

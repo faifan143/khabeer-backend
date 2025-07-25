@@ -5,10 +5,19 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 
 @Injectable()
 export class ServicesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll() {
     return this.prisma.service.findMany();
+  }
+
+  async findByCategory(categoryId: number) {
+    return this.prisma.service.findMany({
+      where: { categoryId },
+      include: {
+        category: true
+      }
+    });
   }
 
   async findById(id: number) {

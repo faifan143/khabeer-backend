@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { ProvidersService } from './providers.service';
@@ -67,6 +67,47 @@ export class ProvidersController {
   @Roles('ADMIN')
   async remove(@Param('id') id: string) {
     return this.providersService.remove(Number(id));
+  }
+
+  @Get(':id/services')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async getProviderServices(@Param('id') id: string, @Request() req) {
+    // Providers can only access their own services, admins can access any
+    if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+      throw new BadRequestException('You can only access your own services');
+    }
+    return this.providersService.getProviderServices(Number(id));
+  }
+
+  @Post(':id/services')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async addServices(
+    @Param('id') id: string,
+    @Body() body: { serviceIds: number[] },
+    @Request() req
+  ) {
+    // Providers can only modify their own services, admins can modify any
+    if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+      throw new BadRequestException('You can only modify your own services');
+    }
+    return this.providersService.addServices(Number(id), body.serviceIds);
+  }
+
+  @Delete(':id/services')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async removeServices(
+    @Param('id') id: string,
+    @Body() body: { serviceIds: number[] },
+    @Request() req
+  ) {
+    // Providers can only modify their own services, admins can modify any
+    if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+      throw new BadRequestException('You can only modify your own services');
+    }
+    return this.providersService.removeServices(Number(id), body.serviceIds);
   }
 }
 

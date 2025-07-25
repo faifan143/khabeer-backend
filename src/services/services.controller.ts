@@ -10,11 +10,16 @@ export class ServicesController {
   constructor(
     private readonly servicesService: ServicesService,
     private readonly filesService: FilesService
-  ) {}
+  ) { }
 
   @Get()
   async findAll() {
     return this.servicesService.findAll();
+  }
+
+  @Get('category/:categoryId')
+  async findByCategory(@Param('categoryId') categoryId: string) {
+    return this.servicesService.findByCategory(Number(categoryId));
   }
 
   @Get(':id')

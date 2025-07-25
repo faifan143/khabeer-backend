@@ -20,6 +20,14 @@ let ServicesService = class ServicesService {
     async findAll() {
         return this.prisma.service.findMany();
     }
+    async findByCategory(categoryId) {
+        return this.prisma.service.findMany({
+            where: { categoryId },
+            include: {
+                category: true
+            }
+        });
+    }
     async findById(id) {
         return this.prisma.service.findUnique({ where: { id } });
     }

@@ -5,46 +5,63 @@ export declare class ServicesService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     findAll(): Promise<{
-        id: number;
         image: string;
-        title: string;
+        id: number;
         description: string;
+        title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     }[]>;
-    findById(id: number): Promise<{
-        id: number;
+    findByCategory(categoryId: number): Promise<({
+        category: {
+            image: string;
+            state: string;
+            id: number;
+            titleAr: string;
+            titleEn: string;
+        } | null;
+    } & {
         image: string;
-        title: string;
+        id: number;
         description: string;
+        title: string;
+        commission: number;
+        whatsapp: string;
+        categoryId: number | null;
+    })[]>;
+    findById(id: number): Promise<{
+        image: string;
+        id: number;
+        description: string;
+        title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     } | null>;
     create(data: CreateServiceDto): Promise<{
-        id: number;
         image: string;
-        title: string;
+        id: number;
         description: string;
+        title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     }>;
     update(id: number, data: UpdateServiceDto): Promise<{
-        id: number;
         image: string;
-        title: string;
+        id: number;
         description: string;
+        title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     }>;
     remove(id: number): Promise<{
-        id: number;
         image: string;
-        title: string;
+        id: number;
         description: string;
+        title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;

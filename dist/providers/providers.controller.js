@@ -60,6 +60,24 @@ let ProvidersController = class ProvidersController {
     async remove(id) {
         return this.providersService.remove(Number(id));
     }
+    async getProviderServices(id, req) {
+        if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+            throw new common_1.BadRequestException('You can only access your own services');
+        }
+        return this.providersService.getProviderServices(Number(id));
+    }
+    async addServices(id, body, req) {
+        if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+            throw new common_1.BadRequestException('You can only modify your own services');
+        }
+        return this.providersService.addServices(Number(id), body.serviceIds);
+    }
+    async removeServices(id, body, req) {
+        if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+            throw new common_1.BadRequestException('You can only modify your own services');
+        }
+        return this.providersService.removeServices(Number(id), body.serviceIds);
+    }
 };
 exports.ProvidersController = ProvidersController;
 __decorate([
@@ -112,6 +130,38 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Get)(':id/services'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getProviderServices", null);
+__decorate([
+    (0, common_1.Post)(':id/services'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "addServices", null);
+__decorate([
+    (0, common_1.Delete)(':id/services'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "removeServices", null);
 exports.ProvidersController = ProvidersController = __decorate([
     (0, common_1.Controller)('providers'),
     __metadata("design:paramtypes", [providers_service_1.ProvidersService,

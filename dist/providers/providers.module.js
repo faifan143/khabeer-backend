@@ -18,7 +18,8 @@ exports.ProvidersModule = ProvidersModule = __decorate([
     (0, common_1.Module)({
         controllers: [providers_controller_1.ProvidersController],
         providers: [providers_service_1.ProvidersService],
-        imports: [files_module_1.FilesModule]
+        imports: [files_module_1.FilesModule],
+        exports: [providers_service_1.ProvidersService]
     })
 ], ProvidersModule);
 //# sourceMappingURL=providers.module.js.map

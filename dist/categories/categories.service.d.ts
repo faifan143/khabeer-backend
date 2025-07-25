@@ -5,37 +5,37 @@ export declare class CategoriesService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     findAll(): Promise<{
-        id: number;
         image: string;
         state: string;
+        id: number;
         titleAr: string;
         titleEn: string;
     }[]>;
     findById(id: number): Promise<{
-        id: number;
         image: string;
         state: string;
+        id: number;
         titleAr: string;
         titleEn: string;
     } | null>;
     create(data: CreateCategoryDto): Promise<{
-        id: number;
         image: string;
         state: string;
+        id: number;
         titleAr: string;
         titleEn: string;
     }>;
     update(id: number, data: UpdateCategoryDto): Promise<{
-        id: number;
         image: string;
         state: string;
+        id: number;
         titleAr: string;
         titleEn: string;
     }>;
     remove(id: number): Promise<{
-        id: number;
         image: string;
         state: string;
+        id: number;
         titleAr: string;
         titleEn: string;
     }>;

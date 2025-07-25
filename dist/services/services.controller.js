@@ -29,6 +29,9 @@ let ServicesController = class ServicesController {
     async findAll() {
         return this.servicesService.findAll();
     }
+    async findByCategory(categoryId) {
+        return this.servicesService.findByCategory(Number(categoryId));
+    }
     async findOne(id) {
         return this.servicesService.findById(Number(id));
     }
@@ -50,6 +53,13 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], ServicesController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('category/:categoryId'),
+    __param(0, (0, common_1.Param)('categoryId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ServicesController.prototype, "findByCategory", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

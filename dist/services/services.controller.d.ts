@@ -7,46 +7,63 @@ export declare class ServicesController {
     private readonly filesService;
     constructor(servicesService: ServicesService, filesService: FilesService);
     findAll(): Promise<{
-        id: number;
         image: string;
-        title: string;
+        id: number;
         description: string;
+        title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     }[]>;
-    findOne(id: string): Promise<{
-        id: number;
+    findByCategory(categoryId: string): Promise<({
+        category: {
+            image: string;
+            state: string;
+            id: number;
+            titleAr: string;
+            titleEn: string;
+        } | null;
+    } & {
         image: string;
-        title: string;
+        id: number;
         description: string;
+        title: string;
+        commission: number;
+        whatsapp: string;
+        categoryId: number | null;
+    })[]>;
+    findOne(id: string): Promise<{
+        image: string;
+        id: number;
+        description: string;
+        title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     } | null>;
     create(data: CreateServiceDto, file: Express.Multer.File): Promise<{
-        id: number;
         image: string;
-        title: string;
+        id: number;
         description: string;
+        title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     }>;
     update(id: string, data: UpdateServiceDto): Promise<{
-        id: number;
         image: string;
-        title: string;
+        id: number;
         description: string;
+        title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     }>;
     remove(id: string): Promise<{
-        id: number;
         image: string;
-        title: string;
+        id: number;
         description: string;
+        title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;

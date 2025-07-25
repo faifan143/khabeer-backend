@@ -16,6 +16,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { FilesModule } from './files/files.module';
 import { HealthModule } from './health/health.module';
+import { SearchModule } from './search/search.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { HealthModule } from './health/health.module';
     AuthModule,
     FilesModule,
     HealthModule,
+    SearchModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,6 +7,8 @@ export declare class RegisterDto {
     address?: string;
     phone?: string;
     state?: string;
+    description?: string;
     isActive?: boolean;
     officialDocuments?: string;
+    serviceIds?: number[];
 }
