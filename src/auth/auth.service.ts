@@ -16,26 +16,38 @@ export class AuthService {
 
   async validateUser(email: string, pass: string): Promise<any> {
     try {
-      // First check if it's a regular user
-      const user = await this.usersService.findByEmail(email);
-      if (user && await bcrypt.compare(pass, user.password)) {
-        // Only check isActive for regular users (not admins)
-        if (user.role === 'USER' && !user.isActive) {
-          throw new UnauthorizedException('Your account is not active. Please contact admin for activation.');
+      // Check both users and providers tables simultaneously
+      const [user, provider] = await Promise.all([
+        this.usersService.findByEmail(email),
+        this.providersService.findByEmail(email)
+      ]);
+
+      // If email exists in both tables, prioritize provider for provider-specific logic
+      if (user && provider) {
+        // Check provider first if password matches
+        if (provider.password && provider.password.trim() !== '' && await bcrypt.compare(pass, provider.password)) {
+          // Check if provider is verified
+          if (!provider.isVerified) {
+            throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
+          }
+          const { password, ...result } = provider;
+          return { ...result, role: 'PROVIDER' };
         }
 
+        // If provider password doesn't match, check user password
+        if (user.password && await bcrypt.compare(pass, user.password)) {
+          const { password, ...result } = user;
+          return { ...result, role: user.role };
+        }
+      } else if (user && await bcrypt.compare(pass, user.password)) {
+        // Only user exists and password matches
         const { password, ...result } = user;
         return { ...result, role: user.role };
-      }
-
-      // If not a user, check if it's a provider
-      const provider = await this.providersService.findByEmail(email);
-      if (provider && provider.password && provider.password.trim() !== '' && await bcrypt.compare(pass, provider.password)) {
-        // Only check if provider is verified (admin approval)
+      } else if (provider && provider.password && provider.password.trim() !== '' && await bcrypt.compare(pass, provider.password)) {
+        // Only provider exists and password matches
         if (!provider.isVerified) {
           throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
         }
-
         const { password, ...result } = provider;
         return { ...result, role: 'PROVIDER' };
       }
@@ -98,15 +110,18 @@ export class AuthService {
       // Hash password
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
-      // Prepare user data
+      // Prepare user data - only include fields that CreateUserDto expects
       const userData = {
-        ...data,
+        name: data.name,
+        email: data.email,
         password: hashedPassword,
         image: data.image || '',
         address: data.address || '',
         phone: data.phone || '',
         state: data.state || '',
-        isActive: data.isActive ?? true
+        role: data.role || 'USER',
+        isActive: data.isActive ?? true,
+        officialDocuments: data.officialDocuments
       };
 
       // Create user or provider based on role
@@ -134,7 +149,7 @@ export class AuthService {
         return {
           ...result,
           role: 'PROVIDER',
-          message: 'Provider registered successfully. Please wait for admin approval.'
+          message: 'Provider registered successfully. Please wait for admin verification to login.'
         };
       } else {
         // Create regular user
@@ -243,7 +258,7 @@ export class AuthService {
             type: 'USER',
             isActive: user.isActive,
             isVerified: true, // Regular users don't need verification
-            message: user.isActive ? 'Account is active' : 'Account is not active. Please contact admin.'
+            message: 'User account is ready to use. isActive status does not affect login.'
           };
         }
       }
@@ -273,16 +288,16 @@ export class AuthService {
 
   async activateProviderAccount(providerId: number) {
     try {
+      console.log('Attempting to activate provider with ID:', providerId);
+
+      // Try to find the provider directly by ID
       const provider = await this.providersService.findById(providerId);
-      if (!provider) {
-        throw new NotFoundException('Provider not found');
-      }
 
       if (!provider.isVerified) {
         throw new BadRequestException('Your account must be verified by admin before you can activate it.');
       }
 
-      const updatedProvider = await this.providersService.update(providerId, { isActive: true });
+      const updatedProvider = await this.providersService.update(provider.id, { isActive: true });
       return {
         ...updatedProvider,
         message: 'Account activated successfully. You can now accept orders.'
@@ -291,18 +306,19 @@ export class AuthService {
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
+      console.error('Error activating provider account:', error);
       throw new InternalServerErrorException('Error activating account');
     }
   }
 
   async deactivateProviderAccount(providerId: number) {
     try {
-      const provider = await this.providersService.findById(providerId);
-      if (!provider) {
-        throw new NotFoundException('Provider not found');
-      }
+      console.log('Attempting to deactivate provider with ID:', providerId);
 
-      const updatedProvider = await this.providersService.update(providerId, { isActive: false });
+      // Try to find the provider directly by ID
+      const provider = await this.providersService.findById(providerId);
+
+      const updatedProvider = await this.providersService.update(provider.id, { isActive: false });
       return {
         ...updatedProvider,
         message: 'Account deactivated successfully. You will not receive new orders.'
@@ -311,6 +327,7 @@ export class AuthService {
       if (error instanceof NotFoundException) {
         throw error;
       }
+      console.error('Error deactivating provider account:', error);
       throw new InternalServerErrorException('Error deactivating account');
     }
   }

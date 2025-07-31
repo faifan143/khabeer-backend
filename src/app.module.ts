@@ -12,6 +12,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ProviderRatingsModule } from './provider-ratings/provider-ratings.module';
 import { ProviderServiceModule } from './provider-service/provider-service.module';
 import { ProviderJoinRequestsModule } from './provider-join-requests/provider-join-requests.module';
+import { ProviderVerificationModule } from './provider-verification/provider-verification.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { FilesModule } from './files/files.module';
@@ -36,6 +37,7 @@ import { AdminModule } from './admin/admin.module';
     ProviderRatingsModule,
     ProviderServiceModule,
     ProviderJoinRequestsModule,
+    ProviderVerificationModule,
     AuthModule,
     FilesModule,
     HealthModule,

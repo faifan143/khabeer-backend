@@ -41,6 +41,9 @@ let InvoicesController = class InvoicesController {
         const end = endDate ? new Date(endDate) : undefined;
         return this.invoicesService.generateInvoiceReport(req.user.userId, req.user.role, start, end);
     }
+    async getPendingConfirmations(req) {
+        return this.invoicesService.getProviderPendingConfirmations(req.user.userId);
+    }
     async findOne(id, req) {
         return this.invoicesService.findOne(id, req.user.userId, req.user.role);
     }
@@ -65,6 +68,9 @@ let InvoicesController = class InvoicesController {
             paymentStatus: 'refunded'
         };
         return this.invoicesService.updatePaymentStatus(id, updateDto, req.user.userId, req.user.role);
+    }
+    async confirmPayment(id, req) {
+        return this.invoicesService.confirmPayment(id, req.user.userId);
     }
 };
 exports.InvoicesController = InvoicesController;
@@ -100,6 +106,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", Promise)
 ], InvoicesController.prototype, "generateReport", null);
+__decorate([
+    (0, common_1.Get)('pending-confirmations'),
+    (0, roles_decorator_1.Roles)('PROVIDER'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], InvoicesController.prototype, "getPendingConfirmations", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
@@ -142,6 +156,15 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], InvoicesController.prototype, "refund", null);
+__decorate([
+    (0, common_1.Put)(':id/confirm-payment'),
+    (0, roles_decorator_1.Roles)('PROVIDER'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], InvoicesController.prototype, "confirmPayment", null);
 exports.InvoicesController = InvoicesController = __decorate([
     (0, common_1.Controller)('invoices'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

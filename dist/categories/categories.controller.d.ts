@@ -7,37 +7,37 @@ export declare class CategoriesController {
     private readonly filesService;
     constructor(categoriesService: CategoriesService, filesService: FilesService);
     findAll(): Promise<{
+        id: number;
         image: string;
         state: string;
-        id: number;
         titleAr: string;
         titleEn: string;
     }[]>;
     findOne(id: string): Promise<{
+        id: number;
         image: string;
         state: string;
-        id: number;
         titleAr: string;
         titleEn: string;
     } | null>;
-    create(data: CreateCategoryDto, file: Express.Multer.File): Promise<{
+    create(createCategoryDto: CreateCategoryDto, file: Express.Multer.File): Promise<{
+        id: number;
         image: string;
         state: string;
-        id: number;
         titleAr: string;
         titleEn: string;
     }>;
     update(id: string, data: UpdateCategoryDto): Promise<{
+        id: number;
         image: string;
         state: string;
-        id: number;
         titleAr: string;
         titleEn: string;
     }>;
     remove(id: string): Promise<{
+        id: number;
         image: string;
         state: string;
-        id: number;
         titleAr: string;
         titleEn: string;
     }>;

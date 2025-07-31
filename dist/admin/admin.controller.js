@@ -40,6 +40,12 @@ let AdminController = class AdminController {
     async getProviderStats() {
         return this.adminService.getProviderStats();
     }
+    async getAllProviders() {
+        return this.adminService.getAllProviders();
+    }
+    async getUnverifiedProviders() {
+        return this.adminService.getUnverifiedProviders();
+    }
     async getOrderStats() {
         return this.adminService.getOrderStats();
     }
@@ -143,6 +149,18 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getProviderStats", null);
+__decorate([
+    (0, common_1.Get)('providers'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAllProviders", null);
+__decorate([
+    (0, common_1.Get)('providers/unverified'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getUnverifiedProviders", null);
 __decorate([
     (0, common_1.Get)('orders/stats'),
     __metadata("design:type", Function),

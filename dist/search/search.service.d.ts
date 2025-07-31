@@ -7,226 +7,42 @@ export interface SearchFilters {
     minRating?: number;
     location?: string;
     isVerified?: boolean;
+    availability?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+    providerId?: number;
+    serviceIds?: number[];
+}
+export interface SearchResult<T> {
+    data: T[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasNext: boolean;
+        hasPrev: boolean;
+    };
+    filters: SearchFilters;
 }
 export declare class SearchService {
     private readonly prisma;
     constructor(prisma: PrismaService);
-    searchServices(filters: SearchFilters): Promise<{
-        providerServices: ({
-            provider: {
-                name: string;
-                image: string;
-                id: number;
-                ratings: {
-                    rating: number;
-                }[];
-                description: string;
-                isVerified: boolean;
-            };
-        } & {
-            isActive: boolean;
-            id: number;
-            providerId: number;
-            serviceId: number;
-            price: number;
-        })[];
-        category: {
-            image: string;
-            state: string;
-            id: number;
-            titleAr: string;
-            titleEn: string;
-        } | null;
-        image: string;
-        id: number;
-        description: string;
-        title: string;
-        commission: number;
-        whatsapp: string;
-        categoryId: number | null;
-    }[]>;
-    searchProviders(filters: SearchFilters): Promise<{
-        providerServices: ({
-            service: {
-                category: {
-                    image: string;
-                    state: string;
-                    id: number;
-                    titleAr: string;
-                    titleEn: string;
-                } | null;
-            } & {
-                image: string;
-                id: number;
-                description: string;
-                title: string;
-                commission: number;
-                whatsapp: string;
-                categoryId: number | null;
-            };
-        } & {
-            isActive: boolean;
-            id: number;
-            providerId: number;
-            serviceId: number;
-            price: number;
-        })[];
-        averageRating: number;
-        ratings: {
-            rating: number;
-        }[];
-        name: string;
-        email: string | null;
-        password: string | null;
-        image: string;
-        phone: string;
-        state: string;
-        isActive: boolean;
-        officialDocuments: string | null;
-        id: number;
-        createdAt: Date;
-        updatedAt: Date;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
-        description: string;
-        isVerified: boolean;
-    }[]>;
-    searchByLocation(location: string): Promise<{
-        averageRating: number;
-        ratings: {
-            rating: number;
-        }[];
-        providerServices: ({
-            service: {
-                category: {
-                    image: string;
-                    state: string;
-                    id: number;
-                    titleAr: string;
-                    titleEn: string;
-                } | null;
-            } & {
-                image: string;
-                id: number;
-                description: string;
-                title: string;
-                commission: number;
-                whatsapp: string;
-                categoryId: number | null;
-            };
-        } & {
-            isActive: boolean;
-            id: number;
-            providerId: number;
-            serviceId: number;
-            price: number;
-        })[];
-        name: string;
-        email: string | null;
-        password: string | null;
-        image: string;
-        phone: string;
-        state: string;
-        isActive: boolean;
-        officialDocuments: string | null;
-        id: number;
-        createdAt: Date;
-        updatedAt: Date;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
-        description: string;
-        isVerified: boolean;
-    }[]>;
-    getPopularServices(limit?: number): Promise<{
-        orderCount: number;
-        category: {
-            image: string;
-            state: string;
-            id: number;
-            titleAr: string;
-            titleEn: string;
-        } | null;
-        orders: {
-            id: number;
-            providerId: number;
-            serviceId: number;
-            scheduledDate: Date | null;
-            location: string | null;
-            locationDetails: string | null;
-            quantity: number;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            status: string;
-            bookingId: string;
-            userId: number;
-            orderDate: Date;
-            totalAmount: number;
-            providerAmount: number;
-            commissionAmount: number;
-        }[];
-        providerServices: ({
-            provider: {
-                name: string;
-                image: string;
-                id: number;
-                isVerified: boolean;
-            };
-        } & {
-            isActive: boolean;
-            id: number;
-            providerId: number;
-            serviceId: number;
-            price: number;
-        })[];
-        image: string;
-        id: number;
-        description: string;
-        title: string;
-        commission: number;
-        whatsapp: string;
-        categoryId: number | null;
-    }[]>;
-    getTopRatedProviders(limit?: number): Promise<{
-        averageRating: number;
-        ratings: {
-            rating: number;
-        }[];
-        providerServices: ({
-            service: {
-                category: {
-                    image: string;
-                    state: string;
-                    id: number;
-                    titleAr: string;
-                    titleEn: string;
-                } | null;
-            } & {
-                image: string;
-                id: number;
-                description: string;
-                title: string;
-                commission: number;
-                whatsapp: string;
-                categoryId: number | null;
-            };
-        } & {
-            isActive: boolean;
-            id: number;
-            providerId: number;
-            serviceId: number;
-            price: number;
-        })[];
-        name: string;
-        email: string | null;
-        password: string | null;
-        image: string;
-        phone: string;
-        state: string;
-        isActive: boolean;
-        officialDocuments: string | null;
-        id: number;
-        createdAt: Date;
-        updatedAt: Date;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
-        description: string;
-        isVerified: boolean;
-    }[]>;
+    searchServices(filters: SearchFilters): Promise<SearchResult<any>>;
+    searchProviders(filters: SearchFilters): Promise<SearchResult<any>>;
+    searchByLocation(location: string, radius?: number): Promise<any[]>;
+    getPopularServices(limit?: number, days?: number): Promise<any[]>;
+    getTopRatedProviders(limit?: number, minReviews?: number): Promise<any[]>;
+    getSearchSuggestions(query: string, limit?: number): Promise<any>;
+    searchServicesWithPagination(filters: SearchFilters, page?: number, limit?: number): Promise<any>;
+    getTrendingServices(limit?: number): Promise<any[]>;
+    private checkProviderAvailability;
+    private calculatePriceRange;
+    private calculateServiceAverageRating;
+    private calculateDistance;
     private calculateAverageRating;
+    private sortServices;
+    private sortProviders;
 }

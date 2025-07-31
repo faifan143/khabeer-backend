@@ -28,7 +28,15 @@ let UsersService = class UsersService {
     }
     async create(data) {
         try {
-            return await this.prisma.user.create({ data });
+            const userData = {
+                ...data,
+                image: data.image || '',
+                address: data.address || '',
+                phone: data.phone || '',
+                state: data.state || '',
+                isActive: data.isActive ?? true
+            };
+            return await this.prisma.user.create({ data: userData });
         }
         catch (error) {
             if (error instanceof library_1.PrismaClientKnownRequestError) {

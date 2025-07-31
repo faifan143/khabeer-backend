@@ -76,4 +76,58 @@ export class SearchController {
     ) {
         return this.searchService.getTopRatedProviders(limit);
     }
+
+    @Get('suggestions')
+    async getSearchSuggestions(@Query('q') query: string, @Query('limit') limit?: number) {
+        return this.searchService.getSearchSuggestions(query, limit || 5);
+    }
+
+    @Get('trending')
+    async getTrendingServices(@Query('limit') limit?: number) {
+        return this.searchService.getTrendingServices(limit || 10);
+    }
+
+    @Get('services/paginated')
+    async searchServicesPaginated(
+        @Query('q') query?: string,
+        @Query('categoryId') categoryId?: number,
+        @Query('minPrice') minPrice?: number,
+        @Query('maxPrice') maxPrice?: number,
+        @Query('minRating') minRating?: number,
+        @Query('isVerified') isVerified?: boolean,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number
+    ) {
+        const filters = {
+            query,
+            categoryId,
+            minPrice,
+            maxPrice,
+            minRating,
+            isVerified: isVerified === true
+        };
+        return this.searchService.searchServicesWithPagination(filters, page || 1, limit || 10);
+    }
+
+    @Get('providers/paginated')
+    async searchProvidersPaginated(
+        @Query('q') query?: string,
+        @Query('categoryId') categoryId?: number,
+        @Query('minPrice') minPrice?: number,
+        @Query('maxPrice') maxPrice?: number,
+        @Query('minRating') minRating?: number,
+        @Query('isVerified') isVerified?: boolean,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number
+    ) {
+        const filters = {
+            query,
+            categoryId,
+            minPrice,
+            maxPrice,
+            minRating,
+            isVerified: isVerified === true
+        };
+        return this.searchService.searchProviders(filters);
+    }
 } 

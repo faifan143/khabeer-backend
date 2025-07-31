@@ -237,6 +237,56 @@ export class AdminService {
         });
     }
 
+    async getAllProviders() {
+        return this.prisma.provider.findMany({
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                description: true,
+                image: true,
+                state: true,
+                isActive: true,
+                isVerified: true,
+                createdAt: true,
+                updatedAt: true,
+                _count: {
+                    select: {
+                        orders: true,
+                        providerServices: true,
+                        ratings: true
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    async getUnverifiedProviders() {
+        return this.prisma.provider.findMany({
+            where: { isVerified: false },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                description: true,
+                image: true,
+                state: true,
+                isActive: true,
+                createdAt: true,
+                officialDocuments: true,
+                _count: {
+                    select: {
+                        providerServices: true
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
     async approveVerification(id: string, notes?: string) {
         const verification = await this.prisma.providerVerification.findUnique({
             where: { id },
@@ -405,12 +455,23 @@ export class AdminService {
             throw new NotFoundException('Provider not found');
         }
 
+        if (provider.isVerified) {
+            throw new BadRequestException('Provider is already verified');
+        }
+
         await this.prisma.provider.update({
             where: { id },
             data: { isVerified: true }
         });
 
-        return { message: 'Provider verified successfully' };
+        return { 
+            message: 'Provider verified successfully. Provider can now login.',
+            provider: {
+                id: provider.id,
+                name: provider.name,
+                email: provider.email
+            }
+        };
     }
 
     async unverifyProvider(id: number) {
@@ -575,4 +636,7 @@ export class AdminService {
             ratingsGiven: user.ratings.length
         }));
     }
+
+    // Payment verification methods
+
 } 

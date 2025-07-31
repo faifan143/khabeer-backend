@@ -38,6 +38,26 @@ let OrdersController = class OrdersController {
     async getStats(req) {
         return this.ordersService.getOrderStats(req.user.userId, req.user.role);
     }
+    async getOrderHistory(req, page, limit) {
+        return this.ordersService.getOrderHistory(req.user.userId, req.user.role, page || 1, limit || 10);
+    }
+    async getOrderAnalytics(req, startDate, endDate) {
+        const start = startDate ? new Date(startDate) : undefined;
+        const end = endDate ? new Date(endDate) : undefined;
+        return this.ordersService.getOrderAnalytics(req.user.userId, req.user.role, start, end);
+    }
+    async getOrdersByDateRange(req, startDate, endDate) {
+        return this.ordersService.getOrdersByDateRange(req.user.userId, req.user.role, new Date(startDate), new Date(endDate));
+    }
+    async getOrdersByStatus(req, status) {
+        return this.ordersService.getOrdersByStatus(req.user.userId, req.user.role, status);
+    }
+    async getUpcomingOrders(req) {
+        return this.ordersService.getUpcomingOrders(req.user.userId, req.user.role);
+    }
+    async getOverdueOrders(req) {
+        return this.ordersService.getOverdueOrders(req.user.userId, req.user.role);
+    }
     async findOne(id, req) {
         return this.ordersService.findOne(id, req.user.userId, req.user.role);
     }
@@ -62,6 +82,9 @@ let OrdersController = class OrdersController {
     }
     async cancelOrder(id, req) {
         return this.ordersService.cancel(id, req.user.userId, req.user.role);
+    }
+    async bulkUpdateStatus(req, body) {
+        return this.ordersService.bulkUpdateStatus(body.orderIds, body.status, req.user.userId, req.user.role);
     }
 };
 exports.OrdersController = OrdersController;
@@ -89,6 +112,61 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "getStats", null);
+__decorate([
+    (0, common_1.Get)('history'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number, Number]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getOrderHistory", null);
+__decorate([
+    (0, common_1.Get)('analytics'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('startDate')),
+    __param(2, (0, common_1.Query)('endDate')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getOrderAnalytics", null);
+__decorate([
+    (0, common_1.Get)('date-range'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('startDate')),
+    __param(2, (0, common_1.Query)('endDate')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getOrdersByDateRange", null);
+__decorate([
+    (0, common_1.Get)('status/:status'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getOrdersByStatus", null);
+__decorate([
+    (0, common_1.Get)('upcoming'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getUpcomingOrders", null);
+__decorate([
+    (0, common_1.Get)('overdue'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getOverdueOrders", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
@@ -154,6 +232,16 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "cancelOrder", null);
+__decorate([
+    (0, common_1.Put)('bulk-update'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "bulkUpdateStatus", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.Controller)('orders'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

@@ -7,9 +7,9 @@ export declare class ServicesController {
     private readonly filesService;
     constructor(servicesService: ServicesService, filesService: FilesService);
     findAll(): Promise<{
-        image: string;
-        id: number;
         description: string;
+        id: number;
+        image: string;
         title: string;
         commission: number;
         whatsapp: string;
@@ -17,52 +17,52 @@ export declare class ServicesController {
     }[]>;
     findByCategory(categoryId: string): Promise<({
         category: {
+            id: number;
             image: string;
             state: string;
-            id: number;
             titleAr: string;
             titleEn: string;
         } | null;
     } & {
-        image: string;
-        id: number;
         description: string;
+        id: number;
+        image: string;
         title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     })[]>;
     findOne(id: string): Promise<{
-        image: string;
-        id: number;
         description: string;
+        id: number;
+        image: string;
         title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     } | null>;
-    create(data: CreateServiceDto, file: Express.Multer.File): Promise<{
-        image: string;
-        id: number;
+    create(createServiceDto: CreateServiceDto, file: Express.Multer.File): Promise<{
         description: string;
+        id: number;
+        image: string;
         title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     }>;
     update(id: string, data: UpdateServiceDto): Promise<{
-        image: string;
-        id: number;
         description: string;
+        id: number;
+        image: string;
         title: string;
         commission: number;
         whatsapp: string;
         categoryId: number | null;
     }>;
     remove(id: string): Promise<{
-        image: string;
-        id: number;
         description: string;
+        id: number;
+        image: string;
         title: string;
         commission: number;
         whatsapp: string;

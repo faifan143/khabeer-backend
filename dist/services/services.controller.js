@@ -19,6 +19,8 @@ const files_service_1 = require("../files/files.service");
 const services_service_1 = require("./services.service");
 const create_service_dto_1 = require("./dto/create-service.dto");
 const update_service_dto_1 = require("./dto/update-service.dto");
+const multer_1 = require("multer");
+const path_1 = require("path");
 let ServicesController = class ServicesController {
     servicesService;
     filesService;
@@ -35,8 +37,15 @@ let ServicesController = class ServicesController {
     async findOne(id) {
         return this.servicesService.findById(Number(id));
     }
-    async create(data, file) {
-        data.image = file ? await this.filesService.handleUploadedFile(file) : '';
+    async create(createServiceDto, file) {
+        const data = { ...createServiceDto };
+        if (file) {
+            const fileResult = await this.filesService.handleUploadedFile(file);
+            data.image = fileResult.url;
+        }
+        else {
+            data.image = '';
+        }
         return this.servicesService.create(data);
     }
     async update(id, data) {
@@ -69,7 +78,16 @@ __decorate([
 ], ServicesController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image')),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),

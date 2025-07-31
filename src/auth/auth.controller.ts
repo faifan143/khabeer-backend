@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Request, UseGuards, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Request, UseGuards, UploadedFile, UseInterceptors, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
@@ -15,11 +15,24 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body: LoginDto) {
-    const user = await this.authService.validateUser(body.email, body.password);
-    if (!user) {
+    try {
+      const user = await this.authService.validateUser(body.email, body.password);
+      if (!user) {
+        throw new BadRequestException('Invalid credentials');
+      }
+      return this.authService.login(user);
+    } catch (error) {
+      // Re-throw UnauthorizedException (for unverified providers) as-is
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      // Re-throw BadRequestException (for invalid credentials) as-is
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // For any other errors, throw invalid credentials
       throw new BadRequestException('Invalid credentials');
     }
-    return this.authService.login(user);
   }
 
   @Post('register')
@@ -49,7 +62,8 @@ export class AuthController {
 
     // Handle file upload
     if (file) {
-      registerData.image = await this.filesService.handleUploadedFile(file);
+      const fileResult = await this.filesService.handleUploadedFile(file);
+      registerData.image = fileResult.url;
     } else {
       registerData.image = '';
     }
@@ -71,7 +85,7 @@ export class AuthController {
   @Post('upgrade-to-provider')
   @UseGuards(JwtAuthGuard)
   async upgradeToProvider(@Request() req, @Body() providerData: any) {
-    return this.authService.upgradeToProvider(req.user.id, providerData);
+    return this.authService.upgradeToProvider(req.user.userId, providerData);
   }
 
   @Post('check-status')
@@ -82,13 +96,13 @@ export class AuthController {
   @Post('activate-account')
   @UseGuards(JwtAuthGuard)
   async activateAccount(@Request() req) {
-    return this.authService.activateProviderAccount(req.user.id);
+    return this.authService.activateProviderAccount(req.user.userId);
   }
 
   @Post('deactivate-account')
   @UseGuards(JwtAuthGuard)
   async deactivateAccount(@Request() req) {
-    return this.authService.deactivateProviderAccount(req.user.id);
+    return this.authService.deactivateProviderAccount(req.user.userId);
   }
 
   private parseServiceIds(serviceIds: any): number[] {

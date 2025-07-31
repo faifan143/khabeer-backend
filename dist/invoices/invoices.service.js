@@ -296,6 +296,90 @@ let InvoicesService = class InvoicesService {
             orderDate: invoice.order.orderDate
         }));
     }
+    async confirmPayment(invoiceId, providerId) {
+        const invoice = await this.prisma.invoice.findUnique({
+            where: { id: invoiceId },
+            include: {
+                order: {
+                    include: {
+                        provider: true
+                    }
+                }
+            }
+        });
+        if (!invoice) {
+            throw new common_1.NotFoundException('Invoice not found');
+        }
+        if (invoice.order.providerId !== providerId) {
+            throw new common_1.BadRequestException('You can only confirm payments for your own orders');
+        }
+        if (invoice.paymentStatus !== 'paid') {
+            throw new common_1.BadRequestException('Invoice must be marked as paid by user before confirmation');
+        }
+        if (invoice.isVerified) {
+            throw new common_1.BadRequestException('Payment is already confirmed');
+        }
+        return this.prisma.invoice.update({
+            where: { id: invoiceId },
+            data: {
+                isVerified: true,
+                verifiedBy: providerId,
+                verifiedAt: new Date()
+            },
+            include: {
+                order: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true
+                            }
+                        },
+                        provider: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    async getProviderPendingConfirmations(providerId) {
+        return this.prisma.invoice.findMany({
+            where: {
+                paymentStatus: 'paid',
+                isVerified: false,
+                order: {
+                    providerId: providerId
+                }
+            },
+            include: {
+                order: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true
+                            }
+                        },
+                        service: {
+                            select: {
+                                title: true
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                paymentDate: 'desc'
+            }
+        });
+    }
 };
 exports.InvoicesService = InvoicesService;
 exports.InvoicesService = InvoicesService = __decorate([

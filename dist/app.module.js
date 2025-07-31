@@ -21,6 +21,7 @@ const categories_module_1 = require("./categories/categories.module");
 const provider_ratings_module_1 = require("./provider-ratings/provider-ratings.module");
 const provider_service_module_1 = require("./provider-service/provider-service.module");
 const provider_join_requests_module_1 = require("./provider-join-requests/provider-join-requests.module");
+const provider_verification_module_1 = require("./provider-verification/provider-verification.module");
 const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./auth/auth.module");
 const files_module_1 = require("./files/files.module");
@@ -48,6 +49,7 @@ exports.AppModule = AppModule = __decorate([
             provider_ratings_module_1.ProviderRatingsModule,
             provider_service_module_1.ProviderServiceModule,
             provider_join_requests_module_1.ProviderJoinRequestsModule,
+            provider_verification_module_1.ProviderVerificationModule,
             auth_module_1.AuthModule,
             files_module_1.FilesModule,
             health_module_1.HealthModule,

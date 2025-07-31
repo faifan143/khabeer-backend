@@ -4,13 +4,15 @@ import { FilesService } from '../files/files.service';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @Controller('categories')
 export class CategoriesController {
   constructor(
     private readonly categoriesService: CategoriesService,
     private readonly filesService: FilesService
-  ) {}
+  ) { }
 
   @Get()
   async findAll() {
@@ -23,9 +25,27 @@ export class CategoriesController {
   }
 
   @Post()
-  @UseInterceptors(FileInterceptor('image'))
-  async create(@Body() data: CreateCategoryDto, @UploadedFile() file: Express.Multer.File) {
-    data.image = file ? await this.filesService.handleUploadedFile(file) : '';
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `${uniqueSuffix}${ext}`);
+      },
+    }),
+  }))
+  async create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const data = { ...createCategoryDto };
+    if (file) {
+      const fileResult = await this.filesService.handleUploadedFile(file);
+      data.image = fileResult.url;
+    } else {
+      data.image = '';
+    }
     return this.categoriesService.create(data);
   }
 

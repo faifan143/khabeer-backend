@@ -109,6 +109,11 @@ model Invoice {
   discount     Float    @default(0)
   paymentStatus String  @default("pending") // pending, paid, failed, refunded
   paymentMethod String?
+  isVerified   Boolean  @default(false) // Admin verification of payment
+  verifiedBy   Int?     // Admin ID who verified the payment
+  verifiedAt   DateTime? // When payment was verified
+  payoutStatus String   @default("pending") // pending, paid, failed
+  payoutDate   DateTime? // When provider was paid
 }
 
 model ProviderVerification {

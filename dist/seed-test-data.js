@@ -1,79 +1,125 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const prisma_1 = require("../generated/prisma");
+const bcrypt = require("bcryptjs");
 const prisma = new prisma_1.PrismaClient();
-async function seedTestData() {
-    console.log('🌱 Seeding test data for Phase 1...');
-    try {
-        const category = await prisma.category.create({
-            data: {
-                image: 'https://example.com/category.jpg',
-                titleAr: 'تنظيف',
-                titleEn: 'Cleaning',
-                state: 'active'
-            }
-        });
-        console.log('✅ Created category:', category.titleEn);
-        const service = await prisma.service.create({
-            data: {
-                image: 'https://example.com/service.jpg',
-                title: 'House Cleaning',
-                description: 'Professional house cleaning service',
-                commission: 10.0,
-                whatsapp: '+1234567890',
-                categoryId: category.id
-            }
-        });
-        console.log('✅ Created service:', service.title);
-        const user = await prisma.user.create({
-            data: {
-                name: 'Test User',
-                email: 'user@test.com',
-                password: '$2a$10$rQZ8N3YqG8K9L2M1N0O9P8Q7R6S5T4U3V2W1X0Y9Z8A7B6C5D4E3F2G1H0I',
-                role: 'USER',
-                image: 'https://example.com/user.jpg',
-                address: '123 Test Street',
-                phone: '+1234567890',
-                state: 'Test State',
-                isActive: true
-            }
-        });
-        console.log('✅ Created user:', user.name);
-        const provider = await prisma.provider.create({
-            data: {
-                name: 'Test Provider',
-                image: 'https://example.com/provider.jpg',
-                description: 'Professional service provider',
-                state: 'Test State',
-                phone: '+1234567891',
-                isActive: true,
-                isVerified: true
-            }
-        });
-        console.log('✅ Created provider:', provider.name);
-        const providerService = await prisma.providerService.create({
-            data: {
-                providerId: provider.id,
-                serviceId: service.id,
-                price: 50.0,
-                isActive: true
-            }
-        });
-        console.log('✅ Created provider service association');
-        console.log('\n🎉 Test data seeded successfully!');
-        console.log('\n📊 Test Data Summary:');
-        console.log(`- Category ID: ${category.id}`);
-        console.log(`- Service ID: ${service.id}`);
-        console.log(`- User ID: ${user.id}`);
-        console.log(`- Provider ID: ${provider.id}`);
-        console.log(`- Provider Service ID: ${providerService.id}`);
-    }
-    catch (error) {
-        console.error('❌ Error seeding test data:', error);
-    }
-    finally {
-        await prisma.$disconnect();
-    }
+async function main() {
+    console.log('🌱 Starting database seeding...');
+    const adminPassword = await bcrypt.hash('admin123', 10);
+    const admin = await prisma.user.create({
+        data: {
+            name: 'Admin User',
+            email: 'admin@example.com',
+            password: adminPassword,
+            role: 'ADMIN',
+            phone: '1234567890',
+            address: 'Admin Address',
+            state: 'Admin State',
+            isActive: true,
+            image: ''
+        },
+    });
+    console.log('✅ Admin user created:', admin.email);
+    const userPassword = await bcrypt.hash('user123', 10);
+    const user = await prisma.user.create({
+        data: {
+            name: 'Test User',
+            email: 'user@example.com',
+            password: userPassword,
+            role: 'USER',
+            phone: '1234567890',
+            address: 'Test Address',
+            state: 'Test State',
+            isActive: true,
+            image: ''
+        },
+    });
+    console.log('✅ Test user created:', user.email);
+    const providerPassword = await bcrypt.hash('provider123', 10);
+    const provider = await prisma.provider.create({
+        data: {
+            name: 'Test Provider',
+            email: 'provider@example.com',
+            password: providerPassword,
+            phone: '0987654321',
+            state: 'Test State',
+            description: 'Test provider description',
+            image: '',
+            isActive: true,
+            isVerified: true
+        },
+    });
+    console.log('✅ Test provider created:', provider.email);
+    const cleaningCategory = await prisma.category.create({
+        data: {
+            titleAr: 'تنظيف',
+            titleEn: 'Cleaning',
+            state: 'active',
+            image: ''
+        },
+    });
+    console.log('✅ Cleaning category created');
+    const maintenanceCategory = await prisma.category.upsert({
+        where: { id: 2 },
+        update: {},
+        create: {
+            id: 2,
+            titleAr: 'صيانة',
+            titleEn: 'Maintenance',
+            state: 'active',
+            image: ''
+        },
+    });
+    console.log('✅ Maintenance category created');
+    const cleaningService = await prisma.service.upsert({
+        where: { id: 1 },
+        update: {},
+        create: {
+            id: 1,
+            title: 'House Cleaning',
+            description: 'Professional house cleaning service',
+            commission: 10.0,
+            whatsapp: '+966501234567',
+            categoryId: 1,
+            image: ''
+        },
+    });
+    console.log('✅ Cleaning service created');
+    const maintenanceService = await prisma.service.upsert({
+        where: { id: 2 },
+        update: {},
+        create: {
+            id: 2,
+            title: 'Plumbing Service',
+            description: 'Professional plumbing maintenance',
+            commission: 15.0,
+            whatsapp: '+966501234568',
+            categoryId: 2,
+            image: ''
+        },
+    });
+    console.log('✅ Maintenance service created');
+    await prisma.providerService.create({
+        data: {
+            providerId: provider.id,
+            serviceId: cleaningService.id,
+            price: 100.0,
+            isActive: true
+        },
+    });
+    console.log('✅ Provider linked to cleaning service');
+    console.log('🎉 Database seeding completed successfully!');
+    console.log('\n📋 Test Credentials:');
+    console.log('Admin: admin@example.com / admin123');
+    console.log('User: user@example.com / user123');
+    console.log('Provider: provider@example.com / provider123');
 }
-seedTestData();
+main()
+    .catch((e) => {
+    console.error('❌ Seeding failed:', e);
+    process.exit(1);
+})
+    .finally(async () => {
+    await prisma.$disconnect();
+});
 //# sourceMappingURL=seed-test-data.js.map

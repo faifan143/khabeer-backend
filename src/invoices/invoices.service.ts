@@ -328,4 +328,97 @@ export class InvoicesService {
       orderDate: invoice.order.orderDate
     }));
   }
+
+  // Provider methods for payment confirmation
+  async confirmPayment(invoiceId: number, providerId: number) {
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      include: {
+        order: {
+          include: {
+            provider: true
+          }
+        }
+      }
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Invoice not found');
+    }
+
+    // Check if the provider is the one assigned to this order
+    if (invoice.order.providerId !== providerId) {
+      throw new BadRequestException('You can only confirm payments for your own orders');
+    }
+
+    if (invoice.paymentStatus !== 'paid') {
+      throw new BadRequestException('Invoice must be marked as paid by user before confirmation');
+    }
+
+    if (invoice.isVerified) {
+      throw new BadRequestException('Payment is already confirmed');
+    }
+
+    return this.prisma.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        isVerified: true,
+        verifiedBy: providerId,
+        verifiedAt: new Date()
+      },
+      include: {
+        order: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            provider: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async getProviderPendingConfirmations(providerId: number) {
+    return this.prisma.invoice.findMany({
+      where: {
+        paymentStatus: 'paid',
+        isVerified: false,
+        order: {
+          providerId: providerId
+        }
+      },
+      include: {
+        order: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            service: {
+              select: {
+                title: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        paymentDate: 'desc'
+      }
+    });
+  }
 }

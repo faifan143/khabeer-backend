@@ -22,6 +22,9 @@ const roles_decorator_1 = require("../auth/roles.decorator");
 const roles_guard_1 = require("../auth/roles.guard");
 const create_provider_dto_1 = require("./dto/create-provider.dto");
 const update_provider_dto_1 = require("./dto/update-provider.dto");
+const update_status_dto_1 = require("./dto/update-status.dto");
+const multer_1 = require("multer");
+const path_1 = require("path");
 let ProvidersController = class ProvidersController {
     providersService;
     filesService;
@@ -35,8 +38,21 @@ let ProvidersController = class ProvidersController {
     async findOne(id) {
         return this.providersService.findById(Number(id));
     }
+    async getStatus(id, req) {
+        if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+            throw new common_1.BadRequestException('You can only access your own status');
+        }
+        const provider = await this.providersService.findById(Number(id));
+        return { isActive: provider.isActive };
+    }
     async register(data, file) {
-        data.image = file ? await this.filesService.handleUploadedFile(file) : '';
+        if (file) {
+            const fileResult = await this.filesService.handleUploadedFile(file);
+            data.image = fileResult.url;
+        }
+        else {
+            data.image = '';
+        }
         if (typeof data.serviceIds === 'string') {
             data.serviceIds = [parseInt(data.serviceIds, 10)];
         }
@@ -51,29 +67,43 @@ let ProvidersController = class ProvidersController {
         data.phone = data.phone || '';
         return this.providersService.registerProviderWithServices(data);
     }
-    async create(data) {
+    async create(createProviderDto, file) {
+        const data = { ...createProviderDto };
+        if (file) {
+            const fileResult = await this.filesService.handleUploadedFile(file);
+            data.image = fileResult.url;
+        }
+        else {
+            data.image = '';
+        }
         return this.providersService.create(data);
     }
     async update(id, data) {
         return this.providersService.update(Number(id), data);
     }
+    async updateStatus(id, data, req) {
+        if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+            throw new common_1.BadRequestException('You can only update your own status');
+        }
+        return this.providersService.updateStatus(Number(id), data.isActive);
+    }
     async remove(id) {
         return this.providersService.remove(Number(id));
     }
     async getProviderServices(id, req) {
-        if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+        if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
             throw new common_1.BadRequestException('You can only access your own services');
         }
         return this.providersService.getProviderServices(Number(id));
     }
     async addServices(id, body, req) {
-        if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+        if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
             throw new common_1.BadRequestException('You can only modify your own services');
         }
         return this.providersService.addServices(Number(id), body.serviceIds);
     }
     async removeServices(id, body, req) {
-        if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+        if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
             throw new common_1.BadRequestException('You can only modify your own services');
         }
         return this.providersService.removeServices(Number(id), body.serviceIds);
@@ -94,6 +124,16 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)(':id/status'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getStatus", null);
+__decorate([
     (0, common_1.Post)('register'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image')),
     __param(0, (0, common_1.Body)()),
@@ -104,11 +144,20 @@ __decorate([
 ], ProvidersController.prototype, "register", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_provider_dto_1.CreateProviderDto]),
+    __metadata("design:paramtypes", [create_provider_dto_1.CreateProviderDto, Object]),
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "create", null);
 __decorate([
@@ -121,6 +170,17 @@ __decorate([
     __metadata("design:paramtypes", [String, update_provider_dto_1.UpdateProviderDto]),
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "update", null);
+__decorate([
+    (0, common_1.Put)(':id/status'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_status_dto_1.UpdateStatusDto, Object]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "updateStatus", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

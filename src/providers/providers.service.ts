@@ -138,6 +138,27 @@ export class ProvidersService {
     }
   }
 
+  async updateStatus(id: number, isActive: boolean) {
+    try {
+      const provider = await this.prisma.provider.update({
+        where: { id },
+        data: { isActive },
+        include: { providerServices: true }
+      });
+      return provider;
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        switch (error.code) {
+          case 'P2025':
+            throw new NotFoundException(`Provider with ID ${id} not found`);
+          default:
+            throw new InternalServerErrorException('Database operation failed');
+        }
+      }
+      throw new InternalServerErrorException('Error updating provider status');
+    }
+  }
+
   async addServices(providerId: number, serviceIds: number[]) {
     try {
       const existingServices = await this.prisma.providerService.findMany({

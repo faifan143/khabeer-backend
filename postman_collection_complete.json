@@ -1,17 +1,17 @@
 {
   "info": {
-    "name": "Khabeer Backend - Complete Testing Collection",
-    "description": "Comprehensive test collection for Khabeer Backend including Phase 1 features, Admin Panel, and all functionalities",
+    "name": "Khabeer Backend - Complete API Collection",
+    "description": "Complete Postman collection for Khabeer service marketplace backend. Features simplified provider authentication flow, admin panel, orders management, payments, search, ratings, offers, and file upload capabilities.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000",
+      "value": "http://localhost:3000/api",
       "type": "string"
     },
     {
-      "key": "userToken",
+      "key": "adminToken",
       "value": "",
       "type": "string"
     },
@@ -21,92 +21,28 @@
       "type": "string"
     },
     {
-      "key": "adminToken",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "userId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "providerId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "orderId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "invoiceId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "serviceId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "categoryId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "verificationId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "joinRequestId",
+      "key": "userToken",
       "value": "",
       "type": "string"
     }
   ],
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{userToken}}",
-        "type": "string"
-      }
-    ]
-  },
   "item": [
     {
       "name": "🔐 Authentication",
       "item": [
         {
-          "name": "Register User",
+          "name": "Admin Login",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "multipart/form-data" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                { "key": "name", "value": "Test User", "type": "text" },
-                { "key": "email", "value": "user@test.com", "type": "text" },
-                { "key": "password", "value": "password123", "type": "text" },
-                { "key": "phone", "value": "+1234567890", "type": "text" },
-                {
-                  "key": "address",
-                  "value": "123 Test Street",
-                  "type": "text"
-                },
-                { "key": "state", "value": "Test State", "type": "text" },
-                { "key": "image", "type": "file", "src": [] }
-              ]
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/auth/register",
+              "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "register"]
+              "path": ["auth", "login"]
             }
           },
           "event": [
@@ -114,98 +50,7 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    pm.collectionVariables.set('userId', pm.response.json().id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Register Provider",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "multipart/form-data" }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                { "key": "name", "value": "Test Provider", "type": "text" },
-                {
-                  "key": "email",
-                  "value": "provider@test.com",
-                  "type": "text"
-                },
-                { "key": "password", "value": "password123", "type": "text" },
-                {
-                  "key": "description",
-                  "value": "Professional service provider",
-                  "type": "text"
-                },
-                { "key": "phone", "value": "+1234567890", "type": "text" },
-                { "key": "state", "value": "Active", "type": "text" },
-                { "key": "serviceIds", "value": "[1, 2]", "type": "text" },
-                { "key": "image", "type": "file", "src": [] }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "register"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    pm.collectionVariables.set('providerToken', pm.response.json().access_token);",
-                  "    pm.collectionVariables.set('providerId', pm.response.json().user.id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Register Admin",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "multipart/form-data" }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                { "key": "name", "value": "Admin User", "type": "text" },
-                {
-                  "key": "email",
-                  "value": "admin@khabeer.com",
-                  "type": "text"
-                },
-                { "key": "password", "value": "admin123", "type": "text" },
-                { "key": "role", "value": "ADMIN", "type": "text" },
-                { "key": "phone", "value": "+1234567899", "type": "text" },
-                { "key": "address", "value": "Admin Office", "type": "text" },
-                { "key": "state", "value": "Admin State", "type": "text" },
-                { "key": "image", "type": "file", "src": [] }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "register"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
+                  "if (pm.response.code === 200) {",
                   "    pm.collectionVariables.set('adminToken', pm.response.json().access_token);",
                   "}"
                 ]
@@ -214,18 +59,46 @@
           ]
         },
         {
-          "name": "Login User",
+          "name": "Provider Login",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@test.com\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"email\": \"provider@test.com\",\n  \"password\": \"123456\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
+              "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('providerToken', pm.response.json().access_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
             }
           },
           "event": [
@@ -242,60 +115,60 @@
           ]
         },
         {
-          "name": "Login Provider",
+          "name": "Register User",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"provider@test.com\",\n  \"password\": \"password123\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Test User", "type": "text" },
+                { "key": "email", "value": "user@example.com", "type": "text" },
+                { "key": "password", "value": "user123", "type": "text" },
+                { "key": "role", "value": "USER", "type": "text" },
+                { "key": "phone", "value": "1234567890", "type": "text" },
+                { "key": "address", "value": "Test Address", "type": "text" },
+                { "key": "state", "value": "Test State", "type": "text" }
+              ]
             },
             "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
+              "raw": "{{baseUrl}}/auth/register",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
+              "path": ["auth", "register"]
             }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    pm.collectionVariables.set('providerToken', pm.response.json().access_token);",
-                  "}"
-                ]
-              }
-            }
-          ]
+          }
         },
         {
-          "name": "Login Admin",
+          "name": "Register Provider",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@khabeer.com\",\n  \"password\": \"admin123\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Test Provider", "type": "text" },
+                {
+                  "key": "email",
+                  "value": "provider@test.com",
+                  "type": "text"
+                },
+                { "key": "password", "value": "123456", "type": "text" },
+                { "key": "role", "value": "PROVIDER", "type": "text" },
+                { "key": "phone", "value": "1234567890", "type": "text" },
+                { "key": "state", "value": "Test State", "type": "text" },
+                {
+                  "key": "description",
+                  "value": "Test provider description",
+                  "type": "text"
+                }
+              ]
             },
             "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
+              "raw": "{{baseUrl}}/auth/register",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
+              "path": ["auth", "register"]
             }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    pm.collectionVariables.set('adminToken', pm.response.json().access_token);",
-                  "}"
-                ]
-              }
-            }
-          ]
+          }
         },
         {
           "name": "Check Account Status",
@@ -307,296 +180,73 @@
               "raw": "{\n  \"email\": \"provider@test.com\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/auth/check-status",
+              "raw": "{{baseUrl}}/auth/check-status",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "check-status"]
-            }
-          }
-        },
-        {
-          "name": "Check User Account Status",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"user@test.com\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/check-status",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "check-status"]
-            }
-          }
-        },
-        {
-          "name": "Check Admin Account Status",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@khabeer.com\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/check-status",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "check-status"]
-            }
-          }
-        },
-        {
-          "name": "Activate Provider Account",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/activate-account",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "activate-account"]
-            }
-          }
-        },
-        {
-          "name": "Deactivate Provider Account",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/deactivate-account",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "deactivate-account"]
+              "path": ["auth", "check-status"]
             }
           }
         }
       ]
     },
     {
-      "name": "📂 Categories Management",
+      "name": "👨‍💼 Admin Panel",
       "item": [
         {
-          "name": "Get All Categories",
+          "name": "Get All Users",
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/api/categories",
+              "raw": "{{baseUrl}}/admin/users",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "categories"]
+              "path": ["admin", "users"]
             }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200 && pm.response.json().length > 0) {",
-                  "    pm.collectionVariables.set('categoryId', pm.response.json()[0].id);",
-                  "}"
-                ]
-              }
-            }
-          ]
+          }
         },
         {
-          "name": "Get Category by ID",
+          "name": "Get All Providers",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "categories", "{{categoryId}}"]
-            }
-          }
-        },
-        {
-          "name": "Create Category (Admin)",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"image\": \"https://example.com/category-image.jpg\",\n  \"titleAr\": \"فئة تجريبية\",\n  \"titleEn\": \"Test Category\",\n  \"state\": \"active\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/categories",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "categories"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    pm.collectionVariables.set('categoryId', pm.response.json().id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Update Category (Admin)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"image\": \"https://example.com/updated-category-image.jpg\",\n  \"titleAr\": \"فئة محدثة\",\n  \"titleEn\": \"Updated Test Category\",\n  \"state\": \"active\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "categories", "{{categoryId}}"]
-            }
-          }
-        },
-        {
-          "name": "Delete Category (Admin)",
-          "request": {
-            "method": "DELETE",
             "header": [
               { "key": "Authorization", "value": "Bearer {{adminToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
+              "raw": "{{baseUrl}}/admin/providers",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "categories", "{{categoryId}}"]
+              "path": ["admin", "providers"]
             }
           }
-        }
-      ]
-    },
-    {
-      "name": "🛍️ Services Management",
-      "item": [
+        },
         {
-          "name": "Get All Services",
+          "name": "Get Unverified Providers",
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/api/services",
+              "raw": "{{baseUrl}}/admin/providers/unverified",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "services"]
+              "path": ["admin", "providers", "unverified"]
             }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200 && pm.response.json().length > 0) {",
-                  "    pm.collectionVariables.set('serviceId', pm.response.json()[0].id);",
-                  "}"
-                ]
-              }
-            }
-          ]
+          }
         },
         {
-          "name": "Get Service by ID",
+          "name": "Get All Orders",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/api/services/{{serviceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "services", "{{serviceId}}"]
-            }
-          }
-        },
-        {
-          "name": "Create Service (Admin)",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"image\": \"https://example.com/service-image.jpg\",\n  \"title\": \"Test Service\",\n  \"description\": \"A test service for providers\",\n  \"commission\": 10.5,\n  \"whatsapp\": \"+1234567890\",\n  \"categoryId\": {{categoryId}}\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/services",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "services"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    pm.collectionVariables.set('serviceId', pm.response.json().id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Update Service (Admin)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"image\": \"https://example.com/updated-service-image.jpg\",\n  \"title\": \"Updated Test Service\",\n  \"description\": \"Updated description for the test service\",\n  \"commission\": 15.0,\n  \"whatsapp\": \"+1234567890\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/services/{{serviceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "services", "{{serviceId}}"]
-            }
-          }
-        },
-        {
-          "name": "Delete Service (Admin)",
-          "request": {
-            "method": "DELETE",
             "header": [
               { "key": "Authorization", "value": "Bearer {{adminToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/services/{{serviceId}}",
+              "raw": "{{baseUrl}}/admin/orders",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "services", "{{serviceId}}"]
+              "path": ["admin", "orders"]
             }
           }
         },
-        {
-          "name": "Get Services by Category",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/api/services/category/{{categoryId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "services", "category", "{{categoryId}}"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "📊 Admin Dashboard",
-      "item": [
         {
           "name": "Get Dashboard Stats",
           "request": {
@@ -605,77 +255,126 @@
               { "key": "Authorization", "value": "Bearer {{adminToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/dashboard",
+              "raw": "{{baseUrl}}/admin/dashboard",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "dashboard"]
+              "path": ["admin", "dashboard"]
             }
           }
         },
         {
-          "name": "Get Overview Stats",
+          "name": "Verify Provider",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/providers/1/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "providers", "1", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Unverify Provider",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/providers/1/unverify",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "providers", "1", "unverify"]
+            }
+          }
+        },
+        {
+          "name": "Get Provider Status (Admin)",
           "request": {
             "method": "GET",
             "header": [
               { "key": "Authorization", "value": "Bearer {{adminToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/overview?period=30",
+              "raw": "{{baseUrl}}/providers/1/status",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "overview"],
-              "query": [{ "key": "period", "value": "30" }]
+              "path": ["providers", "1", "status"]
             }
           }
         },
         {
-          "name": "Get Revenue Stats",
+          "name": "Set Provider Active (Admin)",
           "request": {
-            "method": "GET",
+            "method": "PUT",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": true\n}"
+            },
             "url": {
-              "raw": "{{baseUrl}}/api/admin/revenue",
+              "raw": "{{baseUrl}}/providers/1/status",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "revenue"]
+              "path": ["providers", "1", "status"]
+            }
+          }
+        },
+        {
+          "name": "Set Provider Inactive (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/providers/1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["providers", "1", "status"]
             }
           }
         }
       ]
     },
     {
-      "name": "📦 Orders Management",
+      "name": "📋 Orders Management",
       "item": [
         {
-          "name": "Create Order",
+          "name": "Create Order (User)",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"providerId\": {{providerId}},\n  \"serviceId\": {{serviceId}},\n  \"scheduledDate\": \"2024-01-15T10:00:00Z\",\n  \"location\": \"Home\",\n  \"locationDetails\": \"Apartment 5B\",\n  \"quantity\": 1\n}"
+              "raw": "{\n  \"providerId\": 5,\n  \"serviceId\": 2,\n  \"scheduledDate\": \"2024-12-25T10:00:00Z\",\n  \"location\": \"Home\",\n  \"locationDetails\": \"123 Main St, Apartment 4B\",\n  \"quantity\": 1,\n  \"providerLocation\": {\n    \"lat\": 40.7128,\n    \"lng\": -74.0060\n  }\n}"
             },
+            "description": "Creates a new order. If there's a valid offer for this provider/service combination, it will be automatically applied and the discount will be shown in the response.",
             "url": {
-              "raw": "{{baseUrl}}/api/orders",
+              "raw": "{{baseUrl}}/orders",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "orders"]
+              "path": ["orders"]
             }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    pm.collectionVariables.set('orderId', pm.response.json().id);",
-                  "    pm.collectionVariables.set('invoiceId', pm.response.json().invoice.id);",
-                  "}"
-                ]
-              }
-            }
-          ]
+          }
         },
         {
           "name": "Get User Orders",
@@ -685,9 +384,23 @@
               { "key": "Authorization", "value": "Bearer {{userToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/orders",
+              "raw": "{{baseUrl}}/orders",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "orders"]
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Provider Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders"]
             }
           }
         },
@@ -696,17 +409,17 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"providerLocation\": {\"lat\": 40.7128, \"lng\": -74.0060},\n  \"notes\": \"Accepted\"\n}"
+              "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/orders/{{orderId}}/accept",
+              "raw": "{{baseUrl}}/orders/1/accept",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "orders", "{{orderId}}", "accept"]
+              "path": ["orders", "1", "accept"]
             }
           }
         },
@@ -715,17 +428,172 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"notes\": \"Completed\"\n}"
+              "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/orders/{{orderId}}/complete",
+              "raw": "{{baseUrl}}/orders/1/complete",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "orders", "{{orderId}}", "complete"]
+              "path": ["orders", "1", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Get Order History (User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/history?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "history"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order Analytics (Provider)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Get Orders by Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/status/accepted",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "status", "accepted"]
+            }
+          }
+        },
+        {
+          "name": "Get Upcoming Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/upcoming",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "upcoming"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Update Orders",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderIds\": [1, 2, 3],\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/bulk-update",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "bulk-update"]
+            }
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"accepted\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "1", "status"]
+            }
+          }
+        },
+        {
+          "name": "Provider Start Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/1/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "1", "start"]
+            }
+          }
+        },
+        {
+          "name": "Provider Reject Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/1/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "1", "reject"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/1/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "1", "cancel"]
             }
           }
         }
@@ -742,70 +610,92 @@
               { "key": "Authorization", "value": "Bearer {{userToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/invoices",
+              "raw": "{{baseUrl}}/invoices",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "invoices"]
+              "path": ["invoices"]
             }
           }
         },
         {
-          "name": "Mark Invoice as Paid",
+          "name": "Get Provider Invoices",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invoices",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices"]
+            }
+          }
+        },
+        {
+          "name": "User Mark as Paid",
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"paymentMethod\": \"credit_card\"\n}"
+              "raw": "{\n  \"paymentMethod\": \"cash\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/mark-paid",
+              "raw": "{{baseUrl}}/invoices/1/mark-paid",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "invoices", "{{invoiceId}}", "mark-paid"]
+              "path": ["invoices", "1", "mark-paid"]
+            }
+          }
+        },
+        {
+          "name": "Provider Confirm Payment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invoices/1/confirm-payment",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", "1", "confirm-payment"]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Confirmations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invoices/pending-confirmations",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", "pending-confirmations"]
             }
           }
         }
       ]
     },
     {
-      "name": "🔍 Search & Discovery",
+      "name": "🔍 Search & Filtering",
       "item": [
         {
           "name": "Search Services",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/search/services?q=cleaning&categoryId=1&minPrice=10&maxPrice=100&isVerified=true",
+              "raw": "{{baseUrl}}/search/services?q=cleaning&categoryId=1&minPrice=50&maxPrice=200",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "search", "services"],
+              "path": ["search", "services"],
               "query": [
-                {
-                  "key": "q",
-                  "value": "cleaning",
-                  "description": "Search query"
-                },
-                {
-                  "key": "categoryId",
-                  "value": "1",
-                  "description": "Filter by category ID"
-                },
-                {
-                  "key": "minPrice",
-                  "value": "10",
-                  "description": "Minimum price"
-                },
-                {
-                  "key": "maxPrice",
-                  "value": "100",
-                  "description": "Maximum price"
-                },
-                {
-                  "key": "isVerified",
-                  "value": "true",
-                  "description": "Only verified providers"
-                }
+                { "key": "q", "value": "cleaning" },
+                { "key": "categoryId", "value": "1" },
+                { "key": "minPrice", "value": "50" },
+                { "key": "maxPrice", "value": "200" }
               ]
             }
           }
@@ -814,50 +704,151 @@
           "name": "Search Providers",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/search/providers?q=professional&categoryId=1&minRating=4&isVerified=true",
+              "raw": "{{baseUrl}}/search/providers?q=cleaning&isVerified=true&minRating=4",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "search", "providers"],
+              "path": ["search", "providers"],
               "query": [
-                {
-                  "key": "q",
-                  "value": "professional",
-                  "description": "Search query"
-                },
-                {
-                  "key": "categoryId",
-                  "value": "1",
-                  "description": "Filter by category ID"
-                },
-                {
-                  "key": "minRating",
-                  "value": "4",
-                  "description": "Minimum rating"
-                },
-                {
-                  "key": "isVerified",
-                  "value": "true",
-                  "description": "Only verified providers"
-                }
+                { "key": "q", "value": "cleaning" },
+                { "key": "isVerified", "value": "true" },
+                { "key": "minRating", "value": "4" }
               ]
             }
           }
         },
         {
-          "name": "Get Popular Services",
+          "name": "Search Services Paginated",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/search/popular/services?limit=5",
+              "raw": "{{baseUrl}}/search/services/paginated?q=cleaning&page=1&limit=10",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "search", "popular", "services"],
+              "path": ["search", "services", "paginated"],
               "query": [
-                {
-                  "key": "limit",
-                  "value": "5",
-                  "description": "Number of services to return"
-                }
+                { "key": "q", "value": "cleaning" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
               ]
+            }
+          }
+        },
+        {
+          "name": "Get Trending Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/trending",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "trending"]
+            }
+          }
+        },
+        {
+          "name": "Get Search Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/suggestions?q=cle",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "suggestions"],
+              "query": [{ "key": "q", "value": "cle" }]
+            }
+          }
+        },
+        {
+          "name": "Update Payment Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentStatus\": \"paid\",\n  \"paymentMethod\": \"card\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/invoices/1/payment-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", "1", "payment-status"]
+            }
+          }
+        },
+        {
+          "name": "Mark Invoice as Failed",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/invoices/1/mark-failed",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", "1", "mark-failed"]
+            }
+          }
+        },
+        {
+          "name": "Refund Invoice",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/invoices/1/refund",
+              "host": ["{{baseUrl}}"],
+              "path": ["invoices", "1", "refund"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⭐ Provider Ratings",
+      "item": [
+        {
+          "name": "Rate Provider",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"providerId\": 5,\n  \"orderId\": 7,\n  \"rating\": 5,\n  \"comment\": \"Excellent service!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/provider-ratings",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-ratings"]
+            }
+          }
+        },
+        {
+          "name": "Get Provider Ratings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/provider-ratings/provider/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-ratings", "provider", "1"]
             }
           }
         },
@@ -865,134 +856,187 @@
           "name": "Get Top Rated Providers",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/search/top-rated/providers?limit=10",
+              "raw": "{{baseUrl}}/provider-ratings/top-rated",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "search", "top-rated", "providers"],
-              "query": [
-                {
-                  "key": "limit",
-                  "value": "10",
-                  "description": "Number of providers to return"
-                }
-              ]
+              "path": ["provider-ratings", "top-rated"]
+            }
+          }
+        },
+        {
+          "name": "Get All Ratings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/provider-ratings",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-ratings"]
+            }
+          }
+        },
+        {
+          "name": "Get My Ratings (User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/provider-ratings/my-ratings",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-ratings", "my-ratings"]
+            }
+          }
+        },
+        {
+          "name": "Update Rating",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Updated review - very good service!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/provider-ratings/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-ratings", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Rating",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/provider-ratings/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-ratings", "1"]
             }
           }
         }
       ]
     },
     {
-      "name": "👥 Admin User Management",
+      "name": "🎁 Offers & Promotions",
       "item": [
         {
-          "name": "Get All Users",
+          "name": "Create Offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": 1,\n  \"title\": \"Summer Discount\",\n  \"description\": \"20% off cleaning services\",\n  \"originalPrice\": 100.00,\n  \"offerPrice\": 80.00,\n  \"startDate\": \"2024-01-01T00:00:00Z\",\n  \"endDate\": \"2024-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/offers",
+              "host": ["{{baseUrl}}"],
+              "path": ["offers"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Offers",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/users",
+              "raw": "{{baseUrl}}/offers/active",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "users"]
+              "path": ["offers", "active"]
             }
           }
         },
         {
-          "name": "Activate User",
-          "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/admin/users/{{userId}}/activate",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "users", "{{userId}}", "activate"]
-            }
-          }
-        },
-        {
-          "name": "Deactivate User",
-          "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/admin/users/{{userId}}/deactivate",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "users", "{{userId}}", "deactivate"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "🏢 Admin Provider Management",
-      "item": [
-        {
-          "name": "Get All Providers",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/providers",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "providers"]
-            }
-          }
-        },
-        {
-          "name": "Verify Provider",
-          "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/admin/providers/{{providerId}}/verify",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "providers", "{{providerId}}", "verify"]
-            }
-          }
-        },
-        {
-          "name": "Unverify Provider",
-          "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/admin/providers/{{providerId}}/unverify",
-              "host": ["{{baseUrl}}"],
-              "path": [
-                "api",
-                "admin",
-                "providers",
-                "{{providerId}}",
-                "unverify"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Get Provider Services",
+          "name": "Get Provider Offers",
           "request": {
             "method": "GET",
             "header": [
               { "key": "Authorization", "value": "Bearer {{providerToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/providers/{{providerId}}/services",
+              "raw": "{{baseUrl}}/offers/provider",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "providers", "{{providerId}}", "services"]
+              "path": ["offers", "provider"]
             }
           }
         },
+        {
+          "name": "Get My Offers (Provider)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/my-offers",
+              "host": ["{{baseUrl}}"],
+              "path": ["offers", "my-offers"]
+            }
+          }
+        },
+        {
+          "name": "Update Offer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Summer Discount\",\n  \"description\": \"25% off cleaning services\",\n  \"offerPrice\": 75.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/offers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["offers", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Offer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["offers", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Offer Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/offers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["offers", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔗 Provider Services",
+      "item": [
         {
           "name": "Add Services to Provider",
           "request": {
@@ -1006,91 +1050,237 @@
               "raw": "{\n  \"serviceIds\": [1, 2, 3]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/providers/{{providerId}}/services",
+              "raw": "{{baseUrl}}/provider-service/add",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "providers", "{{providerId}}", "services"]
+              "path": ["provider-service", "add"]
             }
           }
         },
         {
-          "name": "Remove Services from Provider",
+          "name": "Get Provider Services",
           "request": {
-            "method": "DELETE",
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/provider-service",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-service"]
+            }
+          }
+        },
+        {
+          "name": "Update Service Price",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"price\": 150.00\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/provider-service/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-service", "1"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Service Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/provider-service/1/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-service", "1", "toggle"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔄 Provider Status Management",
+      "item": [
+        {
+          "name": "Get Provider Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/providers/1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["providers", "1", "status"]
+            }
+          }
+        },
+        {
+          "name": "Set Provider Active",
+          "request": {
+            "method": "PUT",
             "header": [
               { "key": "Authorization", "value": "Bearer {{providerToken}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"serviceIds\": [2, 3]\n}"
+              "raw": "{\n  \"isActive\": true\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/providers/{{providerId}}/services",
+              "raw": "{{baseUrl}}/providers/1/status",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "providers", "{{providerId}}", "services"]
+              "path": ["providers", "1", "status"]
+            }
+          }
+        },
+        {
+          "name": "Set Provider Inactive",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/providers/1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["providers", "1", "status"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📁 File Upload",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": [] }]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/files/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["files", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Upload Multiple Files",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "files", "type": "file", "src": [] }]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/files/upload-multiple",
+              "host": ["{{baseUrl}}"],
+              "path": ["files", "upload-multiple"]
+            }
+          }
+        },
+        {
+          "name": "Upload Documents",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "documents", "type": "file", "src": [] }]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/files/upload-documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["files", "upload-documents"]
+            }
+          }
+        },
+        {
+          "name": "Get File Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/files/info/filename.jpg",
+              "host": ["{{baseUrl}}"],
+              "path": ["files", "info", "filename.jpg"]
+            }
+          }
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/files/filename.jpg",
+              "host": ["{{baseUrl}}"],
+              "path": ["files", "filename.jpg"]
             }
           }
         }
       ]
     },
     {
-      "name": "📋 Admin Reports",
+      "name": "📊 Categories & Services",
       "item": [
         {
-          "name": "Get Order Report",
+          "name": "Get All Categories",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/reports/orders",
+              "raw": "{{baseUrl}}/categories",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "reports", "orders"]
+              "path": ["categories"]
             }
           }
         },
         {
-          "name": "Get Revenue Report",
+          "name": "Get Services by Category",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/reports/revenue",
+              "raw": "{{baseUrl}}/services/category/1",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "reports", "revenue"]
+              "path": ["services", "category", "1"]
             }
           }
         },
         {
-          "name": "Get User Report",
+          "name": "Get All Services",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/reports/users",
+              "raw": "{{baseUrl}}/services",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "reports", "users"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "🏥 Health Check",
-      "item": [
-        {
-          "name": "Health Check",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "path": ["services"]
             }
           }
         }

@@ -216,6 +216,54 @@ let AdminService = class AdminService {
             orderBy: { requestDate: 'asc' }
         });
     }
+    async getAllProviders() {
+        return this.prisma.provider.findMany({
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                description: true,
+                image: true,
+                state: true,
+                isActive: true,
+                isVerified: true,
+                createdAt: true,
+                updatedAt: true,
+                _count: {
+                    select: {
+                        orders: true,
+                        providerServices: true,
+                        ratings: true
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+    async getUnverifiedProviders() {
+        return this.prisma.provider.findMany({
+            where: { isVerified: false },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                description: true,
+                image: true,
+                state: true,
+                isActive: true,
+                createdAt: true,
+                officialDocuments: true,
+                _count: {
+                    select: {
+                        providerServices: true
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
     async approveVerification(id, notes) {
         const verification = await this.prisma.providerVerification.findUnique({
             where: { id },
@@ -351,11 +399,21 @@ let AdminService = class AdminService {
         if (!provider) {
             throw new common_1.NotFoundException('Provider not found');
         }
+        if (provider.isVerified) {
+            throw new common_1.BadRequestException('Provider is already verified');
+        }
         await this.prisma.provider.update({
             where: { id },
             data: { isVerified: true }
         });
-        return { message: 'Provider verified successfully' };
+        return {
+            message: 'Provider verified successfully. Provider can now login.',
+            provider: {
+                id: provider.id,
+                name: provider.name,
+                email: provider.email
+            }
+        };
     }
     async unverifyProvider(id) {
         const provider = await this.prisma.provider.findUnique({ where: { id } });

@@ -7,6 +7,9 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @Controller('providers')
 export class ProvidersController {
@@ -25,6 +28,18 @@ export class ProvidersController {
     return this.providersService.findById(Number(id));
   }
 
+  @Get(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async getStatus(@Param('id') id: string, @Request() req) {
+    // Providers can only access their own status, admins can access any
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+      throw new BadRequestException('You can only access your own status');
+    }
+    const provider = await this.providersService.findById(Number(id));
+    return { isActive: provider.isActive };
+  }
+
 
 
   @Post('register')
@@ -33,7 +48,12 @@ export class ProvidersController {
     @Body() data: CreateProviderDto,
     @UploadedFile() file: Express.Multer.File
   ) {
-    data.image = file ? await this.filesService.handleUploadedFile(file) : '';
+    if (file) {
+      const fileResult = await this.filesService.handleUploadedFile(file);
+      data.image = fileResult.url;
+    } else {
+      data.image = '';
+    }
     // Parse serviceIds if it's a string or array of strings
     if (typeof data.serviceIds === 'string') {
       data.serviceIds = [parseInt(data.serviceIds, 10)];
@@ -49,9 +69,27 @@ export class ProvidersController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  async create(@Body() data: CreateProviderDto) {
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `${uniqueSuffix}${ext}`);
+      },
+    }),
+  }))
+  async create(
+    @Body() createProviderDto: CreateProviderDto,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const data = { ...createProviderDto };
+    if (file) {
+      const fileResult = await this.filesService.handleUploadedFile(file);
+      data.image = fileResult.url;
+    } else {
+      data.image = '';
+    }
     return this.providersService.create(data);
   }
 
@@ -60,6 +98,21 @@ export class ProvidersController {
   @Roles('ADMIN')
   async update(@Param('id') id: string, @Body() data: UpdateProviderDto) {
     return this.providersService.update(Number(id), data);
+  }
+
+  @Put(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() data: UpdateStatusDto,
+    @Request() req
+  ) {
+    // Providers can only update their own status, admins can update any
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+      throw new BadRequestException('You can only update your own status');
+    }
+    return this.providersService.updateStatus(Number(id), data.isActive);
   }
 
   @Delete(':id')
@@ -74,7 +127,7 @@ export class ProvidersController {
   @Roles('PROVIDER', 'ADMIN')
   async getProviderServices(@Param('id') id: string, @Request() req) {
     // Providers can only access their own services, admins can access any
-    if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
       throw new BadRequestException('You can only access your own services');
     }
     return this.providersService.getProviderServices(Number(id));
@@ -89,7 +142,7 @@ export class ProvidersController {
     @Request() req
   ) {
     // Providers can only modify their own services, admins can modify any
-    if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
       throw new BadRequestException('You can only modify your own services');
     }
     return this.providersService.addServices(Number(id), body.serviceIds);
@@ -104,7 +157,7 @@ export class ProvidersController {
     @Request() req
   ) {
     // Providers can only modify their own services, admins can modify any
-    if (req.user.role === 'PROVIDER' && req.user.id !== Number(id)) {
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
       throw new BadRequestException('You can only modify your own services');
     }
     return this.providersService.removeServices(Number(id), body.serviceIds);

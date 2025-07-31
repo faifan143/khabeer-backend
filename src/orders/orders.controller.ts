@@ -45,6 +45,64 @@ export class OrdersController {
         return this.ordersService.getOrderStats(req.user.userId, req.user.role);
     }
 
+    @Get('history')
+    @UseGuards(JwtAuthGuard)
+    async getOrderHistory(
+        @Request() req,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number
+    ) {
+        return this.ordersService.getOrderHistory(req.user.userId, req.user.role, page || 1, limit || 10);
+    }
+
+    @Get('analytics')
+    @UseGuards(JwtAuthGuard)
+    async getOrderAnalytics(
+        @Request() req,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        const start = startDate ? new Date(startDate) : undefined;
+        const end = endDate ? new Date(endDate) : undefined;
+        return this.ordersService.getOrderAnalytics(req.user.userId, req.user.role, start, end);
+    }
+
+    @Get('date-range')
+    @UseGuards(JwtAuthGuard)
+    async getOrdersByDateRange(
+        @Request() req,
+        @Query('startDate') startDate: string,
+        @Query('endDate') endDate: string
+    ) {
+        return this.ordersService.getOrdersByDateRange(
+            req.user.userId,
+            req.user.role,
+            new Date(startDate),
+            new Date(endDate)
+        );
+    }
+
+    @Get('status/:status')
+    @UseGuards(JwtAuthGuard)
+    async getOrdersByStatus(
+        @Request() req,
+        @Param('status') status: string
+    ) {
+        return this.ordersService.getOrdersByStatus(req.user.userId, req.user.role, status as any);
+    }
+
+    @Get('upcoming')
+    @UseGuards(JwtAuthGuard)
+    async getUpcomingOrders(@Request() req) {
+        return this.ordersService.getUpcomingOrders(req.user.userId, req.user.role);
+    }
+
+    @Get('overdue')
+    @UseGuards(JwtAuthGuard)
+    async getOverdueOrders(@Request() req) {
+        return this.ordersService.getOverdueOrders(req.user.userId, req.user.role);
+    }
+
     @Get(':id')
     async findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
         return this.ordersService.findOne(id, req.user.userId, req.user.role);
@@ -109,5 +167,20 @@ export class OrdersController {
         @Request() req
     ) {
         return this.ordersService.cancel(id, req.user.userId, req.user.role);
+    }
+
+    @Put('bulk-update')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('PROVIDER')
+    async bulkUpdateStatus(
+        @Request() req,
+        @Body() body: { orderIds: number[]; status: string }
+    ) {
+        return this.ordersService.bulkUpdateStatus(
+            body.orderIds,
+            body.status as any,
+            req.user.userId,
+            req.user.role
+        );
     }
 }

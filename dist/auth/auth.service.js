@@ -27,16 +27,28 @@ let AuthService = class AuthService {
     }
     async validateUser(email, pass) {
         try {
-            const user = await this.usersService.findByEmail(email);
-            if (user && await bcrypt.compare(pass, user.password)) {
-                if (user.role === 'USER' && !user.isActive) {
-                    throw new common_1.UnauthorizedException('Your account is not active. Please contact admin for activation.');
+            const [user, provider] = await Promise.all([
+                this.usersService.findByEmail(email),
+                this.providersService.findByEmail(email)
+            ]);
+            if (user && provider) {
+                if (provider.password && provider.password.trim() !== '' && await bcrypt.compare(pass, provider.password)) {
+                    if (!provider.isVerified) {
+                        throw new common_1.UnauthorizedException('Your account is not verified. Please wait for admin verification.');
+                    }
+                    const { password, ...result } = provider;
+                    return { ...result, role: 'PROVIDER' };
                 }
+                if (user.password && await bcrypt.compare(pass, user.password)) {
+                    const { password, ...result } = user;
+                    return { ...result, role: user.role };
+                }
+            }
+            else if (user && await bcrypt.compare(pass, user.password)) {
                 const { password, ...result } = user;
                 return { ...result, role: user.role };
             }
-            const provider = await this.providersService.findByEmail(email);
-            if (provider && provider.password && provider.password.trim() !== '' && await bcrypt.compare(pass, provider.password)) {
+            else if (provider && provider.password && provider.password.trim() !== '' && await bcrypt.compare(pass, provider.password)) {
                 if (!provider.isVerified) {
                     throw new common_1.UnauthorizedException('Your account is not verified. Please wait for admin verification.');
                 }
@@ -88,13 +100,16 @@ let AuthService = class AuthService {
             }
             const hashedPassword = await bcrypt.hash(data.password, 10);
             const userData = {
-                ...data,
+                name: data.name,
+                email: data.email,
                 password: hashedPassword,
                 image: data.image || '',
                 address: data.address || '',
                 phone: data.phone || '',
                 state: data.state || '',
-                isActive: data.isActive ?? true
+                role: data.role || 'USER',
+                isActive: data.isActive ?? true,
+                officialDocuments: data.officialDocuments
             };
             if (data.role === 'PROVIDER') {
                 const providerData = {
@@ -116,7 +131,7 @@ let AuthService = class AuthService {
                 return {
                     ...result,
                     role: 'PROVIDER',
-                    message: 'Provider registered successfully. Please wait for admin approval.'
+                    message: 'Provider registered successfully. Please wait for admin verification to login.'
                 };
             }
             else {
@@ -209,7 +224,7 @@ let AuthService = class AuthService {
                         type: 'USER',
                         isActive: user.isActive,
                         isVerified: true,
-                        message: user.isActive ? 'Account is active' : 'Account is not active. Please contact admin.'
+                        message: 'User account is ready to use. isActive status does not affect login.'
                     };
                 }
             }
@@ -236,14 +251,12 @@ let AuthService = class AuthService {
     }
     async activateProviderAccount(providerId) {
         try {
+            console.log('Attempting to activate provider with ID:', providerId);
             const provider = await this.providersService.findById(providerId);
-            if (!provider) {
-                throw new common_1.NotFoundException('Provider not found');
-            }
             if (!provider.isVerified) {
                 throw new common_1.BadRequestException('Your account must be verified by admin before you can activate it.');
             }
-            const updatedProvider = await this.providersService.update(providerId, { isActive: true });
+            const updatedProvider = await this.providersService.update(provider.id, { isActive: true });
             return {
                 ...updatedProvider,
                 message: 'Account activated successfully. You can now accept orders.'
@@ -253,16 +266,15 @@ let AuthService = class AuthService {
             if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
+            console.error('Error activating provider account:', error);
             throw new common_1.InternalServerErrorException('Error activating account');
         }
     }
     async deactivateProviderAccount(providerId) {
         try {
+            console.log('Attempting to deactivate provider with ID:', providerId);
             const provider = await this.providersService.findById(providerId);
-            if (!provider) {
-                throw new common_1.NotFoundException('Provider not found');
-            }
-            const updatedProvider = await this.providersService.update(providerId, { isActive: false });
+            const updatedProvider = await this.providersService.update(provider.id, { isActive: false });
             return {
                 ...updatedProvider,
                 message: 'Account deactivated successfully. You will not receive new orders.'
@@ -272,6 +284,7 @@ let AuthService = class AuthService {
             if (error instanceof common_1.NotFoundException) {
                 throw error;
             }
+            console.error('Error deactivating provider account:', error);
             throw new common_1.InternalServerErrorException('Error deactivating account');
         }
     }

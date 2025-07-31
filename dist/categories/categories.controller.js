@@ -19,6 +19,8 @@ const files_service_1 = require("../files/files.service");
 const categories_service_1 = require("./categories.service");
 const create_category_dto_1 = require("./dto/create-category.dto");
 const update_category_dto_1 = require("./dto/update-category.dto");
+const multer_1 = require("multer");
+const path_1 = require("path");
 let CategoriesController = class CategoriesController {
     categoriesService;
     filesService;
@@ -32,8 +34,15 @@ let CategoriesController = class CategoriesController {
     async findOne(id) {
         return this.categoriesService.findById(Number(id));
     }
-    async create(data, file) {
-        data.image = file ? await this.filesService.handleUploadedFile(file) : '';
+    async create(createCategoryDto, file) {
+        const data = { ...createCategoryDto };
+        if (file) {
+            const fileResult = await this.filesService.handleUploadedFile(file);
+            data.image = fileResult.url;
+        }
+        else {
+            data.image = '';
+        }
         return this.categoriesService.create(data);
     }
     async update(id, data) {
@@ -59,7 +68,16 @@ __decorate([
 ], CategoriesController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image')),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),

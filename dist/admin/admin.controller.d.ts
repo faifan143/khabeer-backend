@@ -45,6 +45,39 @@ export declare class AdminController {
         verified: number;
         unverified: number;
     }>;
+    getAllProviders(): Promise<{
+        description: string;
+        id: number;
+        name: string;
+        email: string | null;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        isVerified: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        _count: {
+            providerServices: number;
+            orders: number;
+            ratings: number;
+        };
+    }[]>;
+    getUnverifiedProviders(): Promise<{
+        description: string;
+        id: number;
+        name: string;
+        email: string | null;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        officialDocuments: string | null;
+        createdAt: Date;
+        _count: {
+            providerServices: number;
+        };
+    }[]>;
     getOrderStats(): Promise<{
         total: number;
         byStatus: {
@@ -57,18 +90,18 @@ export declare class AdminController {
         popularServices: {
             orderCount: number;
             category: {
+                id: number;
                 image: string;
                 state: string;
-                id: number;
                 titleAr: string;
                 titleEn: string;
             } | null;
             orders: {
-                id: number;
-                providerId: number;
                 serviceId: number;
-                scheduledDate: Date | null;
+                id: number;
                 location: string | null;
+                providerId: number;
+                scheduledDate: Date | null;
                 locationDetails: string | null;
                 quantity: number;
                 providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
@@ -80,9 +113,9 @@ export declare class AdminController {
                 providerAmount: number;
                 commissionAmount: number;
             }[];
-            image: string;
-            id: number;
             description: string;
+            id: number;
+            image: string;
             title: string;
             commission: number;
             whatsapp: string;
@@ -91,35 +124,35 @@ export declare class AdminController {
     }>;
     getPendingVerifications(): Promise<({
         provider: {
+            description: string;
+            id: number;
             name: string;
             image: string;
             phone: string;
-            id: number;
-            description: string;
         };
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
         providerId: number;
-        status: string;
         documents: string[];
+        status: string;
         adminNotes: string | null;
     })[]>;
     getPendingJoinRequests(): Promise<({
         provider: {
+            description: string;
+            id: number;
             name: string;
             image: string;
             phone: string;
-            id: number;
-            description: string;
         };
     } & {
         id: number;
         providerId: number;
         status: string;
-        adminNotes: string | null;
         requestDate: Date;
+        adminNotes: string | null;
     })[]>;
     approveVerification(id: string, body: {
         notes?: string;
@@ -155,6 +188,11 @@ export declare class AdminController {
     }>;
     verifyProvider(id: number): Promise<{
         message: string;
+        provider: {
+            id: number;
+            name: string;
+            email: string | null;
+        };
     }>;
     unverifyProvider(id: number): Promise<{
         message: string;
@@ -167,14 +205,14 @@ export declare class AdminController {
         totalAmount: number;
         commissionAmount: number;
         user: {
+            id: number;
             name: string;
             email: string;
-            id: number;
         };
         provider: {
+            id: number;
             name: string;
             phone: string;
-            id: number;
         };
         service: {
             id: number;

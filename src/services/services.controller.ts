@@ -4,6 +4,8 @@ import { FilesService } from '../files/files.service';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @Controller('services')
 export class ServicesController {
@@ -28,9 +30,27 @@ export class ServicesController {
   }
 
   @Post()
-  @UseInterceptors(FileInterceptor('image'))
-  async create(@Body() data: CreateServiceDto, @UploadedFile() file: Express.Multer.File) {
-    data.image = file ? await this.filesService.handleUploadedFile(file) : '';
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `${uniqueSuffix}${ext}`);
+      },
+    }),
+  }))
+  async create(
+    @Body() createServiceDto: CreateServiceDto,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const data = { ...createServiceDto };
+    if (file) {
+      const fileResult = await this.filesService.handleUploadedFile(file);
+      data.image = fileResult.url;
+    } else {
+      data.image = '';
+    }
     return this.servicesService.create(data);
   }
 

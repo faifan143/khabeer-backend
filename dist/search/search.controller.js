@@ -64,6 +64,34 @@ let SearchController = class SearchController {
     async getTopRatedProviders(limit) {
         return this.searchService.getTopRatedProviders(limit);
     }
+    async getSearchSuggestions(query, limit) {
+        return this.searchService.getSearchSuggestions(query, limit || 5);
+    }
+    async getTrendingServices(limit) {
+        return this.searchService.getTrendingServices(limit || 10);
+    }
+    async searchServicesPaginated(query, categoryId, minPrice, maxPrice, minRating, isVerified, page, limit) {
+        const filters = {
+            query,
+            categoryId,
+            minPrice,
+            maxPrice,
+            minRating,
+            isVerified: isVerified === true
+        };
+        return this.searchService.searchServicesWithPagination(filters, page || 1, limit || 10);
+    }
+    async searchProvidersPaginated(query, categoryId, minPrice, maxPrice, minRating, isVerified, page, limit) {
+        const filters = {
+            query,
+            categoryId,
+            minPrice,
+            maxPrice,
+            minRating,
+            isVerified: isVerified === true
+        };
+        return this.searchService.searchProviders(filters);
+    }
 };
 exports.SearchController = SearchController;
 __decorate([
@@ -111,6 +139,49 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], SearchController.prototype, "getTopRatedProviders", null);
+__decorate([
+    (0, common_1.Get)('suggestions'),
+    __param(0, (0, common_1.Query)('q')),
+    __param(1, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number]),
+    __metadata("design:returntype", Promise)
+], SearchController.prototype, "getSearchSuggestions", null);
+__decorate([
+    (0, common_1.Get)('trending'),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], SearchController.prototype, "getTrendingServices", null);
+__decorate([
+    (0, common_1.Get)('services/paginated'),
+    __param(0, (0, common_1.Query)('q')),
+    __param(1, (0, common_1.Query)('categoryId')),
+    __param(2, (0, common_1.Query)('minPrice')),
+    __param(3, (0, common_1.Query)('maxPrice')),
+    __param(4, (0, common_1.Query)('minRating')),
+    __param(5, (0, common_1.Query)('isVerified')),
+    __param(6, (0, common_1.Query)('page')),
+    __param(7, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number, Number, Number, Number, Boolean, Number, Number]),
+    __metadata("design:returntype", Promise)
+], SearchController.prototype, "searchServicesPaginated", null);
+__decorate([
+    (0, common_1.Get)('providers/paginated'),
+    __param(0, (0, common_1.Query)('q')),
+    __param(1, (0, common_1.Query)('categoryId')),
+    __param(2, (0, common_1.Query)('minPrice')),
+    __param(3, (0, common_1.Query)('maxPrice')),
+    __param(4, (0, common_1.Query)('minRating')),
+    __param(5, (0, common_1.Query)('isVerified')),
+    __param(6, (0, common_1.Query)('page')),
+    __param(7, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number, Number, Number, Number, Boolean, Number, Number]),
+    __metadata("design:returntype", Promise)
+], SearchController.prototype, "searchProvidersPaginated", null);
 exports.SearchController = SearchController = __decorate([
     (0, common_1.Controller)('search'),
     __metadata("design:paramtypes", [search_service_1.SearchService])

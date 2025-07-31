@@ -27,11 +27,22 @@ let AuthController = class AuthController {
         this.filesService = filesService;
     }
     async login(body) {
-        const user = await this.authService.validateUser(body.email, body.password);
-        if (!user) {
+        try {
+            const user = await this.authService.validateUser(body.email, body.password);
+            if (!user) {
+                throw new common_1.BadRequestException('Invalid credentials');
+            }
+            return this.authService.login(user);
+        }
+        catch (error) {
+            if (error instanceof common_1.UnauthorizedException) {
+                throw error;
+            }
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
+            }
             throw new common_1.BadRequestException('Invalid credentials');
         }
-        return this.authService.login(user);
     }
     async register(body, file) {
         console.log('Register body:', body);
@@ -52,7 +63,8 @@ let AuthController = class AuthController {
             serviceIds: this.parseServiceIds(body.serviceIds)
         };
         if (file) {
-            registerData.image = await this.filesService.handleUploadedFile(file);
+            const fileResult = await this.filesService.handleUploadedFile(file);
+            registerData.image = fileResult.url;
         }
         else {
             registerData.image = '';
@@ -66,16 +78,16 @@ let AuthController = class AuthController {
         return req.user;
     }
     async upgradeToProvider(req, providerData) {
-        return this.authService.upgradeToProvider(req.user.id, providerData);
+        return this.authService.upgradeToProvider(req.user.userId, providerData);
     }
     async checkAccountStatus(body) {
         return this.authService.checkAccountStatus(body.email);
     }
     async activateAccount(req) {
-        return this.authService.activateProviderAccount(req.user.id);
+        return this.authService.activateProviderAccount(req.user.userId);
     }
     async deactivateAccount(req) {
-        return this.authService.deactivateProviderAccount(req.user.id);
+        return this.authService.deactivateProviderAccount(req.user.userId);
     }
     parseServiceIds(serviceIds) {
         if (!serviceIds)

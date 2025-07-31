@@ -50,6 +50,16 @@ export class AdminController {
         return this.adminService.getProviderStats();
     }
 
+    @Get('providers')
+    async getAllProviders() {
+        return this.adminService.getAllProviders();
+    }
+
+    @Get('providers/unverified')
+    async getUnverifiedProviders() {
+        return this.adminService.getUnverifiedProviders();
+    }
+
     @Get('orders/stats')
     async getOrderStats() {
         return this.adminService.getOrderStats();
@@ -153,4 +163,6 @@ export class AdminController {
         const end = endDate ? new Date(endDate) : undefined;
         return this.adminService.getUserReport(start, end);
     }
+
+
 } 
