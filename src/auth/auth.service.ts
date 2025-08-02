@@ -5,7 +5,7 @@ import { ProvidersService } from '../providers/providers.service';
 import { SmsService } from '../sms/sms.service';
 import * as bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
-import { PhoneLoginDto, PhoneLoginVerifyDto, PhoneLoginResponseDto } from './dto/phone-login.dto';
+import { PhoneLoginDto, PhoneLoginVerifyDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -382,14 +382,16 @@ export class AuthService {
     try {
       const { phoneNumber, otp, purpose = 'login' } = phoneLoginVerifyDto;
 
-      // Verify OTP
-      const otpResult = await this.smsService.verifyOtp({ phoneNumber, otp, purpose });
-      
-      if (!otpResult.success) {
-        return {
-          success: false,
-          message: otpResult.message
-        };
+      // If OTP is provided, verify it
+      if (otp) {
+        const otpResult = await this.smsService.verifyOtp({ phoneNumber, otp, purpose });
+        
+        if (!otpResult.success) {
+          return {
+            success: false,
+            message: otpResult.message
+          };
+        }
       }
 
       // Find user/provider by phone number
@@ -404,7 +406,7 @@ export class AuthService {
       }
 
       let userData: any;
-      let role: string;
+      let role: string = 'USER'; // Initialize with default value
 
       if (user) {
         // Check if user is active (except for admins)
@@ -426,6 +428,89 @@ export class AuthService {
         }
         userData = provider;
         role = 'PROVIDER';
+      }
+
+      // Generate JWT token
+      const payload = { 
+        username: userData.email || phoneNumber, 
+        sub: userData.id, 
+        role: role,
+        phone: phoneNumber 
+      };
+      
+      const access_token = this.jwtService.sign(payload);
+
+      return {
+        success: true,
+        message: 'Login successful',
+        access_token,
+        user: {
+          id: userData.id,
+          phone: phoneNumber,
+          role: role
+        }
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Login failed. Please try again.'
+      };
+    }
+  }
+
+  /**
+   * Direct phone login without OTP (for existing users)
+   */
+  async directPhoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto> {
+    try {
+      const { phoneNumber, password } = directPhoneLoginDto;
+
+      // Find user/provider by phone number
+      const user = await this.usersService.findByPhone(phoneNumber);
+      const provider = await this.providersService.findByPhone(phoneNumber);
+
+      if (!user && !provider) {
+        return {
+          success: false,
+          message: 'No account found with this phone number'
+        };
+      }
+
+      let userData: any;
+      let role: string = 'USER'; // Initialize with default value
+
+      if (user) {
+        // Check if user is active (except for admins)
+        if (!user.isActive && user.role !== 'ADMIN') {
+          return {
+            success: false,
+            message: 'Account is not active'
+          };
+        }
+        userData = user;
+        role = user.role;
+      } else if (provider) {
+        // Check if provider is verified
+        if (!provider.isVerified) {
+          return {
+            success: false,
+            message: 'Provider account is not verified'
+          };
+        }
+        userData = provider;
+        role = 'PROVIDER';
+      }
+
+      // If password is provided, validate it
+      if (password && userData.password) {
+        const isPasswordValid = await bcrypt.compare(password, userData.password);
+        if (!isPasswordValid) {
+          return {
+            success: false,
+            message: 'Invalid password'
+          };
+        }
       }
 
       // Generate JWT token

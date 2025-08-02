@@ -36,6 +36,22 @@ export declare class ProvidersService {
         createdAt: Date;
         updatedAt: Date;
     } | null>;
+    findByPhone(phone: string): Promise<{
+        description: string;
+        id: number;
+        name: string;
+        email: string | null;
+        password: string | null;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        isVerified: boolean;
+        location: import("generated/prisma/runtime/library").JsonValue | null;
+        officialDocuments: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    } | null>;
     findById(id: number): Promise<{
         description: string;
         id: number;

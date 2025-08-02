@@ -33,4 +33,8 @@ export class UpdateProviderDto {
   @IsArray()
   @IsNumber({}, { each: true })
   serviceIds?: number[];
+
+  @IsOptional()
+  @IsString()
+  password?: string;
 }

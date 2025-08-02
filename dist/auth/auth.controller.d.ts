@@ -1,5 +1,6 @@
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { PhoneLoginDto, PhoneLoginVerifyDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
 import { FilesService } from 'src/files/files.service';
 export declare class AuthController {
     private readonly authService;
@@ -12,6 +13,34 @@ export declare class AuthController {
             email: string;
             role: string;
         };
+    }>;
+    sendPhoneLoginOtp(phoneLoginDto: PhoneLoginDto): Promise<{
+        success: boolean;
+        message: string;
+        expiresIn?: number;
+    }>;
+    verifyPhoneLogin(phoneLoginVerifyDto: PhoneLoginVerifyDto): Promise<PhoneLoginResponseDto>;
+    directPhoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto>;
+    sendPhoneRegistrationOtp(phoneLoginDto: PhoneLoginDto): Promise<{
+        success: boolean;
+        message: string;
+        expiresIn?: number;
+    }>;
+    registerWithPhone(body: any, file: Express.Multer.File): Promise<any>;
+    sendPasswordResetOtp(body: {
+        phoneNumber: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
+        expiresIn?: number;
+    }>;
+    resetPasswordWithPhone(body: {
+        phoneNumber: string;
+        otp: string;
+        newPassword: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
     }>;
     register(body: any, file: Express.Multer.File): Promise<any>;
     me(req: any): Promise<any>;

@@ -34,6 +34,14 @@ let ProvidersService = class ProvidersService {
             throw new common_1.InternalServerErrorException('Error finding provider by email');
         }
     }
+    async findByPhone(phone) {
+        try {
+            return await this.prisma.provider.findFirst({ where: { phone } });
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error finding provider by phone');
+        }
+    }
     async findById(id) {
         try {
             const provider = await this.prisma.provider.findUnique({ where: { id } });

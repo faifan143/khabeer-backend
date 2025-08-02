@@ -20,6 +20,7 @@ const roles_guard_1 = require("./roles.guard");
 const admin_controller_1 = require("./admin.controller");
 const users_service_1 = require("../users/users.service");
 const files_module_1 = require("../files/files.module");
+const sms_module_1 = require("../sms/sms.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -30,6 +31,7 @@ exports.AuthModule = AuthModule = __decorate([
             files_module_1.FilesModule,
             users_module_1.UsersModule,
             providers_module_1.ProvidersModule,
+            sms_module_1.SmsModule,
             passport_1.PassportModule,
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],

@@ -19,6 +19,21 @@ export declare class UsersService {
         address: string;
         role: string;
     } | null>;
+    findByPhone(phone: string): Promise<{
+        id: number;
+        name: string;
+        email: string;
+        password: string;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        officialDocuments: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        address: string;
+        role: string;
+    } | null>;
     create(data: CreateUserDto): Promise<{
         id: number;
         name: string;

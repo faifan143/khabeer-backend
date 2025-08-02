@@ -9,64 +9,61 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateProviderDto = void 0;
+exports.PhoneLoginResponseDto = exports.DirectPhoneLoginDto = exports.PhoneLoginVerifyDto = exports.PhoneLoginDto = void 0;
 const class_validator_1 = require("class-validator");
-class UpdateProviderDto {
-    name;
-    image;
-    description;
-    state;
-    phone;
-    isActive;
-    officialDocuments;
-    serviceIds;
+class PhoneLoginDto {
+    phoneNumber;
+    purpose;
+}
+exports.PhoneLoginDto = PhoneLoginDto;
+__decorate([
+    (0, class_validator_1.IsPhoneNumber)(),
+    __metadata("design:type", String)
+], PhoneLoginDto.prototype, "phoneNumber", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PhoneLoginDto.prototype, "purpose", void 0);
+class PhoneLoginVerifyDto {
+    phoneNumber;
+    otp;
+    purpose;
+}
+exports.PhoneLoginVerifyDto = PhoneLoginVerifyDto;
+__decorate([
+    (0, class_validator_1.IsPhoneNumber)(),
+    __metadata("design:type", String)
+], PhoneLoginVerifyDto.prototype, "phoneNumber", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PhoneLoginVerifyDto.prototype, "otp", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PhoneLoginVerifyDto.prototype, "purpose", void 0);
+class DirectPhoneLoginDto {
+    phoneNumber;
     password;
 }
-exports.UpdateProviderDto = UpdateProviderDto;
+exports.DirectPhoneLoginDto = DirectPhoneLoginDto;
+__decorate([
+    (0, class_validator_1.IsPhoneNumber)(),
+    __metadata("design:type", String)
+], DirectPhoneLoginDto.prototype, "phoneNumber", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], UpdateProviderDto.prototype, "name", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateProviderDto.prototype, "image", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateProviderDto.prototype, "description", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateProviderDto.prototype, "state", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateProviderDto.prototype, "phone", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], UpdateProviderDto.prototype, "isActive", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateProviderDto.prototype, "officialDocuments", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsNumber)({}, { each: true }),
-    __metadata("design:type", Array)
-], UpdateProviderDto.prototype, "serviceIds", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateProviderDto.prototype, "password", void 0);
-//# sourceMappingURL=update-provider.dto.js.map
+], DirectPhoneLoginDto.prototype, "password", void 0);
+class PhoneLoginResponseDto {
+    success;
+    message;
+    access_token;
+    user;
+}
+exports.PhoneLoginResponseDto = PhoneLoginResponseDto;
+//# sourceMappingURL=phone-login.dto.js.map

@@ -13,12 +13,22 @@ export class PhoneLoginVerifyDto {
   @IsPhoneNumber()
   phoneNumber: string;
 
+  @IsOptional()
   @IsString()
-  otp: string;
+  otp?: string;
 
   @IsOptional()
   @IsString()
   purpose?: string;
+}
+
+export class DirectPhoneLoginDto {
+  @IsPhoneNumber()
+  phoneNumber: string;
+
+  @IsOptional()
+  @IsString()
+  password?: string;
 }
 
 export class PhoneLoginResponseDto {

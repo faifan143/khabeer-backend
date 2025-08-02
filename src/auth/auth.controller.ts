@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { PhoneLoginDto, PhoneLoginVerifyDto, PhoneLoginResponseDto } from './dto/phone-login.dto';
+import { PhoneLoginDto, PhoneLoginVerifyDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
 import { FileInterceptor } from '@nestjs/platform-express/multer';
 import { FilesService } from 'src/files/files.service';
 
@@ -56,6 +56,14 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid OTP' })
   async verifyPhoneLogin(@Body() phoneLoginVerifyDto: PhoneLoginVerifyDto) {
     return this.authService.verifyPhoneLogin(phoneLoginVerifyDto);
+  }
+
+  @Post('phone/login/direct')
+  @ApiOperation({ summary: 'Direct phone login without OTP (optional password)' })
+  @ApiResponse({ status: 200, description: 'Login successful', type: PhoneLoginResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid credentials' })
+  async directPhoneLogin(@Body() directPhoneLoginDto: DirectPhoneLoginDto) {
+    return this.authService.directPhoneLogin(directPhoneLoginDto);
   }
 
   @Post('phone/register/send-otp')

@@ -1,12 +1,15 @@
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { ProvidersService } from '../providers/providers.service';
+import { SmsService } from '../sms/sms.service';
 import { RegisterDto } from './dto/register.dto';
+import { PhoneLoginDto, PhoneLoginVerifyDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
 export declare class AuthService {
     private readonly usersService;
     private readonly providersService;
+    private readonly smsService;
     private readonly jwtService;
-    constructor(usersService: UsersService, providersService: ProvidersService, jwtService: JwtService);
+    constructor(usersService: UsersService, providersService: ProvidersService, smsService: SmsService, jwtService: JwtService);
     validateUser(email: string, pass: string): Promise<any>;
     login(user: {
         id: number;
@@ -99,5 +102,20 @@ export declare class AuthService {
         officialDocuments: string | null;
         createdAt: Date;
         updatedAt: Date;
+    }>;
+    sendPhoneLoginOtp(phoneLoginDto: PhoneLoginDto): Promise<{
+        success: boolean;
+        message: string;
+        expiresIn?: number;
+    }>;
+    verifyPhoneLogin(phoneLoginVerifyDto: PhoneLoginVerifyDto): Promise<PhoneLoginResponseDto>;
+    directPhoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto>;
+    registerWithPhone(data: RegisterDto & {
+        phoneNumber: string;
+        otp: string;
+    }): Promise<any>;
+    resetPasswordWithPhone(phoneNumber: string, otp: string, newPassword: string): Promise<{
+        success: boolean;
+        message: string;
     }>;
 }

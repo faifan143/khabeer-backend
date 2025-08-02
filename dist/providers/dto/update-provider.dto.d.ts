@@ -7,4 +7,5 @@ export declare class UpdateProviderDto {
     isActive?: boolean;
     officialDocuments?: string;
     serviceIds?: number[];
+    password?: string;
 }

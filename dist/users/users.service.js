@@ -26,6 +26,14 @@ let UsersService = class UsersService {
             throw new common_1.InternalServerErrorException('Error finding user by email');
         }
     }
+    async findByPhone(phone) {
+        try {
+            return await this.prisma.user.findFirst({ where: { phone } });
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error finding user by phone');
+        }
+    }
     async create(data) {
         try {
             const userData = {
