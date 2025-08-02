@@ -119,6 +119,35 @@ backup_data() {
     fi
 }
 
+# Function to setup uploads directory with correct permissions
+setup_uploads_directory() {
+    print_status "Setting up uploads directory with correct permissions..."
+    
+    # Create uploads directory if it doesn't exist
+    mkdir -p uploads/documents uploads/images
+    
+    # Set permissions to allow Docker container to write
+    # The container runs as user 1001 (nestjs), so we need to ensure the directory is writable
+    chmod -R 755 uploads/
+    
+    # If running as root, change ownership to allow container access
+    if [ "$(id -u)" = "0" ]; then
+        # Find the UID that the container will use (usually 1001)
+        CONTAINER_UID=1001
+        chown -R $CONTAINER_UID:$CONTAINER_UID uploads/ 2>/dev/null || {
+            print_warning "Could not change ownership to UID $CONTAINER_UID. This might cause permission issues."
+            # Make it world-writable as fallback (less secure but functional)
+            chmod -R 777 uploads/
+        }
+    else
+        # If not running as root, make it world-writable
+        chmod -R 777 uploads/
+        print_warning "Made uploads directory world-writable. Consider running as root for better security."
+    fi
+    
+    print_success "Uploads directory setup completed"
+}
+
 # Function to stop existing containers
 stop_containers() {
     print_status "Stopping existing containers..."
@@ -288,6 +317,9 @@ main() {
     
     # Backup existing data
     backup_data
+    
+    # Setup uploads directory with correct permissions
+    setup_uploads_directory
     
     # Stop existing containers
     stop_containers

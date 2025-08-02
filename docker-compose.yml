@@ -68,7 +68,7 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     volumes:
-      - ./uploads:/app/uploads
+      - ./uploads:/app/uploads:rw
     depends_on:
       postgres:
         condition: service_healthy
