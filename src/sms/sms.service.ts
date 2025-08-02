@@ -12,7 +12,7 @@ export class SmsService {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   /**
    * Generate a random OTP
@@ -65,7 +65,7 @@ export class SmsService {
       if (response.data && response.data.status === 'success') {
         // Log successful SMS
         await this.logSmsActivity(phoneNumber, message, 'sent', response.data);
-        
+
         return {
           success: true,
           message: 'SMS sent successfully'
@@ -76,14 +76,14 @@ export class SmsService {
 
     } catch (error) {
       this.logger.error(`Error sending SMS: ${error.message}`, error.stack);
-      
+
       // Log failed SMS attempt
       await this.logSmsActivity(phoneNumber, message, 'failed', { error: error.message });
-      
+
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       throw new InternalServerErrorException('Failed to send SMS. Please try again later.');
     }
   }
@@ -97,7 +97,7 @@ export class SmsService {
 
       // Check if OTP is enabled in environment
       const otpEnabled = this.configService.get<string>('ENABLE_OTP', 'true').toLowerCase() === 'true';
-      
+
       if (!otpEnabled) {
         this.logger.log(`OTP disabled in environment. Skipping OTP for ${phoneNumber}`);
         return {
@@ -121,7 +121,7 @@ export class SmsService {
       if (recentOtp) {
         const timeDiff = Date.now() - recentOtp.createdAt.getTime();
         const retryAfter = Math.ceil((2 * 60 * 1000 - timeDiff) / 1000);
-        
+
         return {
           success: false,
           message: 'Please wait before requesting another OTP',
@@ -160,11 +160,11 @@ export class SmsService {
 
     } catch (error) {
       this.logger.error(`Error sending OTP: ${error.message}`, error.stack);
-      
+
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       throw new InternalServerErrorException('Failed to send OTP. Please try again later.');
     }
   }
@@ -178,7 +178,7 @@ export class SmsService {
 
       // Check if OTP is enabled in environment
       const otpEnabled = this.configService.get<string>('ENABLE_OTP', 'true').toLowerCase() === 'true';
-      
+
       if (!otpEnabled) {
         this.logger.log(`OTP disabled in environment. Auto-verifying OTP for ${phoneNumber}`);
         return {
@@ -235,7 +235,7 @@ export class SmsService {
       // Mark OTP as used
       await this.prisma.otp.update({
         where: { id: otpRecord.id },
-        data: { 
+        data: {
           isUsed: true,
           usedAt: new Date()
         }
