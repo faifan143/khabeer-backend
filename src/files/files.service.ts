@@ -38,8 +38,21 @@ export class FilesService {
   }
 
   private ensureUploadDirectory(): void {
+    // Create main upload directory
     if (!existsSync(this.uploadDir)) {
       mkdirSync(this.uploadDir, { recursive: true });
+    }
+
+    // Create subdirectories for documents and images
+    const documentsDir = join(this.uploadDir, 'documents');
+    const imagesDir = join(this.uploadDir, 'images');
+
+    if (!existsSync(documentsDir)) {
+      mkdirSync(documentsDir, { recursive: true });
+    }
+
+    if (!existsSync(imagesDir)) {
+      mkdirSync(imagesDir, { recursive: true });
     }
   }
 
