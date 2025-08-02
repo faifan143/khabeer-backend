@@ -71,9 +71,11 @@ APP_VERSION=1.0.0
 POSTGRES_DB=khabeer
 POSTGRES_USER=khabeer_user
 POSTGRES_PASSWORD=khabeer_password
+DATABASE_URL=postgresql://khabeer_user:khabeer_password@localhost:5432/khabeer
 
 # Redis Configuration
 REDIS_PASSWORD=redis_password
+REDIS_URL=redis://:redis_password@localhost:6379
 
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
@@ -89,10 +91,17 @@ RATE_LIMIT_MAX_REQUESTS=100
 # Security
 HELMET_CONTENT_SECURITY_POLICY_ENABLED=true
 
-# SMS Configuration (Update with your actual values)
+# SMS Configuration (Tamimah SMS)
+TAMIMAH_SMS_API_URL=https://api.tamimah.com/sms
+TAMIMAH_SMS_USERNAME=your_sms_username
+TAMIMAH_SMS_PASSWORD=your_sms_password
 SMS_API_KEY=your_sms_api_key
 SMS_API_SECRET=your_sms_api_secret
-SMS_SENDER_ID=your_sender_id
+SMS_SENDER_ID=Khabeer
+
+# File Upload Configuration
+UPLOAD_PATH=./uploads
+MAX_FILE_SIZE=10485760
 EOF
         
         print_warning "Please update the .env file with your actual configuration values before proceeding."
