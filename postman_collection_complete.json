@@ -24,6 +24,21 @@
       "key": "userToken",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "your-order-booking-id",
+      "type": "string"
+    },
+    {
+      "key": "providerId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "type": "string"
     }
   ],
   "item": [
@@ -1282,6 +1297,189 @@
               "host": ["{{baseUrl}}"],
               "path": ["services"]
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📍 Location Tracking",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/location-tracking/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["location-tracking", "health"]
+            }
+          }
+        },
+        {
+          "name": "Get Current Location (User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/location-tracking/order/{{orderId}}/current-location",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "location-tracking",
+                "order",
+                "{{orderId}}",
+                "current-location"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Location History (User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/location-tracking/order/{{orderId}}/location-history?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "location-tracking",
+                "order",
+                "{{orderId}}",
+                "location-history"
+              ],
+              "query": [{ "key": "limit", "value": "50" }]
+            }
+          }
+        },
+        {
+          "name": "Get Estimated Arrival (User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/location-tracking/order/{{orderId}}/estimated-arrival",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "location-tracking",
+                "order",
+                "{{orderId}}",
+                "estimated-arrival"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Tracking Status (User/Provider)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/location-tracking/order/{{orderId}}/tracking-status",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "location-tracking",
+                "order",
+                "{{orderId}}",
+                "tracking-status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Provider Orders (Provider)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/location-tracking/provider/{{providerId}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "location-tracking",
+                "provider",
+                "{{providerId}}",
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Orders (User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/location-tracking/user/{{userId}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["location-tracking", "user", "{{userId}}", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Tracking (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/location-tracking/active-tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["location-tracking", "active-tracking"]
+            }
+          }
+        },
+        {
+          "name": "Start Tracking (Provider - WebSocket)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"updateInterval\": 30\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/location-tracking/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["location-tracking", "start"]
+            },
+            "description": "This endpoint is for documentation/testing. Real tracking should be done via WebSocket connection to ws://localhost:3000/location-tracking"
+          }
+        },
+        {
+          "name": "Stop Tracking (Provider - WebSocket)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/location-tracking/stop",
+              "host": ["{{baseUrl}}"],
+              "path": ["location-tracking", "stop"]
+            },
+            "description": "This endpoint is for documentation/testing. Real tracking should be done via WebSocket connection to ws://localhost:3000/location-tracking"
           }
         }
       ]

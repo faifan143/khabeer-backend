@@ -28,6 +28,7 @@ const files_module_1 = require("./files/files.module");
 const health_module_1 = require("./health/health.module");
 const search_module_1 = require("./search/search.module");
 const admin_module_1 = require("./admin/admin.module");
+const location_tracking_module_1 = require("./location-tracking/location-tracking.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -55,6 +56,7 @@ exports.AppModule = AppModule = __decorate([
             health_module_1.HealthModule,
             search_module_1.SearchModule,
             admin_module_1.AdminModule,
+            location_tracking_module_1.LocationTrackingModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

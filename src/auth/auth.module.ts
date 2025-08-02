@@ -11,6 +11,7 @@ import { RolesGuard } from './roles.guard';
 import { AdminController } from './admin.controller';
 import { UsersService } from 'src/users/users.service';
 import { FilesModule } from 'src/files/files.module';
+import { SmsModule } from '../sms/sms.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { FilesModule } from 'src/files/files.module';
     FilesModule,
     UsersModule,
     ProvidersModule,
+    SmsModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

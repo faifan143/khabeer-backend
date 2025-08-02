@@ -19,6 +19,8 @@ import { FilesModule } from './files/files.module';
 import { HealthModule } from './health/health.module';
 import { SearchModule } from './search/search.module';
 import { AdminModule } from './admin/admin.module';
+import { LocationTrackingModule } from './location-tracking/location-tracking.module';
+import { SmsModule } from './sms/sms.module';
 
 @Module({
   imports: [
@@ -43,6 +45,8 @@ import { AdminModule } from './admin/admin.module';
     HealthModule,
     SearchModule,
     AdminModule,
+    LocationTrackingModule,
+    SmsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -18,12 +18,12 @@ export declare class AuthController {
     upgradeToProvider(req: any, providerData: any): Promise<{
         role: string;
         message: string;
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;
@@ -51,18 +51,18 @@ export declare class AuthController {
     activateAccount(req: any): Promise<{
         message: string;
         providerServices: {
+            serviceId: number;
             id: number;
             isActive: boolean;
-            price: number;
-            serviceId: number;
             providerId: number;
+            price: number;
         }[];
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;
@@ -75,18 +75,18 @@ export declare class AuthController {
     deactivateAccount(req: any): Promise<{
         message: string;
         providerServices: {
+            serviceId: number;
             id: number;
             isActive: boolean;
-            price: number;
-            serviceId: number;
             providerId: number;
+            price: number;
         }[];
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;

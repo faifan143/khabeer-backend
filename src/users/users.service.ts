@@ -16,6 +16,14 @@ export class UsersService {
     }
   }
 
+  async findByPhone(phone: string) {
+    try {
+      return await this.prisma.user.findFirst({ where: { phone } });
+    } catch (error) {
+      throw new InternalServerErrorException('Error finding user by phone');
+    }
+  }
+
   async create(data: CreateUserDto) {
     try {
       // Ensure required fields have default values

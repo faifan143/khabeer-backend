@@ -58,6 +58,7 @@ model Provider {
   offers            Offer[]
   ratings           ProviderRating[]
   verification      ProviderVerification?
+  locationTracking  LocationTracking[]
 }
 
 model User {
@@ -98,6 +99,8 @@ model Order {
   providerAmount    Float
   commissionAmount  Float
   invoice           Invoice?
+  locationTracking  LocationTracking[]
+  activeConnections ActiveConnection[]
 }
 
 model Invoice {
@@ -170,4 +173,70 @@ model ProviderRating {
   rating      Float
   comment     String?
   ratingDate  DateTime @default(now())
+}
+
+model LocationTracking {
+  id          Int      @id @default(autoincrement())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId     Int
+  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId  Int
+  latitude    Decimal  @db.Decimal(10, 8)
+  longitude   Decimal  @db.Decimal(11, 8)
+  accuracy    Decimal? @db.Decimal(5, 2)
+  timestamp   DateTime @default(now())
+  isActive    Boolean  @default(true)
+
+  @@index([orderId])
+  @@index([providerId])
+  @@index([timestamp])
+  @@index([isActive])
+}
+
+model ActiveConnection {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  userType     String   // USER or PROVIDER
+  socketId     String   @unique
+  order        Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId      Int?
+  connectedAt  DateTime @default(now())
+  lastActivity DateTime @default(now())
+
+  @@index([userId])
+  @@index([userType])
+  @@index([orderId])
+  @@index([socketId])
+  @@index([lastActivity])
+}
+
+// SMS Integration Models
+model Otp {
+  id          Int      @id @default(autoincrement())
+  phoneNumber String
+  otp         String   // Hashed OTP
+  purpose     String   // login, registration, password_reset, etc.
+  expiresAt   DateTime
+  attempts    Int      @default(0)
+  isUsed      Boolean  @default(false)
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([phoneNumber])
+  @@index([purpose])
+  @@index([expiresAt])
+  @@index([isUsed])
+}
+
+model SmsLog {
+  id          Int      @id @default(autoincrement())
+  phoneNumber String
+  message     String
+  status      String   // sent, failed, pending
+  response    String?  // API response
+  sentAt      DateTime @default(now())
+
+  @@index([phoneNumber])
+  @@index([status])
+  @@index([sentAt])
 }

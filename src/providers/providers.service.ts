@@ -24,6 +24,14 @@ export class ProvidersService {
     }
   }
 
+  async findByPhone(phone: string) {
+    try {
+      return await this.prisma.provider.findFirst({ where: { phone } });
+    } catch (error) {
+      throw new InternalServerErrorException('Error finding provider by phone');
+    }
+  }
+
   async findById(id: number) {
     try {
       const provider = await this.prisma.provider.findUnique({ where: { id } });

@@ -8,12 +8,12 @@ export declare class ProvidersController {
     private readonly filesService;
     constructor(providersService: ProvidersService, filesService: FilesService);
     findAll(): Promise<{
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;
@@ -24,12 +24,12 @@ export declare class ProvidersController {
         updatedAt: Date;
     }[]>;
     findOne(id: string): Promise<{
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;
@@ -44,19 +44,19 @@ export declare class ProvidersController {
     }>;
     register(data: CreateProviderDto, file: Express.Multer.File): Promise<{
         providerServices: {
+            serviceId: number;
             id: number;
             isActive: boolean;
-            price: number;
-            serviceId: number;
             providerId: number;
+            price: number;
         }[];
     } & {
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;
@@ -67,12 +67,12 @@ export declare class ProvidersController {
         updatedAt: Date;
     }>;
     create(createProviderDto: CreateProviderDto, file: Express.Multer.File): Promise<{
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;
@@ -84,19 +84,19 @@ export declare class ProvidersController {
     }>;
     update(id: string, data: UpdateProviderDto): Promise<{
         providerServices: {
+            serviceId: number;
             id: number;
             isActive: boolean;
-            price: number;
-            serviceId: number;
             providerId: number;
+            price: number;
         }[];
     } & {
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;
@@ -108,19 +108,19 @@ export declare class ProvidersController {
     }>;
     updateStatus(id: string, data: UpdateStatusDto, req: any): Promise<{
         providerServices: {
+            serviceId: number;
             id: number;
             isActive: boolean;
-            price: number;
-            serviceId: number;
             providerId: number;
+            price: number;
         }[];
     } & {
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;
@@ -135,38 +135,38 @@ export declare class ProvidersController {
     }>;
     getProviderServices(id: string, req: any): Promise<({
         service: {
+            description: string;
             id: number;
             image: string;
-            description: string;
             title: string;
             commission: number;
             whatsapp: string;
             categoryId: number | null;
         };
     } & {
+        serviceId: number;
         id: number;
         isActive: boolean;
-        price: number;
-        serviceId: number;
         providerId: number;
+        price: number;
     })[]>;
     addServices(id: string, body: {
         serviceIds: number[];
     }, req: any): Promise<({
         providerServices: {
+            serviceId: number;
             id: number;
             isActive: boolean;
-            price: number;
-            serviceId: number;
             providerId: number;
+            price: number;
         }[];
     } & {
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;
@@ -180,19 +180,19 @@ export declare class ProvidersController {
         serviceIds: number[];
     }, req: any): Promise<({
         providerServices: {
+            serviceId: number;
             id: number;
             isActive: boolean;
-            price: number;
-            serviceId: number;
             providerId: number;
+            price: number;
         }[];
     } & {
+        description: string;
         id: number;
         name: string;
         email: string | null;
         password: string | null;
         image: string;
-        description: string;
         state: string;
         phone: string;
         isActive: boolean;
