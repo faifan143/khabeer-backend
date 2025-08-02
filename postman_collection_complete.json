@@ -130,58 +130,126 @@
           ]
         },
         {
-          "name": "Register User",
+          "name": "Phone Login (No OTP)",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                { "key": "name", "value": "Test User", "type": "text" },
-                { "key": "email", "value": "user@example.com", "type": "text" },
-                { "key": "password", "value": "user123", "type": "text" },
-                { "key": "role", "value": "USER", "type": "text" },
-                { "key": "phone", "value": "1234567890", "type": "text" },
-                { "key": "address", "value": "Test Address", "type": "text" },
-                { "key": "state", "value": "Test State", "type": "text" }
-              ]
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+966500000000\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/register",
+              "raw": "{{baseUrl}}/auth/phone/login",
               "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
+              "path": ["auth", "phone", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 && pm.response.json().success) {",
+                  "    pm.collectionVariables.set('userToken', pm.response.json().access_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User Registration - Step 1 (Initiate)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"phoneNumber\": \"+966500000000\",\n  \"role\": \"USER\",\n  \"address\": \"Riyadh, Saudi Arabia\",\n  \"state\": \"Riyadh\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/initiate",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "initiate"]
             }
           }
         },
         {
-          "name": "Register Provider",
+          "name": "User Registration - Step 2 (Complete)",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                { "key": "name", "value": "Test Provider", "type": "text" },
-                {
-                  "key": "email",
-                  "value": "provider@test.com",
-                  "type": "text"
-                },
-                { "key": "password", "value": "123456", "type": "text" },
-                { "key": "role", "value": "PROVIDER", "type": "text" },
-                { "key": "phone", "value": "1234567890", "type": "text" },
-                { "key": "state", "value": "Test State", "type": "text" },
-                {
-                  "key": "description",
-                  "value": "Test provider description",
-                  "type": "text"
-                }
-              ]
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"phoneNumber\": \"+966500000000\",\n  \"otp\": \"123456\",\n  \"role\": \"USER\",\n  \"address\": \"Riyadh, Saudi Arabia\",\n  \"state\": \"Riyadh\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/register",
+              "raw": "{{baseUrl}}/auth/register/complete",
               "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
+              "path": ["auth", "register", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Provider Registration - Step 1 (Initiate)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Provider Name\",\n  \"email\": \"provider@example.com\",\n  \"password\": \"password123\",\n  \"phoneNumber\": \"+966500000001\",\n  \"role\": \"PROVIDER\",\n  \"description\": \"Professional service provider\",\n  \"address\": \"Jeddah, Saudi Arabia\",\n  \"state\": \"Jeddah\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/initiate",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "initiate"]
+            }
+          }
+        },
+        {
+          "name": "Provider Registration - Step 2 (Complete)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Provider Name\",\n  \"email\": \"provider@example.com\",\n  \"password\": \"password123\",\n  \"phoneNumber\": \"+966500000001\",\n  \"otp\": \"123456\",\n  \"role\": \"PROVIDER\",\n  \"description\": \"Professional service provider\",\n  \"address\": \"Jeddah, Saudi Arabia\",\n  \"state\": \"Jeddah\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Send Password Reset OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+966500000000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/phone/password-reset/send-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "phone", "password-reset", "send-otp"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password with OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+966500000000\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/phone/password-reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "phone", "password-reset"]
             }
           }
         },
@@ -192,7 +260,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"provider@test.com\"\n}"
+              "raw": "{\n  \"email\": \"provider@example.com\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/check-status",
@@ -289,9 +357,9 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/admin/providers/1/verify",
+              "raw": "{{baseUrl}}/admin/verify-provider/{{providerId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["admin", "providers", "1", "verify"]
+              "path": ["admin", "verify-provider", "{{providerId}}"]
             }
           }
         },

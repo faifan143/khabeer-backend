@@ -1,6 +1,6 @@
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { PhoneLoginDto, PhoneLoginVerifyDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
+import { PhoneLoginDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
 import { FilesService } from 'src/files/files.service';
 export declare class AuthController {
     private readonly authService;
@@ -14,13 +14,7 @@ export declare class AuthController {
             role: string;
         };
     }>;
-    sendPhoneLoginOtp(phoneLoginDto: PhoneLoginDto): Promise<{
-        success: boolean;
-        message: string;
-        expiresIn?: number;
-    }>;
-    verifyPhoneLogin(phoneLoginVerifyDto: PhoneLoginVerifyDto): Promise<PhoneLoginResponseDto>;
-    directPhoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto>;
+    phoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto>;
     sendPhoneRegistrationOtp(phoneLoginDto: PhoneLoginDto): Promise<{
         success: boolean;
         message: string;
@@ -43,6 +37,12 @@ export declare class AuthController {
         message: string;
     }>;
     register(body: any, file: Express.Multer.File): Promise<any>;
+    initiateRegistration(body: any): Promise<{
+        success: boolean;
+        message: string;
+        expiresIn?: number;
+    }>;
+    completeRegistration(body: any, file: Express.Multer.File): Promise<any>;
     me(req: any): Promise<any>;
     upgradeToProvider(req: any, providerData: any): Promise<{
         role: string;

@@ -3,7 +3,7 @@ import { UsersService } from '../users/users.service';
 import { ProvidersService } from '../providers/providers.service';
 import { SmsService } from '../sms/sms.service';
 import { RegisterDto } from './dto/register.dto';
-import { PhoneLoginDto, PhoneLoginVerifyDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
+import { PhoneLoginDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
 export declare class AuthService {
     private readonly usersService;
     private readonly providersService;
@@ -108,14 +108,24 @@ export declare class AuthService {
         message: string;
         expiresIn?: number;
     }>;
-    verifyPhoneLogin(phoneLoginVerifyDto: PhoneLoginVerifyDto): Promise<PhoneLoginResponseDto>;
-    directPhoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto>;
+    phoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto>;
     registerWithPhone(data: RegisterDto & {
         phoneNumber: string;
-        otp: string;
+        otp?: string;
     }): Promise<any>;
     resetPasswordWithPhone(phoneNumber: string, otp: string, newPassword: string): Promise<{
         success: boolean;
         message: string;
     }>;
+    initiateRegistration(data: RegisterDto & {
+        phoneNumber: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
+        expiresIn?: number;
+    }>;
+    completeRegistration(data: RegisterDto & {
+        phoneNumber: string;
+        otp: string;
+    }): Promise<any>;
 }

@@ -6,10 +6,10 @@ export class PhoneLoginDto {
 
   @IsOptional()
   @IsString()
-  purpose?: string; // login, registration, password_reset
+  purpose?: string; // registration, password_reset (removed login)
 }
 
-export class PhoneLoginVerifyDto {
+export class PhoneRegistrationDto {
   @IsPhoneNumber()
   phoneNumber: string;
 

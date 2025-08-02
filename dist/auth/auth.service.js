@@ -293,100 +293,32 @@ let AuthService = class AuthService {
     }
     async sendPhoneLoginOtp(phoneLoginDto) {
         try {
-            const { phoneNumber, purpose = 'login' } = phoneLoginDto;
-            const user = await this.usersService.findByPhone(phoneNumber);
-            const provider = await this.providersService.findByPhone(phoneNumber);
-            if (!user && !provider) {
-                if (purpose === 'registration') {
-                    return this.smsService.sendOtp({ phoneNumber, purpose });
-                }
-                throw new common_1.NotFoundException('No account found with this phone number');
-            }
-            if (purpose === 'login') {
-                if (user && !user.isActive && user.role !== 'ADMIN') {
-                    throw new common_1.UnauthorizedException('Account is not active');
-                }
-                if (provider && !provider.isVerified) {
-                    throw new common_1.UnauthorizedException('Provider account is not verified');
-                }
-            }
-            return this.smsService.sendOtp({ phoneNumber, purpose });
-        }
-        catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.UnauthorizedException) {
-                throw error;
-            }
-            throw new common_1.InternalServerErrorException('Failed to send OTP');
-        }
-    }
-    async verifyPhoneLogin(phoneLoginVerifyDto) {
-        try {
-            const { phoneNumber, otp, purpose = 'login' } = phoneLoginVerifyDto;
-            if (otp) {
-                const otpResult = await this.smsService.verifyOtp({ phoneNumber, otp, purpose });
-                if (!otpResult.success) {
+            const { phoneNumber, purpose = 'registration' } = phoneLoginDto;
+            if (purpose === 'registration') {
+                const existingUser = await this.usersService.findByPhone(phoneNumber);
+                const existingProvider = await this.providersService.findByPhone(phoneNumber);
+                if (existingUser || existingProvider) {
                     return {
                         success: false,
-                        message: otpResult.message
+                        message: 'Phone number is already registered'
                     };
                 }
             }
-            const user = await this.usersService.findByPhone(phoneNumber);
-            const provider = await this.providersService.findByPhone(phoneNumber);
-            if (!user && !provider) {
-                return {
-                    success: false,
-                    message: 'No account found with this phone number'
-                };
-            }
-            let userData;
-            let role = 'USER';
-            if (user) {
-                if (!user.isActive && user.role !== 'ADMIN') {
-                    return {
-                        success: false,
-                        message: 'Account is not active'
-                    };
-                }
-                userData = user;
-                role = user.role;
-            }
-            else if (provider) {
-                if (!provider.isVerified) {
-                    return {
-                        success: false,
-                        message: 'Provider account is not verified'
-                    };
-                }
-                userData = provider;
-                role = 'PROVIDER';
-            }
-            const payload = {
-                username: userData.email || phoneNumber,
-                sub: userData.id,
-                role: role,
-                phone: phoneNumber
-            };
-            const access_token = this.jwtService.sign(payload);
+            const result = await this.smsService.sendOtp({ phoneNumber, purpose });
             return {
-                success: true,
-                message: 'Login successful',
-                access_token,
-                user: {
-                    id: userData.id,
-                    phone: phoneNumber,
-                    role: role
-                }
+                success: result.success,
+                message: result.message,
+                expiresIn: result.expiresIn
             };
         }
         catch (error) {
             return {
                 success: false,
-                message: 'Login failed. Please try again.'
+                message: 'Failed to send OTP'
             };
         }
     }
-    async directPhoneLogin(directPhoneLoginDto) {
+    async phoneLogin(directPhoneLoginDto) {
         try {
             const { phoneNumber, password } = directPhoneLoginDto;
             const user = await this.usersService.findByPhone(phoneNumber);
@@ -456,13 +388,15 @@ let AuthService = class AuthService {
     async registerWithPhone(data) {
         try {
             const { phoneNumber, otp, ...registerData } = data;
-            const otpResult = await this.smsService.verifyOtp({
-                phoneNumber,
-                otp,
-                purpose: 'registration'
-            });
-            if (!otpResult.success) {
-                throw new common_1.BadRequestException(otpResult.message);
+            if (otp) {
+                const otpResult = await this.smsService.verifyOtp({
+                    phoneNumber,
+                    otp,
+                    purpose: 'registration'
+                });
+                if (!otpResult.success) {
+                    throw new common_1.BadRequestException(otpResult.message);
+                }
             }
             const existingUser = await this.usersService.findByPhone(phoneNumber);
             const existingProvider = await this.providersService.findByPhone(phoneNumber);
@@ -520,6 +454,123 @@ let AuthService = class AuthService {
                 success: false,
                 message: 'Password reset failed'
             };
+        }
+    }
+    async initiateRegistration(data) {
+        try {
+            const { phoneNumber, ...registerData } = data;
+            if (!registerData.email || !registerData.password || !registerData.name) {
+                throw new common_1.BadRequestException('Email, password, and name are required');
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(registerData.email)) {
+                throw new common_1.BadRequestException('Invalid email format');
+            }
+            if (registerData.password.length < 6) {
+                throw new common_1.BadRequestException('Password must be at least 6 characters long');
+            }
+            const existingUser = await this.usersService.findByEmail(registerData.email);
+            const existingProvider = await this.providersService.findByEmail(registerData.email);
+            if (existingUser || existingProvider) {
+                throw new common_1.ConflictException('User with this email already exists');
+            }
+            const existingUserByPhone = await this.usersService.findByPhone(phoneNumber);
+            const existingProviderByPhone = await this.providersService.findByPhone(phoneNumber);
+            if (existingUserByPhone || existingProviderByPhone) {
+                throw new common_1.ConflictException('Phone number is already registered');
+            }
+            const otpResult = await this.smsService.sendOtp({
+                phoneNumber,
+                purpose: 'registration'
+            });
+            return {
+                success: otpResult.success,
+                message: otpResult.message,
+                expiresIn: otpResult.expiresIn
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.BadRequestException || error instanceof common_1.ConflictException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Registration initiation failed');
+        }
+    }
+    async completeRegistration(data) {
+        try {
+            const { phoneNumber, otp, ...registerData } = data;
+            const otpResult = await this.smsService.verifyOtp({
+                phoneNumber,
+                otp,
+                purpose: 'registration'
+            });
+            if (!otpResult.success) {
+                throw new common_1.BadRequestException(otpResult.message);
+            }
+            if (!registerData.email || !registerData.password || !registerData.name) {
+                throw new common_1.BadRequestException('Email, password, and name are required');
+            }
+            const existingUser = await this.usersService.findByEmail(registerData.email);
+            const existingProvider = await this.providersService.findByEmail(registerData.email);
+            if (existingUser || existingProvider) {
+                throw new common_1.ConflictException('User with this email already exists');
+            }
+            const existingUserByPhone = await this.usersService.findByPhone(phoneNumber);
+            const existingProviderByPhone = await this.providersService.findByPhone(phoneNumber);
+            if (existingUserByPhone || existingProviderByPhone) {
+                throw new common_1.ConflictException('Phone number is already registered');
+            }
+            const hashedPassword = await bcrypt.hash(registerData.password, 10);
+            const userData = {
+                name: registerData.name,
+                email: registerData.email,
+                password: hashedPassword,
+                image: registerData.image || '',
+                address: registerData.address || '',
+                phone: phoneNumber,
+                state: registerData.state || '',
+                role: registerData.role || 'USER',
+                isActive: registerData.isActive ?? true,
+                officialDocuments: registerData.officialDocuments
+            };
+            if (registerData.role === 'PROVIDER') {
+                const providerData = {
+                    name: registerData.name,
+                    email: registerData.email,
+                    password: hashedPassword,
+                    image: registerData.image || '',
+                    description: registerData.description || '',
+                    state: registerData.state || '',
+                    phone: phoneNumber,
+                    isActive: registerData.isActive ?? false,
+                    isVerified: false,
+                    location: null,
+                    officialDocuments: registerData.officialDocuments || undefined,
+                    serviceIds: registerData.serviceIds || []
+                };
+                const provider = await this.providersService.registerProviderWithServices(providerData);
+                const { password, ...result } = provider;
+                return {
+                    ...result,
+                    role: 'PROVIDER',
+                    message: 'Provider registered successfully. Please wait for admin verification to login.'
+                };
+            }
+            else {
+                const user = await this.usersService.create(userData);
+                const { password, ...result } = user;
+                return {
+                    ...result,
+                    role: 'USER',
+                    message: 'User registered successfully'
+                };
+            }
+        }
+        catch (error) {
+            if (error instanceof common_1.BadRequestException || error instanceof common_1.ConflictException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Registration completion failed');
         }
     }
 };

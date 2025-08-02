@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PhoneLoginResponseDto = exports.DirectPhoneLoginDto = exports.PhoneLoginVerifyDto = exports.PhoneLoginDto = void 0;
+exports.PhoneLoginResponseDto = exports.DirectPhoneLoginDto = exports.PhoneRegistrationDto = exports.PhoneLoginDto = void 0;
 const class_validator_1 = require("class-validator");
 class PhoneLoginDto {
     phoneNumber;
@@ -25,26 +25,26 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], PhoneLoginDto.prototype, "purpose", void 0);
-class PhoneLoginVerifyDto {
+class PhoneRegistrationDto {
     phoneNumber;
     otp;
     purpose;
 }
-exports.PhoneLoginVerifyDto = PhoneLoginVerifyDto;
+exports.PhoneRegistrationDto = PhoneRegistrationDto;
 __decorate([
     (0, class_validator_1.IsPhoneNumber)(),
     __metadata("design:type", String)
-], PhoneLoginVerifyDto.prototype, "phoneNumber", void 0);
+], PhoneRegistrationDto.prototype, "phoneNumber", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], PhoneLoginVerifyDto.prototype, "otp", void 0);
+], PhoneRegistrationDto.prototype, "otp", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], PhoneLoginVerifyDto.prototype, "purpose", void 0);
+], PhoneRegistrationDto.prototype, "purpose", void 0);
 class DirectPhoneLoginDto {
     phoneNumber;
     password;

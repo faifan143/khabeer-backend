@@ -95,6 +95,18 @@ export class SmsService {
     try {
       const { phoneNumber, purpose = 'verification' } = sendOtpDto;
 
+      // Check if OTP is enabled in environment
+      const otpEnabled = this.configService.get<string>('ENABLE_OTP', 'true').toLowerCase() === 'true';
+      
+      if (!otpEnabled) {
+        this.logger.log(`OTP disabled in environment. Skipping OTP for ${phoneNumber}`);
+        return {
+          success: true,
+          message: 'OTP bypassed (disabled in environment)',
+          expiresIn: 600 // 10 minutes
+        };
+      }
+
       // Check if there's a recent OTP request (rate limiting)
       const recentOtp = await this.prisma.otp.findFirst({
         where: {
@@ -163,6 +175,17 @@ export class SmsService {
   async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<{ success: boolean; message: string }> {
     try {
       const { phoneNumber, otp, purpose = 'verification' } = verifyOtpDto;
+
+      // Check if OTP is enabled in environment
+      const otpEnabled = this.configService.get<string>('ENABLE_OTP', 'true').toLowerCase() === 'true';
+      
+      if (!otpEnabled) {
+        this.logger.log(`OTP disabled in environment. Auto-verifying OTP for ${phoneNumber}`);
+        return {
+          success: true,
+          message: 'OTP verified (bypassed in environment)'
+        };
+      }
 
       // Find OTP record
       const otpRecord = await this.prisma.otp.findFirst({

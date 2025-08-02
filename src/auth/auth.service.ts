@@ -5,7 +5,7 @@ import { ProvidersService } from '../providers/providers.service';
 import { SmsService } from '../sms/sms.service';
 import * as bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
-import { PhoneLoginDto, PhoneLoginVerifyDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
+import { PhoneLoginDto, PhoneRegistrationDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -336,133 +336,46 @@ export class AuthService {
   }
 
   /**
-   * Send OTP for phone-based login
+   * Send OTP for phone-based operations (registration, password reset)
    */
   async sendPhoneLoginOtp(phoneLoginDto: PhoneLoginDto): Promise<{ success: boolean; message: string; expiresIn?: number }> {
     try {
-      const { phoneNumber, purpose = 'login' } = phoneLoginDto;
+      const { phoneNumber, purpose = 'registration' } = phoneLoginDto;
 
-      // Check if user/provider exists with this phone number
-      const user = await this.usersService.findByPhone(phoneNumber);
-      const provider = await this.providersService.findByPhone(phoneNumber);
+      // Check if phone number is already registered (for registration)
+      if (purpose === 'registration') {
+        const existingUser = await this.usersService.findByPhone(phoneNumber);
+        const existingProvider = await this.providersService.findByPhone(phoneNumber);
 
-      if (!user && !provider) {
-        // For registration, allow sending OTP
-        if (purpose === 'registration') {
-          return this.smsService.sendOtp({ phoneNumber, purpose });
-        }
-        throw new NotFoundException('No account found with this phone number');
-      }
-
-      // For login, check if account is active
-      if (purpose === 'login') {
-        if (user && !user.isActive && user.role !== 'ADMIN') {
-          throw new UnauthorizedException('Account is not active');
-        }
-        if (provider && !provider.isVerified) {
-          throw new UnauthorizedException('Provider account is not verified');
+        if (existingUser || existingProvider) {
+          return {
+            success: false,
+            message: 'Phone number is already registered'
+          };
         }
       }
 
       // Send OTP
-      return this.smsService.sendOtp({ phoneNumber, purpose });
-
-    } catch (error) {
-      if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Failed to send OTP');
-    }
-  }
-
-  /**
-   * Verify OTP and login user
-   */
-  async verifyPhoneLogin(phoneLoginVerifyDto: PhoneLoginVerifyDto): Promise<PhoneLoginResponseDto> {
-    try {
-      const { phoneNumber, otp, purpose = 'login' } = phoneLoginVerifyDto;
-
-      // If OTP is provided, verify it
-      if (otp) {
-        const otpResult = await this.smsService.verifyOtp({ phoneNumber, otp, purpose });
-        
-        if (!otpResult.success) {
-          return {
-            success: false,
-            message: otpResult.message
-          };
-        }
-      }
-
-      // Find user/provider by phone number
-      const user = await this.usersService.findByPhone(phoneNumber);
-      const provider = await this.providersService.findByPhone(phoneNumber);
-
-      if (!user && !provider) {
-        return {
-          success: false,
-          message: 'No account found with this phone number'
-        };
-      }
-
-      let userData: any;
-      let role: string = 'USER'; // Initialize with default value
-
-      if (user) {
-        // Check if user is active (except for admins)
-        if (!user.isActive && user.role !== 'ADMIN') {
-          return {
-            success: false,
-            message: 'Account is not active'
-          };
-        }
-        userData = user;
-        role = user.role;
-      } else if (provider) {
-        // Check if provider is verified
-        if (!provider.isVerified) {
-          return {
-            success: false,
-            message: 'Provider account is not verified'
-          };
-        }
-        userData = provider;
-        role = 'PROVIDER';
-      }
-
-      // Generate JWT token
-      const payload = { 
-        username: userData.email || phoneNumber, 
-        sub: userData.id, 
-        role: role,
-        phone: phoneNumber 
-      };
-      
-      const access_token = this.jwtService.sign(payload);
+      const result = await this.smsService.sendOtp({ phoneNumber, purpose });
 
       return {
-        success: true,
-        message: 'Login successful',
-        access_token,
-        user: {
-          id: userData.id,
-          phone: phoneNumber,
-          role: role
-        }
+        success: result.success,
+        message: result.message,
+        expiresIn: result.expiresIn
       };
 
     } catch (error) {
       return {
         success: false,
-        message: 'Login failed. Please try again.'
+        message: 'Failed to send OTP'
       };
     }
   }
 
   /**
-   * Direct phone login without OTP (for existing users)
+   * Phone login without OTP (main login method)
    */
-  async directPhoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto> {
+  async phoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto> {
     try {
       const { phoneNumber, password } = directPhoneLoginDto;
 
@@ -514,13 +427,13 @@ export class AuthService {
       }
 
       // Generate JWT token
-      const payload = { 
-        username: userData.email || phoneNumber, 
-        sub: userData.id, 
+      const payload = {
+        username: userData.email || phoneNumber,
+        sub: userData.id,
         role: role,
-        phone: phoneNumber 
+        phone: phoneNumber
       };
-      
+
       const access_token = this.jwtService.sign(payload);
 
       return {
@@ -543,21 +456,23 @@ export class AuthService {
   }
 
   /**
-   * Register user with phone verification
+   * Register user with phone verification (OTP optional)
    */
-  async registerWithPhone(data: RegisterDto & { phoneNumber: string; otp: string }): Promise<any> {
+  async registerWithPhone(data: RegisterDto & { phoneNumber: string; otp?: string }): Promise<any> {
     try {
       const { phoneNumber, otp, ...registerData } = data;
 
-      // Verify OTP first
-      const otpResult = await this.smsService.verifyOtp({ 
-        phoneNumber, 
-        otp, 
-        purpose: 'registration' 
-      });
+      // If OTP is provided, verify it
+      if (otp) {
+        const otpResult = await this.smsService.verifyOtp({
+          phoneNumber,
+          otp,
+          purpose: 'registration'
+        });
 
-      if (!otpResult.success) {
-        throw new BadRequestException(otpResult.message);
+        if (!otpResult.success) {
+          throw new BadRequestException(otpResult.message);
+        }
       }
 
       // Check if phone number is already registered
@@ -591,10 +506,10 @@ export class AuthService {
   async resetPasswordWithPhone(phoneNumber: string, otp: string, newPassword: string): Promise<{ success: boolean; message: string }> {
     try {
       // Verify OTP
-      const otpResult = await this.smsService.verifyOtp({ 
-        phoneNumber, 
-        otp, 
-        purpose: 'password_reset' 
+      const otpResult = await this.smsService.verifyOtp({
+        phoneNumber,
+        otp,
+        purpose: 'password_reset'
       });
 
       if (!otpResult.success) {
@@ -635,6 +550,169 @@ export class AuthService {
         success: false,
         message: 'Password reset failed'
       };
+    }
+  }
+
+  /**
+   * Step 1: Initiate registration and send OTP
+   */
+  async initiateRegistration(data: RegisterDto & { phoneNumber: string }): Promise<{ success: boolean; message: string; expiresIn?: number }> {
+    try {
+      const { phoneNumber, ...registerData } = data;
+
+      // Validate required fields
+      if (!registerData.email || !registerData.password || !registerData.name) {
+        throw new BadRequestException('Email, password, and name are required');
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(registerData.email)) {
+        throw new BadRequestException('Invalid email format');
+      }
+
+      // Validate password strength
+      if (registerData.password.length < 6) {
+        throw new BadRequestException('Password must be at least 6 characters long');
+      }
+
+      // Check if user already exists (in either users or providers table)
+      const existingUser = await this.usersService.findByEmail(registerData.email);
+      const existingProvider = await this.providersService.findByEmail(registerData.email);
+
+      if (existingUser || existingProvider) {
+        throw new ConflictException('User with this email already exists');
+      }
+
+      // Check if phone number is already registered
+      const existingUserByPhone = await this.usersService.findByPhone(phoneNumber);
+      const existingProviderByPhone = await this.providersService.findByPhone(phoneNumber);
+
+      if (existingUserByPhone || existingProviderByPhone) {
+        throw new ConflictException('Phone number is already registered');
+      }
+
+      // Send OTP for registration
+      const otpResult = await this.smsService.sendOtp({
+        phoneNumber,
+        purpose: 'registration'
+      });
+
+      return {
+        success: otpResult.success,
+        message: otpResult.message,
+        expiresIn: otpResult.expiresIn
+      };
+
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof ConflictException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Registration initiation failed');
+    }
+  }
+
+  /**
+   * Step 2: Complete registration with OTP verification
+   */
+  async completeRegistration(data: RegisterDto & { phoneNumber: string; otp: string }): Promise<any> {
+    try {
+      const { phoneNumber, otp, ...registerData } = data;
+
+      // Verify OTP
+      const otpResult = await this.smsService.verifyOtp({
+        phoneNumber,
+        otp,
+        purpose: 'registration'
+      });
+
+      if (!otpResult.success) {
+        throw new BadRequestException(otpResult.message);
+      }
+
+      // Re-validate data (in case it was tampered with)
+      if (!registerData.email || !registerData.password || !registerData.name) {
+        throw new BadRequestException('Email, password, and name are required');
+      }
+
+      // Check if user already exists (double-check)
+      const existingUser = await this.usersService.findByEmail(registerData.email);
+      const existingProvider = await this.providersService.findByEmail(registerData.email);
+
+      if (existingUser || existingProvider) {
+        throw new ConflictException('User with this email already exists');
+      }
+
+      // Check if phone number is already registered (double-check)
+      const existingUserByPhone = await this.usersService.findByPhone(phoneNumber);
+      const existingProviderByPhone = await this.providersService.findByPhone(phoneNumber);
+
+      if (existingUserByPhone || existingProviderByPhone) {
+        throw new ConflictException('Phone number is already registered');
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(registerData.password, 10);
+
+      // Prepare user data
+      const userData = {
+        name: registerData.name,
+        email: registerData.email,
+        password: hashedPassword,
+        image: registerData.image || '',
+        address: registerData.address || '',
+        phone: phoneNumber, // Use the phone number from the request
+        state: registerData.state || '',
+        role: registerData.role || 'USER',
+        isActive: registerData.isActive ?? true,
+        officialDocuments: registerData.officialDocuments
+      };
+
+      // Create user or provider based on role
+      if (registerData.role === 'PROVIDER') {
+        // Create provider
+        const providerData = {
+          name: registerData.name,
+          email: registerData.email,
+          password: hashedPassword,
+          image: registerData.image || '',
+          description: registerData.description || '',
+          state: registerData.state || '',
+          phone: phoneNumber,
+          isActive: registerData.isActive ?? false, // Providers start as inactive
+          isVerified: false,
+          location: null,
+          officialDocuments: registerData.officialDocuments || undefined,
+          serviceIds: registerData.serviceIds || []
+        };
+
+        const provider = await this.providersService.registerProviderWithServices(providerData);
+
+        // Return provider data without password
+        const { password, ...result } = provider as any;
+        return {
+          ...result,
+          role: 'PROVIDER',
+          message: 'Provider registered successfully. Please wait for admin verification to login.'
+        };
+      } else {
+        // Create regular user
+        const user = await this.usersService.create(userData);
+
+        // Return user data without password
+        const { password, ...result } = user;
+        return {
+          ...result,
+          role: 'USER',
+          message: 'User registered successfully'
+        };
+      }
+
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof ConflictException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Registration completion failed');
     }
   }
 }

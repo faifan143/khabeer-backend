@@ -2,7 +2,7 @@ export declare class PhoneLoginDto {
     phoneNumber: string;
     purpose?: string;
 }
-export declare class PhoneLoginVerifyDto {
+export declare class PhoneRegistrationDto {
     phoneNumber: string;
     otp?: string;
     purpose?: string;
