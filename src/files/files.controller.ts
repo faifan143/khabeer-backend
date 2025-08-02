@@ -17,23 +17,39 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 @Controller('files')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class FilesController {
   constructor(private readonly filesService: FilesService) { }
 
-  @Post('upload')
-  @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: './uploads',
+  private static ensureDirectory(dirPath: string): void {
+    if (!existsSync(dirPath)) {
+      mkdirSync(dirPath, { recursive: true });
+    }
+  }
+
+  private static getStorageConfig(destination: string) {
+    return diskStorage({
+      destination: (req, file, cb) => {
+        FilesController.ensureDirectory(destination);
+        cb(null, destination);
+      },
       filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         const ext = extname(file.originalname);
-        cb(null, `${uniqueSuffix}${ext}`);
+        const prefix = destination.includes('documents') ? 'doc-' :
+          destination.includes('images') ? 'img-' : '';
+        cb(null, `${prefix}${uniqueSuffix}${ext}`);
       },
-    }),
+    });
+  }
+
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: FilesController.getStorageConfig('./uploads'),
   }))
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
@@ -55,14 +71,7 @@ export class FilesController {
 
   @Post('upload-multiple')
   @UseInterceptors(FilesInterceptor('files', 10, {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `${uniqueSuffix}${ext}`);
-      },
-    }),
+    storage: FilesController.getStorageConfig('./uploads'),
   }))
   async uploadMultipleFiles(
     @UploadedFiles() files: Express.Multer.File[],
@@ -88,14 +97,7 @@ export class FilesController {
   @Post('upload-documents')
   @Roles('PROVIDER')
   @UseInterceptors(FilesInterceptor('documents', 5, {
-    storage: diskStorage({
-      destination: './uploads/documents',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `doc-${uniqueSuffix}${ext}`);
-      },
-    }),
+    storage: FilesController.getStorageConfig('./uploads/documents'),
   }))
   async uploadDocuments(
     @UploadedFiles() files: Express.Multer.File[]
@@ -121,14 +123,7 @@ export class FilesController {
 
   @Post('upload-images')
   @UseInterceptors(FilesInterceptor('images', 10, {
-    storage: diskStorage({
-      destination: './uploads/images',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `img-${uniqueSuffix}${ext}`);
-      },
-    }),
+    storage: FilesController.getStorageConfig('./uploads/images'),
   }))
   async uploadImages(
     @UploadedFiles() files: Express.Multer.File[]

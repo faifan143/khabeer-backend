@@ -34,6 +34,14 @@ let FilesService = class FilesService {
         if (!(0, fs_1.existsSync)(this.uploadDir)) {
             (0, fs_1.mkdirSync)(this.uploadDir, { recursive: true });
         }
+        const documentsDir = (0, path_1.join)(this.uploadDir, 'documents');
+        const imagesDir = (0, path_1.join)(this.uploadDir, 'images');
+        if (!(0, fs_1.existsSync)(documentsDir)) {
+            (0, fs_1.mkdirSync)(documentsDir, { recursive: true });
+        }
+        if (!(0, fs_1.existsSync)(imagesDir)) {
+            (0, fs_1.mkdirSync)(imagesDir, { recursive: true });
+        }
     }
     getPublicUrl(filename) {
         return this.uploadBaseUrl + filename;

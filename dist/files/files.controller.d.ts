@@ -2,6 +2,8 @@ import { FilesService, FileUploadResult } from './files.service';
 export declare class FilesController {
     private readonly filesService;
     constructor(filesService: FilesService);
+    private static ensureDirectory;
+    private static getStorageConfig;
     uploadFile(file: Express.Multer.File, body: {
         category?: string;
         maxSize?: number;

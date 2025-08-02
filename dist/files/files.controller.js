@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var FilesController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FilesController = void 0;
 const common_1 = require("@nestjs/common");
@@ -21,10 +22,31 @@ const roles_guard_1 = require("../auth/roles.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
 const multer_1 = require("multer");
 const path_1 = require("path");
-let FilesController = class FilesController {
+const fs_1 = require("fs");
+let FilesController = FilesController_1 = class FilesController {
     filesService;
     constructor(filesService) {
         this.filesService = filesService;
+    }
+    static ensureDirectory(dirPath) {
+        if (!(0, fs_1.existsSync)(dirPath)) {
+            (0, fs_1.mkdirSync)(dirPath, { recursive: true });
+        }
+    }
+    static getStorageConfig(destination) {
+        return (0, multer_1.diskStorage)({
+            destination: (req, file, cb) => {
+                FilesController_1.ensureDirectory(destination);
+                cb(null, destination);
+            },
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                const prefix = destination.includes('documents') ? 'doc-' :
+                    destination.includes('images') ? 'img-' : '';
+                cb(null, `${prefix}${uniqueSuffix}${ext}`);
+            },
+        });
     }
     async uploadFile(file, body) {
         const options = {};
@@ -104,14 +126,7 @@ exports.FilesController = FilesController;
 __decorate([
     (0, common_1.Post)('upload'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
-        storage: (0, multer_1.diskStorage)({
-            destination: './uploads',
-            filename: (req, file, cb) => {
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-                const ext = (0, path_1.extname)(file.originalname);
-                cb(null, `${uniqueSuffix}${ext}`);
-            },
-        }),
+        storage: FilesController.getStorageConfig('./uploads'),
     })),
     __param(0, (0, common_1.UploadedFile)()),
     __param(1, (0, common_1.Body)()),
@@ -122,14 +137,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)('upload-multiple'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('files', 10, {
-        storage: (0, multer_1.diskStorage)({
-            destination: './uploads',
-            filename: (req, file, cb) => {
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-                const ext = (0, path_1.extname)(file.originalname);
-                cb(null, `${uniqueSuffix}${ext}`);
-            },
-        }),
+        storage: FilesController.getStorageConfig('./uploads'),
     })),
     __param(0, (0, common_1.UploadedFiles)()),
     __param(1, (0, common_1.Body)()),
@@ -141,14 +149,7 @@ __decorate([
     (0, common_1.Post)('upload-documents'),
     (0, roles_decorator_1.Roles)('PROVIDER'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('documents', 5, {
-        storage: (0, multer_1.diskStorage)({
-            destination: './uploads/documents',
-            filename: (req, file, cb) => {
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-                const ext = (0, path_1.extname)(file.originalname);
-                cb(null, `doc-${uniqueSuffix}${ext}`);
-            },
-        }),
+        storage: FilesController.getStorageConfig('./uploads/documents'),
     })),
     __param(0, (0, common_1.UploadedFiles)()),
     __metadata("design:type", Function),
@@ -158,14 +159,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)('upload-images'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('images', 10, {
-        storage: (0, multer_1.diskStorage)({
-            destination: './uploads/images',
-            filename: (req, file, cb) => {
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-                const ext = (0, path_1.extname)(file.originalname);
-                cb(null, `img-${uniqueSuffix}${ext}`);
-            },
-        }),
+        storage: FilesController.getStorageConfig('./uploads/images'),
     })),
     __param(0, (0, common_1.UploadedFiles)()),
     __metadata("design:type", Function),
@@ -202,7 +196,7 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], FilesController.prototype, "getUploadStats", null);
-exports.FilesController = FilesController = __decorate([
+exports.FilesController = FilesController = FilesController_1 = __decorate([
     (0, common_1.Controller)('files'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [files_service_1.FilesService])
