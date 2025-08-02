@@ -23,8 +23,10 @@ RUN npm run build
 # Production stage
 FROM node:18-alpine AS production
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init and OpenSSL for Prisma compatibility
+RUN apk add --no-cache dumb-init openssl && \
+    ln -s /usr/lib/libssl.so.3 /usr/lib/libssl.so.1.1 || true && \
+    ln -s /usr/lib/libcrypto.so.3 /usr/lib/libcrypto.so.1.1 || true
 
 # Create app user
 RUN addgroup -g 1001 -S nodejs
@@ -41,8 +43,10 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/generated ./generated
 COPY --from=builder /app/prisma ./prisma
+
+# Regenerate Prisma client for the target platform
+RUN npx prisma generate
 
 # Create uploads directory with proper permissions
 RUN mkdir -p uploads/documents uploads/images && \
