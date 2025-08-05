@@ -121,6 +121,33 @@ export class FilesController {
     };
   }
 
+  @Post('upload-documents-admin')
+  @Roles('ADMIN')
+  @UseInterceptors(FilesInterceptor('documents', 5, {
+    storage: FilesController.getStorageConfig('./uploads/documents'),
+  }))
+  async uploadDocumentsAdmin(
+    @UploadedFiles() files: Express.Multer.File[]
+  ) {
+    const options: FileValidationOptions = {
+      maxSize: 10 * 1024 * 1024, // 10MB for documents
+      allowedMimeTypes: [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/png'
+      ],
+      allowedExtensions: ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+    };
+
+    const results = await this.filesService.handleMultipleFiles(files, options);
+    return {
+      message: `Successfully uploaded ${results.length} documents`,
+      documents: results
+    };
+  }
+
   @Post('upload-images')
   @UseInterceptors(FilesInterceptor('images', 10, {
     storage: FilesController.getStorageConfig('./uploads/images'),

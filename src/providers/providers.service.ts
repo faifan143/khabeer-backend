@@ -233,6 +233,129 @@ export class ProvidersService {
     }
   }
 
+  async getProviderOrders(providerId: number) {
+    try {
+      return await this.prisma.order.findMany({
+        where: { providerId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true
+            }
+          },
+          service: {
+            select: {
+              id: true,
+              title: true,
+              description: true
+            }
+          }
+        },
+        orderBy: {
+          orderDate: 'desc'
+        }
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Error fetching provider orders');
+    }
+  }
+
+  async getProviderRatings(providerId: number) {
+    try {
+      return await this.prisma.providerRating.findMany({
+        where: { providerId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        },
+        orderBy: {
+          ratingDate: 'desc'
+        }
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Error fetching provider ratings');
+    }
+  }
+
+  async getProviderDocuments(providerId: number) {
+    try {
+      const verification = await this.prisma.providerVerification.findUnique({
+        where: { providerId },
+        include: {
+          provider: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true
+            }
+          }
+        }
+      });
+
+      if (!verification) {
+        return {
+          documents: [],
+          verificationStatus: 'pending',
+          adminNotes: null
+        };
+      }
+
+      // Convert document URLs to document objects with full URLs
+      const documents = verification.documents.map((url, index) => {
+        // Ensure we have a full URL
+        const fullUrl = url.startsWith('http') 
+          ? url 
+          : `http://localhost:3001${url}`;
+        
+        return {
+          id: `doc-${index}`,
+          name: url.split('/').pop() || `Document ${index + 1}`,
+          url: fullUrl,
+          type: this.getFileTypeFromUrl(url),
+          size: 0, // We don't store file size in the database
+          uploadedAt: verification.createdAt.toISOString(),
+          uploadedBy: 'Admin'
+        };
+      });
+
+      return {
+        documents,
+        verificationStatus: verification.status,
+        adminNotes: verification.adminNotes
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Error fetching provider documents');
+    }
+  }
+
+  private getFileTypeFromUrl(url: string): string {
+    const extension = url.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'doc':
+        return 'application/msword';
+      case 'docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
   async remove(id: number) {
     try {
       await this.prisma.provider.delete({ where: { id } });

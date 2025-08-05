@@ -44,19 +44,37 @@ export class ServicesController {
     @Body() createServiceDto: CreateServiceDto,
     @UploadedFile() file: Express.Multer.File
   ) {
-    const data = { ...createServiceDto };
+    const data = { ...createServiceDto, image: '' };
     if (file) {
       const fileResult = await this.filesService.handleUploadedFile(file);
       data.image = fileResult.url;
-    } else {
-      data.image = '';
     }
     return this.servicesService.create(data);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() data: UpdateServiceDto) {
-    return this.servicesService.update(Number(id), data);
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `${uniqueSuffix}${ext}`);
+      },
+    }),
+  }))
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateServiceDto,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const updateData: any = { ...data };
+    if (file) {
+      const fileResult = await this.filesService.handleUploadedFile(file);
+      updateData.image = fileResult.url;
+    }
+    // If no file provided, don't update the image field (preserve existing)
+    return this.servicesService.update(Number(id), updateData);
   }
 
   @Delete(':id')

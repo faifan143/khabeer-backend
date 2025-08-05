@@ -23,7 +23,7 @@ async function bootstrap() {
     image: 'http://localhost:3000/uploads/category.png',
     titleAr: 'تصنيف',
     titleEn: 'Category',
-    state: 'active',
+    state: 'Riyadh',
   });
 
   // Seed a service
@@ -34,7 +34,6 @@ async function bootstrap() {
     commission: 10,
     whatsapp: '123456789',
     categoryId: category.id,
-    state: 'active',
   });
 
   // Seed a user (using AuthService for hashing)

@@ -3,10 +3,6 @@ import { IsString, IsNumber, IsOptional } from 'class-validator';
 export class UpdateServiceDto {
   @IsOptional()
   @IsString()
-  image?: string;
-
-  @IsOptional()
-  @IsString()
   title?: string;
 
   @IsOptional()

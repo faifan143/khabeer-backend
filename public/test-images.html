@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Khabeer - Image Access Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .image-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+      .image-card {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+      }
+      .image-card:hover {
+        transform: translateY(-5px);
+      }
+      .image-card img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+      .image-info {
+        font-size: 14px;
+        color: #666;
+      }
+      .status {
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+        font-weight: bold;
+      }
+      .status.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .status.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .url-display {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 12px;
+        word-break: break-all;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🖼️ Khabeer Image Access Test</h1>
+      <p>Testing static file serving from uploads directory</p>
+    </div>
+
+    <div id="status" class="status">Testing image access...</div>
+
+    <div class="url-display">
+      <strong>Base URL:</strong> http://localhost:3001/uploads/
+    </div>
+
+    <div id="imageGrid" class="image-grid">
+      <!-- Images will be loaded here -->
+    </div>
+
+    <script>
+      const BASE_URL = 'http://localhost:3001';
+      const IMAGES = [
+        '1754252654623-779371817.png',
+        '1754252594401-804470253.png',
+        '1754235594963-463636795.png',
+        '1754235541737-681823104.png',
+        '1754235062242-276692221.png',
+        '1754235061206-792022907.png',
+        '1754234787168-351214059.png',
+        '1754234785341-217718138.png',
+      ];
+
+      function updateStatus(message, isError = false) {
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = message;
+        statusDiv.className = `status ${isError ? 'error' : 'success'}`;
+      }
+
+      function createImageCard(filename) {
+        const card = document.createElement('div');
+        card.className = 'image-card';
+
+        const img = document.createElement('img');
+        img.src = `${BASE_URL}/uploads/${filename}`;
+        img.alt = filename;
+        img.onload = () => {
+          console.log(`✅ Image loaded: ${filename}`);
+        };
+        img.onerror = () => {
+          console.log(`❌ Image failed to load: ${filename}`);
+          img.style.border = '2px solid red';
+        };
+
+        const info = document.createElement('div');
+        info.className = 'image-info';
+        info.innerHTML = `
+                <strong>Filename:</strong> ${filename}<br>
+                <strong>URL:</strong> ${BASE_URL}/uploads/${filename}<br>
+                <strong>Status:</strong> <span id="status-${filename}">Loading...</span>
+            `;
+
+        card.appendChild(img);
+        card.appendChild(info);
+
+        return card;
+      }
+
+      async function testImageAccess() {
+        updateStatus('Testing image access...');
+
+        const imageGrid = document.getElementById('imageGrid');
+        imageGrid.innerHTML = '';
+
+        let loadedCount = 0;
+        let totalCount = IMAGES.length;
+
+        IMAGES.forEach((filename) => {
+          const card = createImageCard(filename);
+          imageGrid.appendChild(card);
+
+          const img = card.querySelector('img');
+          const statusSpan = card.querySelector(`#status-${filename}`);
+
+          img.onload = () => {
+            statusSpan.textContent = '✅ Loaded';
+            statusSpan.style.color = 'green';
+            loadedCount++;
+            updateStatus(`Loaded ${loadedCount}/${totalCount} images`);
+          };
+
+          img.onerror = () => {
+            statusSpan.textContent = '❌ Failed';
+            statusSpan.style.color = 'red';
+            updateStatus(
+              `Failed to load some images (${loadedCount}/${totalCount} loaded)`,
+              true,
+            );
+          };
+        });
+      }
+
+      // Test server health first
+      async function checkServerHealth() {
+        try {
+          const response = await fetch(`${BASE_URL}/health`);
+          if (response.ok) {
+            updateStatus('✅ Server is running and healthy');
+            testImageAccess();
+          } else {
+            updateStatus('❌ Server health check failed', true);
+          }
+        } catch (error) {
+          updateStatus(
+            "❌ Cannot connect to server. Make sure it's running on port 3001",
+            true,
+          );
+        }
+      }
+
+      // Start the test when page loads
+      window.onload = checkServerHealth;
+    </script>
+  </body>
+</html>

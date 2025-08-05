@@ -233,6 +233,122 @@ let ProvidersService = class ProvidersService {
             throw new common_1.InternalServerErrorException('Error fetching provider services');
         }
     }
+    async getProviderOrders(providerId) {
+        try {
+            return await this.prisma.order.findMany({
+                where: { providerId },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            phone: true
+                        }
+                    },
+                    service: {
+                        select: {
+                            id: true,
+                            title: true,
+                            description: true
+                        }
+                    }
+                },
+                orderBy: {
+                    orderDate: 'desc'
+                }
+            });
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error fetching provider orders');
+        }
+    }
+    async getProviderRatings(providerId) {
+        try {
+            return await this.prisma.providerRating.findMany({
+                where: { providerId },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true
+                        }
+                    }
+                },
+                orderBy: {
+                    ratingDate: 'desc'
+                }
+            });
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error fetching provider ratings');
+        }
+    }
+    async getProviderDocuments(providerId) {
+        try {
+            const verification = await this.prisma.providerVerification.findUnique({
+                where: { providerId },
+                include: {
+                    provider: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            phone: true
+                        }
+                    }
+                }
+            });
+            if (!verification) {
+                return {
+                    documents: [],
+                    verificationStatus: 'pending',
+                    adminNotes: null
+                };
+            }
+            const documents = verification.documents.map((url, index) => {
+                const fullUrl = url.startsWith('http')
+                    ? url
+                    : `http://localhost:3001${url}`;
+                return {
+                    id: `doc-${index}`,
+                    name: url.split('/').pop() || `Document ${index + 1}`,
+                    url: fullUrl,
+                    type: this.getFileTypeFromUrl(url),
+                    size: 0,
+                    uploadedAt: verification.createdAt.toISOString(),
+                    uploadedBy: 'Admin'
+                };
+            });
+            return {
+                documents,
+                verificationStatus: verification.status,
+                adminNotes: verification.adminNotes
+            };
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error fetching provider documents');
+        }
+    }
+    getFileTypeFromUrl(url) {
+        const extension = url.split('.').pop()?.toLowerCase();
+        switch (extension) {
+            case 'pdf':
+                return 'application/pdf';
+            case 'doc':
+                return 'application/msword';
+            case 'docx':
+                return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            case 'jpg':
+            case 'jpeg':
+                return 'image/jpeg';
+            case 'png':
+                return 'image/png';
+            default:
+                return 'application/octet-stream';
+        }
+    }
     async remove(id) {
         try {
             await this.prisma.provider.delete({ where: { id } });

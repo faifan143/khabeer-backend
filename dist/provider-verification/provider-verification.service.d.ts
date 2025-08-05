@@ -220,4 +220,40 @@ export declare class ProviderVerificationService {
         status: string;
         adminNotes: string | null;
     }>;
+    addDocumentsAdmin(providerId: number, documents: string[]): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        providerId: number;
+        documents: string[];
+        status: string;
+        adminNotes: string | null;
+    }>;
+    removeDocumentAdmin(providerId: number, documentUrl: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        providerId: number;
+        documents: string[];
+        status: string;
+        adminNotes: string | null;
+    }>;
+    approveVerificationByProviderId(providerId: number, adminNotes?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        providerId: number;
+        documents: string[];
+        status: string;
+        adminNotes: string | null;
+    }>;
+    rejectVerificationByProviderId(providerId: number, adminNotes: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        providerId: number;
+        documents: string[];
+        status: string;
+        adminNotes: string | null;
+    }>;
 }

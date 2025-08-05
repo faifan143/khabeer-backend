@@ -114,6 +114,27 @@ let AdminController = class AdminController {
         const end = endDate ? new Date(endDate) : undefined;
         return this.adminService.getUserReport(start, end);
     }
+    async getAllOrders(page = '1', limit = '1000') {
+        return this.adminService.getAllOrders(parseInt(page), parseInt(limit));
+    }
+    async updateOrderStatus(id, body) {
+        return this.adminService.updateOrderStatus(id, body.status);
+    }
+    async cancelOrder(id, body) {
+        return this.adminService.cancelOrder(id, body.reason);
+    }
+    async completeOrder(id) {
+        return this.adminService.completeOrder(id);
+    }
+    async acceptOrder(id, body) {
+        return this.adminService.acceptOrder(id, body.notes);
+    }
+    async rejectOrder(id, body) {
+        if (!body.reason) {
+            throw new common_1.BadRequestException('Rejection reason is required');
+        }
+        return this.adminService.rejectOrder(id, body.reason);
+    }
 };
 exports.AdminController = AdminController;
 __decorate([
@@ -291,6 +312,53 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getUserReport", null);
+__decorate([
+    (0, common_1.Get)('orders'),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAllOrders", null);
+__decorate([
+    (0, common_1.Put)('orders/:id/status'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "updateOrderStatus", null);
+__decorate([
+    (0, common_1.Put)('orders/:id/cancel'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "cancelOrder", null);
+__decorate([
+    (0, common_1.Put)('orders/:id/complete'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "completeOrder", null);
+__decorate([
+    (0, common_1.Put)('orders/:id/accept'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "acceptOrder", null);
+__decorate([
+    (0, common_1.Put)('orders/:id/reject'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "rejectOrder", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

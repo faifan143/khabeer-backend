@@ -41,6 +41,18 @@ let ProviderVerificationController = class ProviderVerificationController {
     async getProviderVerification(providerId) {
         return this.providerVerificationService.findByProvider(providerId);
     }
+    async addDocumentsAdmin(providerId, body) {
+        return this.providerVerificationService.addDocumentsAdmin(providerId, body.documents);
+    }
+    async removeDocumentAdmin(providerId, body) {
+        return this.providerVerificationService.removeDocumentAdmin(providerId, body.documentUrl);
+    }
+    async approveVerificationAdmin(providerId, body) {
+        return this.providerVerificationService.approveVerificationByProviderId(providerId, body.adminNotes);
+    }
+    async rejectVerificationAdmin(providerId, body) {
+        return this.providerVerificationService.rejectVerificationByProviderId(providerId, body.adminNotes);
+    }
     async findOne(id) {
         return this.providerVerificationService.findOne(id);
     }
@@ -111,6 +123,42 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], ProviderVerificationController.prototype, "getProviderVerification", null);
+__decorate([
+    (0, common_1.Put)('admin/:providerId/documents'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    __param(0, (0, common_1.Param)('providerId', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ProviderVerificationController.prototype, "addDocumentsAdmin", null);
+__decorate([
+    (0, common_1.Delete)('admin/:providerId/documents'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    __param(0, (0, common_1.Param)('providerId', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ProviderVerificationController.prototype, "removeDocumentAdmin", null);
+__decorate([
+    (0, common_1.Put)('admin/:providerId/approve'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    __param(0, (0, common_1.Param)('providerId', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ProviderVerificationController.prototype, "approveVerificationAdmin", null);
+__decorate([
+    (0, common_1.Put)('admin/:providerId/reject'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    __param(0, (0, common_1.Param)('providerId', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], ProviderVerificationController.prototype, "rejectVerificationAdmin", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

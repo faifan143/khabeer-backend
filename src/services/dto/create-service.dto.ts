@@ -3,10 +3,6 @@ import { IsString, IsNumber, IsOptional, IsNotEmpty } from 'class-validator';
 export class CreateServiceDto {
   @IsString()
   @IsNotEmpty()
-  image: string;
-
-  @IsString()
-  @IsNotEmpty()
   title: string;
 
   @IsString()

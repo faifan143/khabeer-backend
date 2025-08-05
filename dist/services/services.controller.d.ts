@@ -50,7 +50,7 @@ export declare class ServicesController {
         whatsapp: string;
         categoryId: number | null;
     }>;
-    update(id: string, data: UpdateServiceDto): Promise<{
+    update(id: string, data: UpdateServiceDto, file: Express.Multer.File): Promise<{
         description: string;
         id: number;
         image: string;

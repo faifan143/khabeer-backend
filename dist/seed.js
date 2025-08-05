@@ -20,7 +20,7 @@ async function bootstrap() {
         image: 'http://localhost:3000/uploads/category.png',
         titleAr: 'تصنيف',
         titleEn: 'Category',
-        state: 'active',
+        state: 'Riyadh',
     });
     const service = await servicesService.create({
         image: 'http://localhost:3000/uploads/service.png',
@@ -29,7 +29,6 @@ async function bootstrap() {
         commission: 10,
         whatsapp: '123456789',
         categoryId: category.id,
-        state: 'active',
     });
     await authService.register({
         name: 'Seed User',

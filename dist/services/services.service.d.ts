@@ -39,7 +39,9 @@ export declare class ServicesService {
         whatsapp: string;
         categoryId: number | null;
     } | null>;
-    create(data: CreateServiceDto): Promise<{
+    create(data: CreateServiceDto & {
+        image: string;
+    }): Promise<{
         description: string;
         id: number;
         image: string;
@@ -48,7 +50,9 @@ export declare class ServicesService {
         whatsapp: string;
         categoryId: number | null;
     }>;
-    update(id: number, data: UpdateServiceDto): Promise<{
+    update(id: number, data: UpdateServiceDto & {
+        image?: string;
+    }): Promise<{
         description: string;
         id: number;
         image: string;

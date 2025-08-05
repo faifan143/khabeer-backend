@@ -21,6 +21,10 @@ export declare class FilesController {
         message: string;
         documents: FileUploadResult[];
     }>;
+    uploadDocumentsAdmin(files: Express.Multer.File[]): Promise<{
+        message: string;
+        documents: FileUploadResult[];
+    }>;
     uploadImages(files: Express.Multer.File[]): Promise<{
         message: string;
         images: FileUploadResult[];

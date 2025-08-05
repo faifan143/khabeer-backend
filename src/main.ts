@@ -5,46 +5,40 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import { join } from 'path';
+import { existsSync } from 'fs';
+import * as express from 'express';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
   // Get configuration service
   const configService = app.get(ConfigService);
 
-  // Security middleware
-  app.use(helmet({
-    contentSecurityPolicy: configService.get('HELMET_CONTENT_SECURITY_POLICY_ENABLED', 'true') === 'true' ? {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
-      },
-    } : false,
-    crossOriginEmbedderPolicy: false,
-  }));
+  // Security middleware - COMPLETELY DISABLED
+  // app.use(helmet()); // Commented out to remove all security restrictions
 
   // Compression middleware
   app.use(compression());
 
-  // Rate limiting
-  const limiter = rateLimit({
-    windowMs: configService.get('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000), // 15 minutes default
-    max: configService.get('RATE_LIMIT_MAX_REQUESTS', 100), // limit each IP to 100 requests per windowMs
-    message: {
-      statusCode: 429,
-      message: 'Too many requests from this IP, please try again later.',
-      error: 'Too Many Requests',
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-  app.use(limiter);
+  // Rate limiting - DISABLED
+  // const limiter = rateLimit({
+  //   windowMs: configService.get('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000), // 15 minutes default
+  //   max: configService.get('RATE_LIMIT_MAX_REQUESTS', 100), // limit each IP to 100 requests per windowMs
+  //   message: {
+  //     statusCode: 429,
+  //     message: 'Too many requests from this IP, please try again later.',
+  //     error: 'Too Many Requests',
+  //   },
+  //   standardHeaders: true,
+  //   legacyHeaders: false,
+  // });
+  // app.use(limiter);
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -59,18 +53,45 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration
+  // CORS configuration - ALLOW ALL ORIGINS
   app.enableCors({
-    origin: configService.get('CORS_ORIGIN', '*'),
+    origin: true, // Allow all origins
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    credentials: true,
+    allowedHeaders: ['*'], // Allow all headers
+    credentials: true, // Allow credentials
     maxAge: 86400, // 24 hours
   });
 
+  // Serve static files from uploads directory (BEFORE global prefix)
+  const uploadsPath = join(process.cwd(), 'uploads');
+  logger.log(`Setting up static file serving from: ${uploadsPath}`);
+  app.useStaticAssets(uploadsPath, {
+    prefix: '/uploads/',
+    setHeaders: (res, path) => {
+      res.set('Access-Control-Allow-Origin', '*'); // Allow all origins
+      res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.set('Access-Control-Allow-Headers', '*'); // Allow all headers
+      res.set('Access-Control-Allow-Credentials', 'true');
+      res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      logger.log(`Serving static file: ${path}`);
+    }
+  });
+
+  // Serve public files for testing
+  const publicPath = join(process.cwd(), 'public');
+  if (existsSync(publicPath)) {
+    logger.log(`Setting up public file serving from: ${publicPath}`);
+    app.useStaticAssets(publicPath, {
+      setHeaders: (res, path) => {
+        res.set('Access-Control-Allow-Origin', '*'); // Allow all origins
+        logger.log(`Serving public file: ${path}`);
+      }
+    });
+  }
+
   // Global prefix
   app.setGlobalPrefix('api', {
-    exclude: ['/health', '/docs'],
+    exclude: ['/health', '/docs', '/uploads'],
   });
 
   // Swagger documentation

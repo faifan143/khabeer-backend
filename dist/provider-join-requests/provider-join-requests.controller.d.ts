@@ -17,8 +17,8 @@ export declare class ProviderJoinRequestsController {
         id: number;
         providerId: number;
         status: string;
-        requestDate: Date;
         adminNotes: string | null;
+        requestDate: Date;
     }>;
     findAll(status?: string): Promise<({
         provider: {
@@ -35,8 +35,8 @@ export declare class ProviderJoinRequestsController {
         id: number;
         providerId: number;
         status: string;
-        requestDate: Date;
         adminNotes: string | null;
+        requestDate: Date;
     })[]>;
     getPendingRequests(): Promise<({
         provider: {
@@ -53,8 +53,8 @@ export declare class ProviderJoinRequestsController {
         id: number;
         providerId: number;
         status: string;
-        requestDate: Date;
         adminNotes: string | null;
+        requestDate: Date;
     })[]>;
     getRequestStats(): Promise<{
         total: number;
@@ -78,8 +78,8 @@ export declare class ProviderJoinRequestsController {
         id: number;
         providerId: number;
         status: string;
-        requestDate: Date;
         adminNotes: string | null;
+        requestDate: Date;
     })[]>;
     getProviderRequests(providerId: number): Promise<({
         provider: {
@@ -96,8 +96,8 @@ export declare class ProviderJoinRequestsController {
         id: number;
         providerId: number;
         status: string;
-        requestDate: Date;
         adminNotes: string | null;
+        requestDate: Date;
     })[]>;
     findOne(id: number): Promise<{
         provider: {
@@ -114,8 +114,8 @@ export declare class ProviderJoinRequestsController {
         id: number;
         providerId: number;
         status: string;
-        requestDate: Date;
         adminNotes: string | null;
+        requestDate: Date;
     }>;
     update(id: number, updateJoinRequestDto: UpdateJoinRequestDto): Promise<{
         provider: {
@@ -132,8 +132,8 @@ export declare class ProviderJoinRequestsController {
         id: number;
         providerId: number;
         status: string;
-        requestDate: Date;
         adminNotes: string | null;
+        requestDate: Date;
     }>;
     approveRequest(id: number, body: {
         adminNotes?: string;
@@ -152,8 +152,8 @@ export declare class ProviderJoinRequestsController {
         id: number;
         providerId: number;
         status: string;
-        requestDate: Date;
         adminNotes: string | null;
+        requestDate: Date;
     }>;
     rejectRequest(id: number, body: {
         adminNotes: string;
@@ -172,8 +172,8 @@ export declare class ProviderJoinRequestsController {
         id: number;
         providerId: number;
         status: string;
-        requestDate: Date;
         adminNotes: string | null;
+        requestDate: Date;
     }>;
     remove(id: number): Promise<{
         message: string;

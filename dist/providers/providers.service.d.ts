@@ -221,6 +221,64 @@ export declare class ProvidersService {
         providerId: number;
         price: number;
     })[]>;
+    getProviderOrders(providerId: number): Promise<({
+        service: {
+            description: string;
+            id: number;
+            title: string;
+        };
+        user: {
+            id: number;
+            name: string;
+            email: string;
+            phone: string;
+        };
+    } & {
+        serviceId: number;
+        id: number;
+        location: string | null;
+        providerId: number;
+        scheduledDate: Date | null;
+        locationDetails: string | null;
+        quantity: number;
+        providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+        status: string;
+        bookingId: string;
+        userId: number;
+        orderDate: Date;
+        totalAmount: number;
+        providerAmount: number;
+        commissionAmount: number;
+    })[]>;
+    getProviderRatings(providerId: number): Promise<({
+        user: {
+            id: number;
+            name: string;
+            email: string;
+        };
+    } & {
+        id: number;
+        providerId: number;
+        userId: number;
+        orderId: number | null;
+        rating: number;
+        comment: string | null;
+        ratingDate: Date;
+    })[]>;
+    getProviderDocuments(providerId: number): Promise<{
+        documents: {
+            id: string;
+            name: string;
+            url: string;
+            type: string;
+            size: number;
+            uploadedAt: string;
+            uploadedBy: string;
+        }[];
+        verificationStatus: string;
+        adminNotes: string | null;
+    }>;
+    private getFileTypeFromUrl;
     remove(id: number): Promise<{
         message: string;
     }>;

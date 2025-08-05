@@ -8,7 +8,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { RolesGuard } from './roles.guard';
-import { AdminController } from './admin.controller';
 import { UsersService } from 'src/users/users.service';
 import { FilesModule } from 'src/files/files.module';
 import { SmsModule } from '../sms/sms.module';
@@ -33,7 +32,7 @@ import { SmsModule } from '../sms/sms.module';
     }),
   ],
   providers: [AuthService, JwtStrategy, RolesGuard, UsersService],
-  controllers: [AuthController, AdminController],
+  controllers: [AuthController],
   exports: [AuthService],
 })
 export class AuthModule { }

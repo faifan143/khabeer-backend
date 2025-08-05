@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Image Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .image-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .image-item {
+            text-align: center;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .image-item img {
+            max-width: 200px;
+            max-height: 200px;
+            border: 1px solid #ccc;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 5px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .console-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 CORS Image Loading Test</h1>
+    
+    <div class="test-section">
+        <h2>📊 Test Results</h2>
+        <div id="test-results">
+            <p>Click "Run Tests" to start testing image loading...</p>
+        </div>
+        <button onclick="runTests()">Run Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🖼️ Image Display Test</h2>
+        <div class="image-container" id="image-container">
+            <div class="image-item">
+                <h4>Test Image 1</h4>
+                <img src="http://localhost:3001/uploads/1754234785341-217718138.png" 
+                     alt="Test Image 1" 
+                     onload="imageLoaded(this, 'img1')" 
+                     onerror="imageError(this, 'img1')">
+                <div id="status-img1" class="status loading">Loading...</div>
+            </div>
+            <div class="image-item">
+                <h4>Test Image 2</h4>
+                <img src="http://localhost:3001/uploads/1754234787168-351214059.png" 
+                     alt="Test Image 2" 
+                     onload="imageLoaded(this, 'img2')" 
+                     onerror="imageError(this, 'img2')">
+                <div id="status-img2" class="status loading">Loading...</div>
+            </div>
+            <div class="image-item">
+                <h4>Test Image 3</h4>
+                <img src="http://localhost:3001/uploads/1754235061206-792022907.png" 
+                     alt="Test Image 3" 
+                     onload="imageLoaded(this, 'img3')" 
+                     onerror="imageError(this, 'img3')">
+                <div id="status-img3" class="status loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Manual Test</h2>
+        <p>Test a specific image URL:</p>
+        <input type="text" id="test-url" placeholder="Enter image URL" 
+               value="http://localhost:3001/uploads/1754234785341-217718138.png" style="width: 400px; padding: 5px;">
+        <button onclick="testSpecificImage()">Test Image</button>
+        <div id="manual-test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Console Output</h2>
+        <div id="console-output" class="console-output"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const consoleOutput = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            consoleOutput.innerHTML += `[${timestamp}] ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            console.log(message);
+        }
+
+        function imageLoaded(img, id) {
+            const status = document.getElementById(`status-${id}`);
+            status.textContent = '✅ Loaded Successfully';
+            status.className = 'status success';
+            log(`✅ Image ${id} loaded successfully`);
+        }
+
+        function imageError(img, id) {
+            const status = document.getElementById(`status-${id}`);
+            status.textContent = '❌ Failed to Load';
+            status.className = 'status error';
+            log(`❌ Image ${id} failed to load`);
+        }
+
+        async function testImageUrl(url) {
+            try {
+                log(`🔍 Testing URL: ${url}`);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                log(`📊 Response Status: ${response.status}`);
+                log(`📊 Response Headers:`);
+                for (const [key, value] of response.headers.entries()) {
+                    log(`   ${key}: ${value}`);
+                }
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    log(`✅ Image loaded successfully (${blob.size} bytes)`);
+                    return true;
+                } else {
+                    log(`❌ Image failed to load: ${response.status} ${response.statusText}`);
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Error testing image: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function runTests() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '<p>🔄 Running tests...</p>';
+            
+            log('🚀 Starting CORS image tests...');
+            
+            const testUrls = [
+                'http://localhost:3001/uploads/1754234785341-217718138.png',
+                'http://localhost:3001/uploads/1754234787168-351214059.png',
+                'http://localhost:3001/uploads/1754235061206-792022907.png'
+            ];
+            
+            let successCount = 0;
+            let totalCount = testUrls.length;
+            
+            for (let i = 0; i < testUrls.length; i++) {
+                const url = testUrls[i];
+                log(`\n--- Test ${i + 1}/${totalCount} ---`);
+                const success = await testImageUrl(url);
+                if (success) successCount++;
+            }
+            
+            const successRate = ((successCount / totalCount) * 100).toFixed(1);
+            results.innerHTML = `
+                <h3>📊 Test Results</h3>
+                <p><strong>Success Rate:</strong> ${successCount}/${totalCount} (${successRate}%)</p>
+                <p><strong>Status:</strong> ${successCount === totalCount ? '✅ All tests passed!' : '⚠️ Some tests failed'}</p>
+            `;
+            
+            log(`\n🎉 Tests completed: ${successCount}/${totalCount} passed (${successRate}%)`);
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '<p>Click "Run Tests" to start testing image loading...</p>';
+            document.getElementById('console-output').innerHTML = '';
+        }
+
+        async function testSpecificImage() {
+            const url = document.getElementById('test-url').value;
+            const resultDiv = document.getElementById('manual-test-result');
+            
+            if (!url) {
+                resultDiv.innerHTML = '<p class="status error">Please enter a URL</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p class="status loading">Testing...</p>';
+            const success = await testImageUrl(url);
+            
+            if (success) {
+                resultDiv.innerHTML = '<p class="status success">✅ Image loaded successfully!</p>';
+            } else {
+                resultDiv.innerHTML = '<p class="status error">❌ Image failed to load</p>';
+            }
+        }
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            log('🌐 Page loaded, CORS test ready');
+            log('📍 Current origin: ' + window.location.origin);
+            log('🔗 Backend URL: http://localhost:3001');
+        });
+    </script>
+</body>
+</html> 

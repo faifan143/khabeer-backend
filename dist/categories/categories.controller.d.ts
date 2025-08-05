@@ -27,7 +27,7 @@ export declare class CategoriesController {
         titleAr: string;
         titleEn: string;
     }>;
-    update(id: string, data: UpdateCategoryDto): Promise<{
+    update(id: string, data: UpdateCategoryDto, file: Express.Multer.File): Promise<{
         id: number;
         image: string;
         state: string;

@@ -57,6 +57,42 @@ export class ProviderVerificationController {
         return this.providerVerificationService.findByProvider(providerId);
     }
 
+    @Put('admin/:providerId/documents')
+    @Roles('ADMIN')
+    async addDocumentsAdmin(
+        @Param('providerId', ParseIntPipe) providerId: number,
+        @Body() body: { documents: string[] }
+    ) {
+        return this.providerVerificationService.addDocumentsAdmin(providerId, body.documents);
+    }
+
+    @Delete('admin/:providerId/documents')
+    @Roles('ADMIN')
+    async removeDocumentAdmin(
+        @Param('providerId', ParseIntPipe) providerId: number,
+        @Body() body: { documentUrl: string }
+    ) {
+        return this.providerVerificationService.removeDocumentAdmin(providerId, body.documentUrl);
+    }
+
+    @Put('admin/:providerId/approve')
+    @Roles('ADMIN')
+    async approveVerificationAdmin(
+        @Param('providerId', ParseIntPipe) providerId: number,
+        @Body() body: { adminNotes?: string }
+    ) {
+        return this.providerVerificationService.approveVerificationByProviderId(providerId, body.adminNotes);
+    }
+
+    @Put('admin/:providerId/reject')
+    @Roles('ADMIN')
+    async rejectVerificationAdmin(
+        @Param('providerId', ParseIntPipe) providerId: number,
+        @Body() body: { adminNotes: string }
+    ) {
+        return this.providerVerificationService.rejectVerificationByProviderId(providerId, body.adminNotes);
+    }
+
     @Get(':id')
     async findOne(@Param('id') id: string) {
         return this.providerVerificationService.findOne(id);

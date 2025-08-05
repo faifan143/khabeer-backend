@@ -38,7 +38,27 @@ let ServicesService = class ServicesService {
         return this.prisma.service.update({ where: { id }, data });
     }
     async remove(id) {
-        return this.prisma.service.delete({ where: { id } });
+        return this.prisma.$transaction(async (tx) => {
+            await tx.invoice.deleteMany({
+                where: {
+                    order: {
+                        serviceId: id
+                    }
+                }
+            });
+            await tx.order.deleteMany({
+                where: { serviceId: id }
+            });
+            await tx.providerService.deleteMany({
+                where: { serviceId: id }
+            });
+            await tx.offer.deleteMany({
+                where: { serviceId: id }
+            });
+            return tx.service.delete({
+                where: { id }
+            });
+        });
     }
 };
 exports.ServicesService = ServicesService;

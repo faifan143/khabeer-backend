@@ -39,19 +39,37 @@ export class CategoriesController {
     @Body() createCategoryDto: CreateCategoryDto,
     @UploadedFile() file: Express.Multer.File
   ) {
-    const data = { ...createCategoryDto };
+    const data = { ...createCategoryDto, image: '' };
     if (file) {
       const fileResult = await this.filesService.handleUploadedFile(file);
       data.image = fileResult.url;
-    } else {
-      data.image = '';
     }
     return this.categoriesService.create(data);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() data: UpdateCategoryDto) {
-    return this.categoriesService.update(Number(id), data);
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `${uniqueSuffix}${ext}`);
+      },
+    }),
+  }))
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateCategoryDto,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const updateData: any = { ...data };
+    if (file) {
+      const fileResult = await this.filesService.handleUploadedFile(file);
+      updateData.image = fileResult.url;
+    }
+    // If no file provided, don't update the image field (preserve existing)
+    return this.categoriesService.update(Number(id), updateData);
   }
 
   @Delete(':id')

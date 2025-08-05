@@ -35,18 +35,20 @@ let CategoriesController = class CategoriesController {
         return this.categoriesService.findById(Number(id));
     }
     async create(createCategoryDto, file) {
-        const data = { ...createCategoryDto };
+        const data = { ...createCategoryDto, image: '' };
         if (file) {
             const fileResult = await this.filesService.handleUploadedFile(file);
             data.image = fileResult.url;
         }
-        else {
-            data.image = '';
-        }
         return this.categoriesService.create(data);
     }
-    async update(id, data) {
-        return this.categoriesService.update(Number(id), data);
+    async update(id, data, file) {
+        const updateData = { ...data };
+        if (file) {
+            const fileResult = await this.filesService.handleUploadedFile(file);
+            updateData.image = fileResult.url;
+        }
+        return this.categoriesService.update(Number(id), updateData);
     }
     async remove(id) {
         return this.categoriesService.remove(Number(id));
@@ -86,10 +88,21 @@ __decorate([
 ], CategoriesController.prototype, "create", null);
 __decorate([
     (0, common_1.Put)(':id'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_category_dto_1.UpdateCategoryDto]),
+    __metadata("design:paramtypes", [String, update_category_dto_1.UpdateCategoryDto, Object]),
     __metadata("design:returntype", Promise)
 ], CategoriesController.prototype, "update", null);
 __decorate([

@@ -27,7 +27,7 @@ export class FilesService {
   private readonly allowedExtensions: string[];
 
   constructor(private readonly configService: ConfigService) {
-    this.uploadBaseUrl = this.configService.get('UPLOAD_BASE_URL', 'http://localhost:3000/uploads/');
+    this.uploadBaseUrl = '/uploads/';
     this.uploadDir = join(process.cwd(), 'uploads');
     this.maxFileSize = this.configService.get('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB default
     this.allowedMimeTypes = this.configService.get('ALLOWED_MIME_TYPES', 'image/jpeg,image/png,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document').split(',');

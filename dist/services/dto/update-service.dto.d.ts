@@ -1,5 +1,4 @@
 export declare class UpdateServiceDto {
-    image?: string;
     title?: string;
     description?: string;
     commission?: number;

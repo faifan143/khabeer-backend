@@ -6,54 +6,165 @@ export class AdminService {
     constructor(private readonly prisma: PrismaService) { }
 
     async getDashboardStats() {
-        const [
-            totalUsers,
-            totalProviders,
-            totalOrders,
-            totalRevenue,
-            pendingVerifications,
-            pendingJoinRequests,
-            activeUsers,
-            activeProviders,
-            completedOrders,
-            totalCommission
-        ] = await Promise.all([
-            this.prisma.user.count(),
-            this.prisma.provider.count(),
-            this.prisma.order.count(),
-            this.prisma.invoice.aggregate({
-                where: { paymentStatus: 'paid' },
-                _sum: { totalAmount: true }
-            }),
-            this.prisma.providerVerification.count({ where: { status: 'pending' } }),
-            this.prisma.providerJoinRequest.count({ where: { status: 'pending' } }),
-            this.prisma.user.count({ where: { isActive: true } }),
-            this.prisma.provider.count({ where: { isActive: true } }),
-            this.prisma.order.count({ where: { status: 'completed' } }),
-            this.prisma.order.aggregate({
-                where: { status: 'completed' },
-                _sum: { commissionAmount: true }
-            })
-        ]);
-
-        return {
-            overview: {
+        try {
+            const [
                 totalUsers,
                 totalProviders,
                 totalOrders,
-                totalRevenue: totalRevenue._sum.totalAmount || 0,
-                totalCommission: totalCommission._sum.commissionAmount || 0
-            },
-            pending: {
-                verifications: pendingVerifications,
-                joinRequests: pendingJoinRequests
-            },
-            active: {
-                users: activeUsers,
-                providers: activeProviders,
-                completedOrders
-            }
-        };
+                totalRevenue,
+                pendingVerifications,
+                pendingJoinRequests,
+                activeUsers,
+                activeProviders,
+                completedOrders,
+                totalCommission,
+                // Additional data for dashboard
+                popularServices,
+                topProviders,
+                orderStats
+            ] = await Promise.all([
+                this.prisma.user.count(),
+                this.prisma.provider.count(),
+                this.prisma.order.count(),
+                this.prisma.invoice.aggregate({
+                    where: { paymentStatus: 'paid' },
+                    _sum: { totalAmount: true }
+                }),
+                this.prisma.providerVerification.count({ where: { status: 'pending' } }),
+                this.prisma.providerJoinRequest.count({ where: { status: 'pending' } }),
+                this.prisma.user.count({ where: { isActive: true } }),
+                this.prisma.provider.count({ where: { isActive: true } }),
+                this.prisma.order.count({ where: { status: 'completed' } }),
+                this.prisma.order.aggregate({
+                    where: { status: 'completed' },
+                    _sum: { commissionAmount: true }
+                }),
+                // Get popular services with order counts
+                this.prisma.service.findMany({
+                    include: {
+                        category: true,
+                        orders: {
+                            where: { status: 'completed' },
+                            select: { id: true }
+                        }
+                    },
+                    orderBy: {
+                        orders: {
+                            _count: 'desc'
+                        }
+                    },
+                    take: 10
+                }),
+                // Get top providers with order counts and ratings
+                this.prisma.provider.findMany({
+                    include: {
+                        orders: {
+                            where: { status: 'completed' },
+                            select: { id: true }
+                        },
+                        ratings: {
+                            select: { rating: true }
+                        }
+                    },
+                    orderBy: {
+                        orders: {
+                            _count: 'desc'
+                        }
+                    },
+                    take: 10
+                }),
+                // Get order statistics
+                this.getOrderStats()
+            ]);
+
+            // Process popular services
+            const processedPopularServices = popularServices.map(service => ({
+                id: service.id,
+                name: service.title,
+                description: service.description,
+                price: service.commission,
+                category: service.category ? {
+                    id: service.category.id,
+                    name: service.category.titleEn
+                } : null,
+                orderCount: service.orders.length
+            }));
+
+            // Process top providers
+            const processedTopProviders = topProviders.map(provider => {
+                const avgRating = provider.ratings.length > 0
+                    ? provider.ratings.reduce((sum, r) => sum + r.rating, 0) / provider.ratings.length
+                    : 0;
+
+                return {
+                    id: provider.id,
+                    name: provider.name,
+                    email: provider.email || '',
+                    phone: provider.phone,
+                    description: provider.description,
+                    image: provider.image,
+                    state: provider.state,
+                    isActive: provider.isActive,
+                    isVerified: provider.isVerified,
+                    orderCount: provider.orders.length,
+                    rating: avgRating
+                };
+            });
+
+            return {
+                overview: {
+                    totalUsers,
+                    totalProviders,
+                    totalOrders,
+                    totalRevenue: totalRevenue._sum.totalAmount || 0,
+                    totalCommission: totalCommission._sum.commissionAmount || 0
+                },
+                pending: {
+                    verifications: pendingVerifications,
+                    joinRequests: pendingJoinRequests
+                },
+                active: {
+                    users: activeUsers,
+                    providers: activeProviders,
+                    completedOrders
+                },
+                // Include all the additional data
+                popularServices: processedPopularServices,
+                topProviders: processedTopProviders,
+                orderStats
+            };
+        } catch (error) {
+            console.error('Error fetching dashboard stats:', error);
+            // Return default values in case of error
+            return {
+                overview: {
+                    totalUsers: 0,
+                    totalProviders: 0,
+                    totalOrders: 0,
+                    totalRevenue: 0,
+                    totalCommission: 0
+                },
+                pending: {
+                    verifications: 0,
+                    joinRequests: 0
+                },
+                active: {
+                    users: 0,
+                    providers: 0,
+                    completedOrders: 0
+                },
+                popularServices: [],
+                topProviders: [],
+                orderStats: {
+                    total: 0,
+                    today: 0,
+                    yesterday: 0,
+                    thisWeek: 0,
+                    thisMonth: 0,
+                    byStatus: []
+                }
+            };
+        }
     }
 
     async getOverviewStats(days: number = 30) {
@@ -141,34 +252,102 @@ export class AdminService {
     }
 
     async getProviderStats() {
-        const [total, active, inactive, verified, unverified] = await Promise.all([
+        const [total, active, inactive, verified, unverified, topProviders] = await Promise.all([
             this.prisma.provider.count(),
             this.prisma.provider.count({ where: { isActive: true } }),
             this.prisma.provider.count({ where: { isActive: false } }),
             this.prisma.provider.count({ where: { isVerified: true } }),
-            this.prisma.provider.count({ where: { isVerified: false } })
+            this.prisma.provider.count({ where: { isVerified: false } }),
+            this.prisma.provider.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    description: true,
+                    image: true,
+                    state: true,
+                    isActive: true,
+                    isVerified: true,
+                    orders: {
+                        where: { status: 'completed' }
+                    },
+                    ratings: {
+                        select: {
+                            rating: true
+                        }
+                    }
+                },
+                take: 10,
+                orderBy: {
+                    orders: {
+                        _count: 'desc'
+                    }
+                }
+            })
         ]);
+
+        const providersWithStats = topProviders.map(provider => {
+            const avgRating = provider.ratings.length > 0
+                ? provider.ratings.reduce((sum, r) => sum + r.rating, 0) / provider.ratings.length
+                : 0;
+
+            return {
+                id: provider.id,
+                name: provider.name,
+                email: provider.email,
+                phone: provider.phone,
+                description: provider.description,
+                image: provider.image,
+                state: provider.state,
+                isActive: provider.isActive,
+                isVerified: provider.isVerified,
+                orderCount: provider.orders.length,
+                rating: avgRating
+            };
+        }).sort((a, b) => b.orderCount - a.orderCount);
 
         return {
             total,
             active,
             inactive,
             verified,
-            unverified
+            unverified,
+            topProviders: providersWithStats
         };
     }
 
     async getOrderStats() {
-        const [total, completed, pending, inProgress, cancelled] = await Promise.all([
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const thisWeek = new Date(today);
+        thisWeek.setDate(thisWeek.getDate() - 7);
+
+        const thisMonth = new Date(today);
+        thisMonth.setMonth(thisMonth.getMonth() - 1);
+
+        const [total, completed, pending, inProgress, cancelled, todayOrders, yesterdayOrders, thisWeekOrders, thisMonthOrders] = await Promise.all([
             this.prisma.order.count(),
             this.prisma.order.count({ where: { status: 'completed' } }),
             this.prisma.order.count({ where: { status: 'pending' } }),
             this.prisma.order.count({ where: { status: 'in_progress' } }),
-            this.prisma.order.count({ where: { status: 'cancelled' } })
+            this.prisma.order.count({ where: { status: 'cancelled' } }),
+            this.prisma.order.count({ where: { orderDate: { gte: today } } }),
+            this.prisma.order.count({ where: { orderDate: { gte: yesterday, lt: today } } }),
+            this.prisma.order.count({ where: { orderDate: { gte: thisWeek } } }),
+            this.prisma.order.count({ where: { orderDate: { gte: thisMonth } } })
         ]);
 
         return {
             total,
+            today: todayOrders,
+            yesterday: yesterdayOrders,
+            thisWeek: thisWeekOrders,
+            thisMonth: thisMonthOrders,
             byStatus: [
                 { status: 'completed', count: completed },
                 { status: 'pending', count: pending },
@@ -464,7 +643,7 @@ export class AdminService {
             data: { isVerified: true }
         });
 
-        return { 
+        return {
             message: 'Provider verified successfully. Provider can now login.',
             provider: {
                 id: provider.id,
@@ -639,4 +818,117 @@ export class AdminService {
 
     // Payment verification methods
 
+    // Admin Orders Management Methods
+    async getAllOrders(page: number = 1, limit: number = 1000) {
+        const skip = (page - 1) * limit;
+
+        const orders = await this.prisma.order.findMany({
+            skip,
+            take: limit,
+            include: {
+                user: {
+                    select: { id: true, name: true, email: true, phone: true }
+                },
+                provider: {
+                    select: { id: true, name: true, email: true, phone: true }
+                },
+                service: {
+                    select: { id: true, title: true, description: true, commission: true }
+                },
+                invoice: true
+            },
+            orderBy: { orderDate: 'desc' }
+        });
+
+        const total = await this.prisma.order.count();
+
+        return {
+            data: orders,
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
+    }
+
+    async updateOrderStatus(id: number, status: string) {
+        const order = await this.prisma.order.update({
+            where: { id },
+            data: { status },
+            include: {
+                user: { select: { name: true, email: true } },
+                provider: { select: { name: true, email: true } },
+                service: { select: { title: true } }
+            }
+        });
+
+        return { message: 'Order status updated successfully', order };
+    }
+
+    async cancelOrder(id: number, reason?: string) {
+        const order = await this.prisma.order.update({
+            where: { id },
+            data: {
+                status: 'cancelled',
+                // You might want to store the cancellation reason in a separate table
+            },
+            include: {
+                user: { select: { name: true, email: true } },
+                provider: { select: { name: true, email: true } },
+                service: { select: { title: true } }
+            }
+        });
+
+        return { message: 'Order cancelled successfully', order };
+    }
+
+    async completeOrder(id: number) {
+        const order = await this.prisma.order.update({
+            where: { id },
+            data: { status: 'completed' },
+            include: {
+                user: { select: { name: true, email: true } },
+                provider: { select: { name: true, email: true } },
+                service: { select: { title: true } }
+            }
+        });
+
+        return { message: 'Order completed successfully', order };
+    }
+
+    async acceptOrder(id: number, notes?: string) {
+        const order = await this.prisma.order.update({
+            where: { id },
+            data: { 
+                status: 'accepted',
+                // You might want to store admin notes in a separate table
+            },
+            include: {
+                user: { select: { name: true, email: true } },
+                provider: { select: { name: true, email: true } },
+                service: { select: { title: true } }
+            }
+        });
+
+        return { message: 'Order accepted successfully', order };
+    }
+
+    async rejectOrder(id: number, reason: string) {
+        const order = await this.prisma.order.update({
+            where: { id },
+            data: { 
+                status: 'cancelled',
+                // You might want to store the rejection reason in a separate table
+            },
+            include: {
+                user: { select: { name: true, email: true } },
+                provider: { select: { name: true, email: true } },
+                service: { select: { title: true } }
+            }
+        });
+
+        return { message: 'Order rejected successfully', order };
+    }
 } 

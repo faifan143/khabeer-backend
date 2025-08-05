@@ -17,7 +17,6 @@ const jwt_1 = require("@nestjs/jwt");
 const passport_1 = require("@nestjs/passport");
 const jwt_strategy_1 = require("./jwt.strategy");
 const roles_guard_1 = require("./roles.guard");
-const admin_controller_1 = require("./admin.controller");
 const users_service_1 = require("../users/users.service");
 const files_module_1 = require("../files/files.module");
 const sms_module_1 = require("../sms/sms.module");
@@ -45,7 +44,7 @@ exports.AuthModule = AuthModule = __decorate([
             }),
         ],
         providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, roles_guard_1.RolesGuard, users_service_1.UsersService],
-        controllers: [auth_controller_1.AuthController, admin_controller_1.AdminController],
+        controllers: [auth_controller_1.AuthController],
         exports: [auth_service_1.AuthService],
     })
 ], AuthModule);

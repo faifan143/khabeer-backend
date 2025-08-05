@@ -19,6 +19,41 @@ export declare class AdminService {
             providers: number;
             completedOrders: number;
         };
+        popularServices: {
+            id: number;
+            name: string;
+            description: string;
+            price: number;
+            category: {
+                id: number;
+                name: string;
+            } | null;
+            orderCount: number;
+        }[];
+        topProviders: {
+            id: number;
+            name: string;
+            email: string;
+            phone: string;
+            description: string;
+            image: string;
+            state: string;
+            isActive: boolean;
+            isVerified: boolean;
+            orderCount: number;
+            rating: number;
+        }[];
+        orderStats: {
+            total: number;
+            today: number;
+            yesterday: number;
+            thisWeek: number;
+            thisMonth: number;
+            byStatus: {
+                status: string;
+                count: number;
+            }[];
+        };
     }>;
     getOverviewStats(days?: number): Promise<{
         period: string;
@@ -44,9 +79,26 @@ export declare class AdminService {
         inactive: number;
         verified: number;
         unverified: number;
+        topProviders: {
+            id: number;
+            name: string;
+            email: string | null;
+            phone: string;
+            description: string;
+            image: string;
+            state: string;
+            isActive: boolean;
+            isVerified: boolean;
+            orderCount: number;
+            rating: number;
+        }[];
     }>;
     getOrderStats(): Promise<{
         total: number;
+        today: number;
+        yesterday: number;
+        thisWeek: number;
+        thisMonth: number;
         byStatus: {
             status: string;
             count: number;
@@ -118,8 +170,8 @@ export declare class AdminService {
         id: number;
         providerId: number;
         status: string;
-        requestDate: Date;
         adminNotes: string | null;
+        requestDate: Date;
     })[]>;
     getAllProviders(): Promise<{
         description: string;
@@ -258,4 +310,222 @@ export declare class AdminService {
         totalSpent: number;
         ratingsGiven: number;
     }[]>;
+    getAllOrders(page?: number, limit?: number): Promise<{
+        data: ({
+            service: {
+                description: string;
+                id: number;
+                title: string;
+                commission: number;
+            };
+            provider: {
+                id: number;
+                name: string;
+                email: string | null;
+                phone: string;
+            };
+            user: {
+                id: number;
+                name: string;
+                email: string;
+                phone: string;
+            };
+            invoice: {
+                id: number;
+                isVerified: boolean;
+                totalAmount: number;
+                orderId: number;
+                paymentDate: Date | null;
+                discount: number;
+                paymentStatus: string;
+                paymentMethod: string | null;
+                verifiedBy: number | null;
+                verifiedAt: Date | null;
+                payoutStatus: string;
+                payoutDate: Date | null;
+            } | null;
+        } & {
+            serviceId: number;
+            id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
+            bookingId: string;
+            userId: number;
+            orderDate: Date;
+            totalAmount: number;
+            providerAmount: number;
+            commissionAmount: number;
+        })[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    updateOrderStatus(id: number, status: string): Promise<{
+        message: string;
+        order: {
+            service: {
+                title: string;
+            };
+            provider: {
+                name: string;
+                email: string | null;
+            };
+            user: {
+                name: string;
+                email: string;
+            };
+        } & {
+            serviceId: number;
+            id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
+            bookingId: string;
+            userId: number;
+            orderDate: Date;
+            totalAmount: number;
+            providerAmount: number;
+            commissionAmount: number;
+        };
+    }>;
+    cancelOrder(id: number, reason?: string): Promise<{
+        message: string;
+        order: {
+            service: {
+                title: string;
+            };
+            provider: {
+                name: string;
+                email: string | null;
+            };
+            user: {
+                name: string;
+                email: string;
+            };
+        } & {
+            serviceId: number;
+            id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
+            bookingId: string;
+            userId: number;
+            orderDate: Date;
+            totalAmount: number;
+            providerAmount: number;
+            commissionAmount: number;
+        };
+    }>;
+    completeOrder(id: number): Promise<{
+        message: string;
+        order: {
+            service: {
+                title: string;
+            };
+            provider: {
+                name: string;
+                email: string | null;
+            };
+            user: {
+                name: string;
+                email: string;
+            };
+        } & {
+            serviceId: number;
+            id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
+            bookingId: string;
+            userId: number;
+            orderDate: Date;
+            totalAmount: number;
+            providerAmount: number;
+            commissionAmount: number;
+        };
+    }>;
+    acceptOrder(id: number, notes?: string): Promise<{
+        message: string;
+        order: {
+            service: {
+                title: string;
+            };
+            provider: {
+                name: string;
+                email: string | null;
+            };
+            user: {
+                name: string;
+                email: string;
+            };
+        } & {
+            serviceId: number;
+            id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
+            bookingId: string;
+            userId: number;
+            orderDate: Date;
+            totalAmount: number;
+            providerAmount: number;
+            commissionAmount: number;
+        };
+    }>;
+    rejectOrder(id: number, reason: string): Promise<{
+        message: string;
+        order: {
+            service: {
+                title: string;
+            };
+            provider: {
+                name: string;
+                email: string | null;
+            };
+            user: {
+                name: string;
+                email: string;
+            };
+        } & {
+            serviceId: number;
+            id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
+            bookingId: string;
+            userId: number;
+            orderDate: Date;
+            totalAmount: number;
+            providerAmount: number;
+            commissionAmount: number;
+        };
+    }>;
 }

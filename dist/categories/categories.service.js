@@ -30,7 +30,37 @@ let CategoriesService = class CategoriesService {
         return this.prisma.category.update({ where: { id }, data });
     }
     async remove(id) {
-        return this.prisma.category.delete({ where: { id } });
+        return this.prisma.$transaction(async (tx) => {
+            const services = await tx.service.findMany({
+                where: { categoryId: id },
+                select: { id: true }
+            });
+            const serviceIds = services.map(s => s.id);
+            if (serviceIds.length > 0) {
+                await tx.invoice.deleteMany({
+                    where: {
+                        order: {
+                            serviceId: { in: serviceIds }
+                        }
+                    }
+                });
+                await tx.order.deleteMany({
+                    where: { serviceId: { in: serviceIds } }
+                });
+                await tx.providerService.deleteMany({
+                    where: { serviceId: { in: serviceIds } }
+                });
+                await tx.offer.deleteMany({
+                    where: { serviceId: { in: serviceIds } }
+                });
+            }
+            await tx.service.deleteMany({
+                where: { categoryId: id }
+            });
+            return tx.category.delete({
+                where: { id }
+            });
+        });
     }
 };
 exports.CategoriesService = CategoriesService;

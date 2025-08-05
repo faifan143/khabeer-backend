@@ -1121,7 +1121,7 @@
       "name": "🔗 Provider Services",
       "item": [
         {
-          "name": "Add Services to Provider",
+          "name": "Add Single Service to Provider",
           "request": {
             "method": "POST",
             "header": [
@@ -1130,26 +1130,101 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"serviceIds\": [1, 2, 3]\n}"
+              "raw": "{\n  \"serviceId\": 1,\n  \"price\": 100.00,\n  \"isActive\": true\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/provider-service/add",
+              "raw": "{{baseUrl}}/provider-service",
               "host": ["{{baseUrl}}"],
-              "path": ["provider-service", "add"]
+              "path": ["provider-service"]
             }
           }
         },
         {
-          "name": "Get Provider Services",
+          "name": "Add Multiple Services to Provider",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"services\": [\n    {\n      \"serviceId\": 1,\n      \"price\": 100.00,\n      \"isActive\": true\n    },\n    {\n      \"serviceId\": 2,\n      \"price\": 150.00,\n      \"isActive\": true\n    },\n    {\n      \"serviceId\": 3,\n      \"price\": 200.00,\n      \"isActive\": false\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/provider-service/add-multiple",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-service", "add-multiple"]
+            }
+          }
+        },
+        {
+          "name": "Get All Provider Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/provider-service?providerId=1&activeOnly=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-service"],
+              "query": [
+                { "key": "providerId", "value": "1" },
+                { "key": "activeOnly", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get My Services (Provider)",
           "request": {
             "method": "GET",
             "header": [
               { "key": "Authorization", "value": "Bearer {{providerToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/provider-service",
+              "raw": "{{baseUrl}}/provider-service/my-services?activeOnly=true",
               "host": ["{{baseUrl}}"],
-              "path": ["provider-service"]
+              "path": ["provider-service", "my-services"],
+              "query": [{ "key": "activeOnly", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Get Provider Services by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/provider-service/provider/1?activeOnly=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-service", "provider", "1"],
+              "query": [{ "key": "activeOnly", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Get Service Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/provider-service/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-service", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Specific Provider Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/provider-service/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-service", "1"]
             }
           }
         },
@@ -1161,7 +1236,10 @@
               { "key": "Authorization", "value": "Bearer {{providerToken}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"price\": 150.00\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 150.00,\n  \"isActive\": true\n}"
+            },
             "url": {
               "raw": "{{baseUrl}}/provider-service/1",
               "host": ["{{baseUrl}}"],
@@ -1180,6 +1258,39 @@
               "raw": "{{baseUrl}}/provider-service/1/toggle",
               "host": ["{{baseUrl}}"],
               "path": ["provider-service", "1", "toggle"]
+            }
+          }
+        },
+        {
+          "name": "Remove Single Service",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/provider-service/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-service", "1"]
+            }
+          }
+        },
+        {
+          "name": "Remove Multiple Services",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceIds\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/provider-service/remove-multiple",
+              "host": ["{{baseUrl}}"],
+              "path": ["provider-service", "remove-multiple"]
             }
           }
         }

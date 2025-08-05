@@ -162,5 +162,38 @@ export class ProvidersController {
     }
     return this.providersService.removeServices(Number(id), body.serviceIds);
   }
+
+  @Get(':id/orders')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async getProviderOrders(@Param('id') id: string, @Request() req) {
+    // Providers can only access their own orders, admins can access any
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+      throw new BadRequestException('You can only access your own orders');
+    }
+    return this.providersService.getProviderOrders(Number(id));
+  }
+
+  @Get(':id/ratings')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async getProviderRatings(@Param('id') id: string, @Request() req) {
+    // Providers can only access their own ratings, admins can access any
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+      throw new BadRequestException('You can only access your own ratings');
+    }
+    return this.providersService.getProviderRatings(Number(id));
+  }
+
+  @Get(':id/documents')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async getProviderDocuments(@Param('id') id: string, @Request() req) {
+    // Providers can only access their own documents, admins can access any
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+      throw new BadRequestException('You can only access your own documents');
+    }
+    return this.providersService.getProviderDocuments(Number(id));
+  }
 }
 

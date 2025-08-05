@@ -319,6 +319,100 @@ let ProviderVerificationService = class ProviderVerificationService {
         });
         return updatedVerification;
     }
+    async addDocumentsAdmin(providerId, documents) {
+        let verification = await this.prisma.providerVerification.findUnique({
+            where: { providerId }
+        });
+        if (!verification) {
+            verification = await this.prisma.providerVerification.create({
+                data: {
+                    providerId,
+                    status: 'pending',
+                    documents: documents
+                }
+            });
+        }
+        else {
+            const updatedDocuments = [...verification.documents, ...documents];
+            verification = await this.prisma.providerVerification.update({
+                where: { providerId },
+                data: {
+                    documents: updatedDocuments,
+                    updatedAt: new Date()
+                }
+            });
+        }
+        return verification;
+    }
+    async removeDocumentAdmin(providerId, documentUrl) {
+        const verification = await this.prisma.providerVerification.findUnique({
+            where: { providerId }
+        });
+        if (!verification) {
+            throw new common_1.NotFoundException('Verification not found for this provider');
+        }
+        const updatedDocuments = verification.documents.filter(doc => doc !== documentUrl);
+        if (updatedDocuments.length === 0) {
+            throw new common_1.BadRequestException('At least one document is required');
+        }
+        const updatedVerification = await this.prisma.providerVerification.update({
+            where: { providerId },
+            data: {
+                documents: updatedDocuments,
+                updatedAt: new Date()
+            }
+        });
+        return updatedVerification;
+    }
+    async approveVerificationByProviderId(providerId, adminNotes) {
+        const verification = await this.prisma.providerVerification.findUnique({
+            where: { providerId }
+        });
+        if (!verification) {
+            throw new common_1.NotFoundException('Verification not found for this provider');
+        }
+        const updatedVerification = await this.prisma.providerVerification.update({
+            where: { providerId },
+            data: {
+                status: 'approved',
+                adminNotes,
+                updatedAt: new Date()
+            }
+        });
+        await this.prisma.provider.update({
+            where: { id: providerId },
+            data: {
+                isVerified: true
+            }
+        });
+        return updatedVerification;
+    }
+    async rejectVerificationByProviderId(providerId, adminNotes) {
+        if (!adminNotes || adminNotes.trim() === '') {
+            throw new common_1.BadRequestException('Rejection notes are required');
+        }
+        const verification = await this.prisma.providerVerification.findUnique({
+            where: { providerId }
+        });
+        if (!verification) {
+            throw new common_1.NotFoundException('Verification not found for this provider');
+        }
+        const updatedVerification = await this.prisma.providerVerification.update({
+            where: { providerId },
+            data: {
+                status: 'rejected',
+                adminNotes,
+                updatedAt: new Date()
+            }
+        });
+        await this.prisma.provider.update({
+            where: { id: providerId },
+            data: {
+                isVerified: false
+            }
+        });
+        return updatedVerification;
+    }
 };
 exports.ProviderVerificationService = ProviderVerificationService;
 exports.ProviderVerificationService = ProviderVerificationService = __decorate([

@@ -4,9 +4,9 @@ const core_1 = require("@nestjs/core");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const swagger_1 = require("@nestjs/swagger");
-const helmet_1 = require("helmet");
 const compression = require("compression");
-const express_rate_limit_1 = require("express-rate-limit");
+const path_1 = require("path");
+const fs_1 = require("fs");
 const app_module_1 = require("./app.module");
 async function bootstrap() {
     const logger = new common_1.Logger('Bootstrap');
@@ -14,30 +14,7 @@ async function bootstrap() {
         logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });
     const configService = app.get(config_1.ConfigService);
-    app.use((0, helmet_1.default)({
-        contentSecurityPolicy: configService.get('HELMET_CONTENT_SECURITY_POLICY_ENABLED', 'true') === 'true' ? {
-            directives: {
-                defaultSrc: ["'self'"],
-                styleSrc: ["'self'", "'unsafe-inline'"],
-                scriptSrc: ["'self'"],
-                imgSrc: ["'self'", "data:", "https:"],
-            },
-        } : false,
-        crossOriginEmbedderPolicy: false,
-    }));
     app.use(compression());
-    const limiter = (0, express_rate_limit_1.default)({
-        windowMs: configService.get('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000),
-        max: configService.get('RATE_LIMIT_MAX_REQUESTS', 100),
-        message: {
-            statusCode: 429,
-            message: 'Too many requests from this IP, please try again later.',
-            error: 'Too Many Requests',
-        },
-        standardHeaders: true,
-        legacyHeaders: false,
-    });
-    app.use(limiter);
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
@@ -48,14 +25,37 @@ async function bootstrap() {
         errorHttpStatusCode: 422,
     }));
     app.enableCors({
-        origin: configService.get('CORS_ORIGIN', '*'),
+        origin: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+        allowedHeaders: ['*'],
         credentials: true,
         maxAge: 86400,
     });
+    const uploadsPath = (0, path_1.join)(process.cwd(), 'uploads');
+    logger.log(`Setting up static file serving from: ${uploadsPath}`);
+    app.useStaticAssets(uploadsPath, {
+        prefix: '/uploads/',
+        setHeaders: (res, path) => {
+            res.set('Access-Control-Allow-Origin', '*');
+            res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            res.set('Access-Control-Allow-Headers', '*');
+            res.set('Access-Control-Allow-Credentials', 'true');
+            res.set('Cache-Control', 'public, max-age=31536000');
+            logger.log(`Serving static file: ${path}`);
+        }
+    });
+    const publicPath = (0, path_1.join)(process.cwd(), 'public');
+    if ((0, fs_1.existsSync)(publicPath)) {
+        logger.log(`Setting up public file serving from: ${publicPath}`);
+        app.useStaticAssets(publicPath, {
+            setHeaders: (res, path) => {
+                res.set('Access-Control-Allow-Origin', '*');
+                logger.log(`Serving public file: ${path}`);
+            }
+        });
+    }
     app.setGlobalPrefix('api', {
-        exclude: ['/health', '/docs'],
+        exclude: ['/health', '/docs', '/uploads'],
     });
     if (configService.get('NODE_ENV') !== 'production') {
         const config = new swagger_1.DocumentBuilder()

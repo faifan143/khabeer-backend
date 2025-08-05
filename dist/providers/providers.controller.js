@@ -108,6 +108,24 @@ let ProvidersController = class ProvidersController {
         }
         return this.providersService.removeServices(Number(id), body.serviceIds);
     }
+    async getProviderOrders(id, req) {
+        if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+            throw new common_1.BadRequestException('You can only access your own orders');
+        }
+        return this.providersService.getProviderOrders(Number(id));
+    }
+    async getProviderRatings(id, req) {
+        if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+            throw new common_1.BadRequestException('You can only access your own ratings');
+        }
+        return this.providersService.getProviderRatings(Number(id));
+    }
+    async getProviderDocuments(id, req) {
+        if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+            throw new common_1.BadRequestException('You can only access your own documents');
+        }
+        return this.providersService.getProviderDocuments(Number(id));
+    }
 };
 exports.ProvidersController = ProvidersController;
 __decorate([
@@ -222,6 +240,36 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "removeServices", null);
+__decorate([
+    (0, common_1.Get)(':id/orders'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getProviderOrders", null);
+__decorate([
+    (0, common_1.Get)(':id/ratings'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getProviderRatings", null);
+__decorate([
+    (0, common_1.Get)(':id/documents'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getProviderDocuments", null);
 exports.ProvidersController = ProvidersController = __decorate([
     (0, common_1.Controller)('providers'),
     __metadata("design:paramtypes", [providers_service_1.ProvidersService,

@@ -91,6 +91,24 @@ let FilesController = FilesController_1 = class FilesController {
             documents: results
         };
     }
+    async uploadDocumentsAdmin(files) {
+        const options = {
+            maxSize: 10 * 1024 * 1024,
+            allowedMimeTypes: [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'image/jpeg',
+                'image/png'
+            ],
+            allowedExtensions: ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+        };
+        const results = await this.filesService.handleMultipleFiles(files, options);
+        return {
+            message: `Successfully uploaded ${results.length} documents`,
+            documents: results
+        };
+    }
     async uploadImages(files) {
         const options = {
             maxSize: 5 * 1024 * 1024,
@@ -156,6 +174,17 @@ __decorate([
     __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], FilesController.prototype, "uploadDocuments", null);
+__decorate([
+    (0, common_1.Post)('upload-documents-admin'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('documents', 5, {
+        storage: FilesController.getStorageConfig('./uploads/documents'),
+    })),
+    __param(0, (0, common_1.UploadedFiles)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Array]),
+    __metadata("design:returntype", Promise)
+], FilesController.prototype, "uploadDocumentsAdmin", null);
 __decorate([
     (0, common_1.Post)('upload-images'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('images', 10, {

@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateServiceDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateServiceDto {
-    image;
     title;
     description;
     commission;
@@ -21,11 +20,6 @@ class CreateServiceDto {
     state;
 }
 exports.CreateServiceDto = CreateServiceDto;
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], CreateServiceDto.prototype, "image", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),

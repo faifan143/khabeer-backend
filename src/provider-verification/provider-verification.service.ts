@@ -378,4 +378,125 @@ export class ProviderVerificationService {
 
         return updatedVerification;
     }
+
+    async addDocumentsAdmin(providerId: number, documents: string[]) {
+        // Find or create verification for the provider
+        let verification = await this.prisma.providerVerification.findUnique({
+            where: { providerId }
+        });
+
+        if (!verification) {
+            // Create verification if it doesn't exist
+            verification = await this.prisma.providerVerification.create({
+                data: {
+                    providerId,
+                    status: 'pending',
+                    documents: documents
+                }
+            });
+        } else {
+            // Add documents to existing verification
+            const updatedDocuments = [...verification.documents, ...documents];
+            verification = await this.prisma.providerVerification.update({
+                where: { providerId },
+                data: {
+                    documents: updatedDocuments,
+                    updatedAt: new Date()
+                }
+            });
+        }
+
+        return verification;
+    }
+
+    async removeDocumentAdmin(providerId: number, documentUrl: string) {
+        const verification = await this.prisma.providerVerification.findUnique({
+            where: { providerId }
+        });
+
+        if (!verification) {
+            throw new NotFoundException('Verification not found for this provider');
+        }
+
+        // Remove the document from the array
+        const updatedDocuments = verification.documents.filter(doc => doc !== documentUrl);
+
+        if (updatedDocuments.length === 0) {
+            throw new BadRequestException('At least one document is required');
+        }
+
+        const updatedVerification = await this.prisma.providerVerification.update({
+            where: { providerId },
+            data: {
+                documents: updatedDocuments,
+                updatedAt: new Date()
+            }
+        });
+
+        return updatedVerification;
+    }
+
+    async approveVerificationByProviderId(providerId: number, adminNotes?: string) {
+        const verification = await this.prisma.providerVerification.findUnique({
+            where: { providerId }
+        });
+
+        if (!verification) {
+            throw new NotFoundException('Verification not found for this provider');
+        }
+
+        // Update verification status
+        const updatedVerification = await this.prisma.providerVerification.update({
+            where: { providerId },
+            data: {
+                status: 'approved',
+                adminNotes,
+                updatedAt: new Date()
+            }
+        });
+
+        // Update provider verification status
+        await this.prisma.provider.update({
+            where: { id: providerId },
+            data: {
+                isVerified: true
+            }
+        });
+
+        return updatedVerification;
+    }
+
+    async rejectVerificationByProviderId(providerId: number, adminNotes: string) {
+        if (!adminNotes || adminNotes.trim() === '') {
+            throw new BadRequestException('Rejection notes are required');
+        }
+
+        const verification = await this.prisma.providerVerification.findUnique({
+            where: { providerId }
+        });
+
+        if (!verification) {
+            throw new NotFoundException('Verification not found for this provider');
+        }
+
+        // Update verification status
+        const updatedVerification = await this.prisma.providerVerification.update({
+            where: { providerId },
+            data: {
+                status: 'rejected',
+                adminNotes,
+                updatedAt: new Date()
+            }
+        });
+
+        // Update provider verification status
+        await this.prisma.provider.update({
+            where: { id: providerId },
+            data: {
+                isVerified: false
+            }
+        });
+
+        return updatedVerification;
+    }
 } 

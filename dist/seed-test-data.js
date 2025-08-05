@@ -54,7 +54,7 @@ async function main() {
         data: {
             titleAr: 'تنظيف',
             titleEn: 'Cleaning',
-            state: 'active',
+            state: 'Riyadh',
             image: ''
         },
     });
@@ -66,7 +66,7 @@ async function main() {
             id: 2,
             titleAr: 'صيانة',
             titleEn: 'Maintenance',
-            state: 'active',
+            state: 'Jeddah',
             image: ''
         },
     });

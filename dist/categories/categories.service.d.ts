@@ -18,14 +18,18 @@ export declare class CategoriesService {
         titleAr: string;
         titleEn: string;
     } | null>;
-    create(data: CreateCategoryDto): Promise<{
+    create(data: CreateCategoryDto & {
+        image: string;
+    }): Promise<{
         id: number;
         image: string;
         state: string;
         titleAr: string;
         titleEn: string;
     }>;
-    update(id: number, data: UpdateCategoryDto): Promise<{
+    update(id: number, data: UpdateCategoryDto & {
+        image?: string;
+    }): Promise<{
         id: number;
         image: string;
         state: string;

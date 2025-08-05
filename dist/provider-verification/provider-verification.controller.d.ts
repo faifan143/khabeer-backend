@@ -109,6 +109,50 @@ export declare class ProviderVerificationController {
         status: string;
         adminNotes: string | null;
     }) | null>;
+    addDocumentsAdmin(providerId: number, body: {
+        documents: string[];
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        providerId: number;
+        documents: string[];
+        status: string;
+        adminNotes: string | null;
+    }>;
+    removeDocumentAdmin(providerId: number, body: {
+        documentUrl: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        providerId: number;
+        documents: string[];
+        status: string;
+        adminNotes: string | null;
+    }>;
+    approveVerificationAdmin(providerId: number, body: {
+        adminNotes?: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        providerId: number;
+        documents: string[];
+        status: string;
+        adminNotes: string | null;
+    }>;
+    rejectVerificationAdmin(providerId: number, body: {
+        adminNotes: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        providerId: number;
+        documents: string[];
+        status: string;
+        adminNotes: string | null;
+    }>;
     findOne(id: string): Promise<{
         provider: {
             description: string;

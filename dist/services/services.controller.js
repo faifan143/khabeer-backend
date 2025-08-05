@@ -38,18 +38,20 @@ let ServicesController = class ServicesController {
         return this.servicesService.findById(Number(id));
     }
     async create(createServiceDto, file) {
-        const data = { ...createServiceDto };
+        const data = { ...createServiceDto, image: '' };
         if (file) {
             const fileResult = await this.filesService.handleUploadedFile(file);
             data.image = fileResult.url;
         }
-        else {
-            data.image = '';
-        }
         return this.servicesService.create(data);
     }
-    async update(id, data) {
-        return this.servicesService.update(Number(id), data);
+    async update(id, data, file) {
+        const updateData = { ...data };
+        if (file) {
+            const fileResult = await this.filesService.handleUploadedFile(file);
+            updateData.image = fileResult.url;
+        }
+        return this.servicesService.update(Number(id), updateData);
     }
     async remove(id) {
         return this.servicesService.remove(Number(id));
@@ -96,10 +98,21 @@ __decorate([
 ], ServicesController.prototype, "create", null);
 __decorate([
     (0, common_1.Put)(':id'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_service_dto_1.UpdateServiceDto]),
+    __metadata("design:paramtypes", [String, update_service_dto_1.UpdateServiceDto, Object]),
     __metadata("design:returntype", Promise)
 ], ServicesController.prototype, "update", null);
 __decorate([

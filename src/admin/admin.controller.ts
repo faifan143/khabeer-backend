@@ -164,5 +164,38 @@ export class AdminController {
         return this.adminService.getUserReport(start, end);
     }
 
+    // Admin Orders Management Endpoints
+    @Get('orders')
+    async getAllOrders(@Query('page') page: string = '1', @Query('limit') limit: string = '1000') {
+        return this.adminService.getAllOrders(parseInt(page), parseInt(limit));
+    }
+
+    @Put('orders/:id/status')
+    async updateOrderStatus(@Param('id', ParseIntPipe) id: number, @Body() body: { status: string }) {
+        return this.adminService.updateOrderStatus(id, body.status);
+    }
+
+    @Put('orders/:id/cancel')
+    async cancelOrder(@Param('id', ParseIntPipe) id: number, @Body() body: { reason?: string }) {
+        return this.adminService.cancelOrder(id, body.reason);
+    }
+
+    @Put('orders/:id/complete')
+    async completeOrder(@Param('id', ParseIntPipe) id: number) {
+        return this.adminService.completeOrder(id);
+    }
+
+    @Put('orders/:id/accept')
+    async acceptOrder(@Param('id', ParseIntPipe) id: number, @Body() body: { notes?: string }) {
+        return this.adminService.acceptOrder(id, body.notes);
+    }
+
+    @Put('orders/:id/reject')
+    async rejectOrder(@Param('id', ParseIntPipe) id: number, @Body() body: { reason: string }) {
+        if (!body.reason) {
+            throw new BadRequestException('Rejection reason is required');
+        }
+        return this.adminService.rejectOrder(id, body.reason);
+    }
 
 } 
