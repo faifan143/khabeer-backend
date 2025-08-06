@@ -294,6 +294,41 @@ export declare class AdminService {
     deactivateUser(id: number): Promise<{
         message: string;
     }>;
+    getAllRatings(): Promise<{
+        order: {
+            totalAmount: number;
+            service: {
+                id: number;
+                title: string;
+                category: {
+                    id: number;
+                    titleAr: string;
+                    titleEn: string;
+                } | null;
+            };
+            id: number;
+            bookingId: string;
+        } | null;
+        user: {
+            id: number;
+            image: string;
+            name: string;
+            email: string;
+        };
+        provider: {
+            id: number;
+            image: string;
+            name: string;
+            email: string | null;
+        };
+        id: number;
+        userId: number;
+        providerId: number;
+        orderId: number | null;
+        rating: number;
+        comment: string | null;
+        ratingDate: Date;
+    }[]>;
     activateProvider(id: number): Promise<{
         message: string;
     }>;

@@ -164,6 +164,11 @@ export class AdminController {
         return this.adminService.getUserReport(start, end);
     }
 
+    @Get('ratings')
+    async getAllRatings() {
+        return this.adminService.getAllRatings();
+    }
+
     // Admin Orders Management Endpoints
     @Get('orders')
     async getAllOrders(@Query('page') page: string = '1', @Query('limit') limit: string = '1000') {

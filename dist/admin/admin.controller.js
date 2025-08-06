@@ -114,6 +114,9 @@ let AdminController = class AdminController {
         const end = endDate ? new Date(endDate) : undefined;
         return this.adminService.getUserReport(start, end);
     }
+    async getAllRatings() {
+        return this.adminService.getAllRatings();
+    }
     async getAllOrders(page = '1', limit = '1000') {
         return this.adminService.getAllOrders(parseInt(page), parseInt(limit));
     }
@@ -312,6 +315,12 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getUserReport", null);
+__decorate([
+    (0, common_1.Get)('ratings'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAllRatings", null);
 __decorate([
     (0, common_1.Get)('orders'),
     __param(0, (0, common_1.Query)('page')),

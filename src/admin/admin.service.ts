@@ -615,6 +615,66 @@ export class AdminService {
         return { message: 'User deactivated successfully' };
     }
 
+    // Get all ratings for admin
+    async getAllRatings() {
+        const ratings = await this.prisma.providerRating.findMany({
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true
+                    }
+                },
+                provider: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true
+                    }
+                }
+            },
+            orderBy: {
+                ratingDate: 'desc'
+            }
+        });
+
+        // Get order details for ratings that have orderId
+        const ratingsWithOrders = await Promise.all(
+            ratings.map(async (rating) => {
+                if (rating.orderId) {
+                    const order = await this.prisma.order.findUnique({
+                        where: { id: rating.orderId },
+                        select: {
+                            id: true,
+                            bookingId: true,
+                            totalAmount: true,
+                            service: {
+                                select: {
+                                    id: true,
+                                    title: true,
+                                    category: {
+                                        select: {
+                                            id: true,
+                                            titleEn: true,
+                                            titleAr: true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    return { ...rating, order };
+                }
+                return { ...rating, order: null };
+            })
+        );
+
+        return ratingsWithOrders;
+    }
+
     async activateProvider(id: number) {
         const provider = await this.prisma.provider.findUnique({ where: { id } });
         if (!provider) {
