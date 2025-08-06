@@ -20,14 +20,16 @@ export interface FileValidationOptions {
 
 @Injectable()
 export class FilesService {
-  private readonly uploadBaseUrl: string;
+
   private readonly uploadDir: string;
   private readonly maxFileSize: number;
   private readonly allowedMimeTypes: string[];
   private readonly allowedExtensions: string[];
 
   constructor(private readonly configService: ConfigService) {
-    this.uploadBaseUrl = '/uploads/';
+    // Get the backend URL from config or use default
+    const backendUrl = this.configService.get('BACKEND_URL', 'http://localhost:3001');
+
     this.uploadDir = join(process.cwd(), 'uploads');
     this.maxFileSize = this.configService.get('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB default
     this.allowedMimeTypes = this.configService.get('ALLOWED_MIME_TYPES', 'image/jpeg,image/png,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document').split(',');
@@ -45,19 +47,32 @@ export class FilesService {
 
     // Create subdirectories for documents and images
     const documentsDir = join(this.uploadDir, 'documents');
+    const documentsLegalDir = join(documentsDir, 'legal');
     const imagesDir = join(this.uploadDir, 'images');
+    const imagesBannersDir = join(imagesDir, 'banners');
 
     if (!existsSync(documentsDir)) {
       mkdirSync(documentsDir, { recursive: true });
     }
 
+    if (!existsSync(documentsLegalDir)) {
+      mkdirSync(documentsLegalDir, { recursive: true });
+    }
+
     if (!existsSync(imagesDir)) {
       mkdirSync(imagesDir, { recursive: true });
     }
+
+    if (!existsSync(imagesBannersDir)) {
+      mkdirSync(imagesBannersDir, { recursive: true });
+    }
   }
 
-  getPublicUrl(filename: string): string {
-    return this.uploadBaseUrl + filename;
+  getPublicUrl(filename: string, subdirectory?: string): string {
+    if (subdirectory) {
+      return '/uploads/' + subdirectory + '/' + filename;
+    }
+    return '/uploads/' + filename;
   }
 
   // Enhanced single file upload with validation

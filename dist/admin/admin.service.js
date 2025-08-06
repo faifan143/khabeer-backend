@@ -898,6 +898,256 @@ let AdminService = class AdminService {
         });
         return { message: 'Order rejected successfully', order };
     }
+    async getSystemSettings(category) {
+        try {
+            const where = category ? { category } : {};
+            const settings = await this.prisma.systemSettings.findMany({
+                where,
+                orderBy: { category: 'asc' }
+            });
+            const groupedSettings = settings.reduce((acc, setting) => {
+                if (!acc[setting.category]) {
+                    acc[setting.category] = [];
+                }
+                acc[setting.category].push(setting);
+                return acc;
+            }, {});
+            return groupedSettings;
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async updateSystemSetting(key, value, description, category = 'general') {
+        try {
+            const setting = await this.prisma.systemSettings.upsert({
+                where: { key },
+                update: {
+                    value,
+                    description,
+                    category,
+                    updatedAt: new Date()
+                },
+                create: {
+                    key,
+                    value,
+                    description,
+                    category
+                }
+            });
+            return setting;
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async getSubAdmins() {
+        try {
+            const subAdmins = await this.prisma.subAdmin.findMany({
+                orderBy: { createdAt: 'desc' }
+            });
+            return subAdmins.map(admin => ({
+                ...admin,
+                permissions: JSON.parse(admin.permissions)
+            }));
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async createSubAdmin(name, email, password, permissions) {
+        try {
+            const existingAdmin = await this.prisma.subAdmin.findUnique({
+                where: { email }
+            });
+            if (existingAdmin) {
+                throw new common_1.BadRequestException('Email already exists');
+            }
+            const hashedPassword = password;
+            const subAdmin = await this.prisma.subAdmin.create({
+                data: {
+                    name,
+                    email,
+                    password: hashedPassword,
+                    permissions: JSON.stringify(permissions)
+                }
+            });
+            return {
+                ...subAdmin,
+                permissions: JSON.parse(subAdmin.permissions)
+            };
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async deleteSubAdmin(id) {
+        try {
+            const subAdmin = await this.prisma.subAdmin.findUnique({
+                where: { id }
+            });
+            if (!subAdmin) {
+                throw new common_1.NotFoundException('Sub-admin not found');
+            }
+            await this.prisma.subAdmin.delete({
+                where: { id }
+            });
+            return { message: 'Sub-admin deleted successfully' };
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async getAdBanners() {
+        try {
+            const banners = await this.prisma.adBanner.findMany({
+                orderBy: { createdAt: 'desc' }
+            });
+            return banners;
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async createAdBanner(data) {
+        try {
+            const createData = { ...data };
+            if (typeof createData.isActive === 'string') {
+                createData.isActive = createData.isActive === 'true';
+            }
+            if (createData.providerId && typeof createData.providerId === 'string') {
+                createData.providerId = parseInt(createData.providerId, 10);
+            }
+            const banner = await this.prisma.adBanner.create({
+                data: createData
+            });
+            return banner;
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async updateAdBanner(id, data) {
+        try {
+            const banner = await this.prisma.adBanner.findUnique({
+                where: { id }
+            });
+            if (!banner) {
+                throw new common_1.NotFoundException('Ad banner not found');
+            }
+            const updateData = { ...data };
+            if (typeof updateData.isActive === 'string') {
+                updateData.isActive = updateData.isActive === 'true';
+            }
+            if (updateData.providerId && typeof updateData.providerId === 'string') {
+                updateData.providerId = parseInt(updateData.providerId, 10);
+            }
+            const updatedBanner = await this.prisma.adBanner.update({
+                where: { id },
+                data: {
+                    ...updateData,
+                    updatedAt: new Date()
+                }
+            });
+            return updatedBanner;
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async deleteAdBanner(id) {
+        try {
+            const banner = await this.prisma.adBanner.findUnique({
+                where: { id }
+            });
+            if (!banner) {
+                throw new common_1.NotFoundException('Ad banner not found');
+            }
+            await this.prisma.adBanner.delete({
+                where: { id }
+            });
+            return { message: 'Ad banner deleted successfully' };
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async getAllNotifications() {
+        try {
+            const notifications = await this.prisma.notification.findMany({
+                orderBy: { createdAt: 'desc' }
+            });
+            return notifications.map(notification => ({
+                ...notification,
+                targetAudience: JSON.parse(notification.targetAudience)
+            }));
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async createNotification(data) {
+        try {
+            const notification = await this.prisma.notification.create({
+                data: {
+                    title: data.title,
+                    message: data.message,
+                    imageUrl: data.imageUrl || null,
+                    targetAudience: JSON.stringify(data.targetAudience),
+                    status: 'draft'
+                }
+            });
+            return {
+                ...notification,
+                targetAudience: JSON.parse(notification.targetAudience)
+            };
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async sendNotification(id) {
+        try {
+            const notification = await this.prisma.notification.findUnique({
+                where: { id }
+            });
+            if (!notification) {
+                throw new common_1.NotFoundException('Notification not found');
+            }
+            const updatedNotification = await this.prisma.notification.update({
+                where: { id },
+                data: {
+                    status: 'sent',
+                    sentAt: new Date(),
+                    recipientsCount: 1000
+                }
+            });
+            return {
+                ...updatedNotification,
+                targetAudience: JSON.parse(updatedNotification.targetAudience)
+            };
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async deleteNotification(id) {
+        try {
+            const notification = await this.prisma.notification.findUnique({
+                where: { id }
+            });
+            if (!notification) {
+                throw new common_1.NotFoundException('Notification not found');
+            }
+            await this.prisma.notification.delete({
+                where: { id }
+            });
+            return { message: 'Notification deleted successfully' };
+        }
+        catch (error) {
+            throw error;
+        }
+    }
 };
 exports.AdminService = AdminService;
 exports.AdminService = AdminService = __decorate([

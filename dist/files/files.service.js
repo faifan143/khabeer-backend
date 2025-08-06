@@ -16,14 +16,13 @@ const path_1 = require("path");
 const fs_1 = require("fs");
 let FilesService = class FilesService {
     configService;
-    uploadBaseUrl;
     uploadDir;
     maxFileSize;
     allowedMimeTypes;
     allowedExtensions;
     constructor(configService) {
         this.configService = configService;
-        this.uploadBaseUrl = '/uploads/';
+        const backendUrl = this.configService.get('BACKEND_URL', 'http://localhost:3001');
         this.uploadDir = (0, path_1.join)(process.cwd(), 'uploads');
         this.maxFileSize = this.configService.get('MAX_FILE_SIZE', 5 * 1024 * 1024);
         this.allowedMimeTypes = this.configService.get('ALLOWED_MIME_TYPES', 'image/jpeg,image/png,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document').split(',');
@@ -35,16 +34,27 @@ let FilesService = class FilesService {
             (0, fs_1.mkdirSync)(this.uploadDir, { recursive: true });
         }
         const documentsDir = (0, path_1.join)(this.uploadDir, 'documents');
+        const documentsLegalDir = (0, path_1.join)(documentsDir, 'legal');
         const imagesDir = (0, path_1.join)(this.uploadDir, 'images');
+        const imagesBannersDir = (0, path_1.join)(imagesDir, 'banners');
         if (!(0, fs_1.existsSync)(documentsDir)) {
             (0, fs_1.mkdirSync)(documentsDir, { recursive: true });
+        }
+        if (!(0, fs_1.existsSync)(documentsLegalDir)) {
+            (0, fs_1.mkdirSync)(documentsLegalDir, { recursive: true });
         }
         if (!(0, fs_1.existsSync)(imagesDir)) {
             (0, fs_1.mkdirSync)(imagesDir, { recursive: true });
         }
+        if (!(0, fs_1.existsSync)(imagesBannersDir)) {
+            (0, fs_1.mkdirSync)(imagesBannersDir, { recursive: true });
+        }
     }
-    getPublicUrl(filename) {
-        return this.uploadBaseUrl + filename;
+    getPublicUrl(filename, subdirectory) {
+        if (subdirectory) {
+            return '/uploads/' + subdirectory + '/' + filename;
+        }
+        return '/uploads/' + filename;
     }
     async handleUploadedFile(file, options) {
         if (!file) {

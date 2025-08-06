@@ -309,17 +309,17 @@ export class ProvidersService {
         };
       }
 
-      // Convert document URLs to document objects with full URLs
+      // Convert document URLs to document objects with relative URLs
       const documents = verification.documents.map((url, index) => {
-        // Ensure we have a full URL
-        const fullUrl = url.startsWith('http') 
-          ? url 
-          : `http://localhost:3001${url}`;
-        
+        // Ensure we have a relative URL (remove any base URL if present)
+        const relativeUrl = url.startsWith('http')
+          ? url.replace(/^https?:\/\/[^\/]+/, '')
+          : url;
+
         return {
           id: `doc-${index}`,
           name: url.split('/').pop() || `Document ${index + 1}`,
-          url: fullUrl,
+          url: relativeUrl,
           type: this.getFileTypeFromUrl(url),
           size: 0, // We don't store file size in the database
           uploadedAt: verification.createdAt.toISOString(),

@@ -82,7 +82,7 @@ export declare class ProvidersController {
         createdAt: Date;
         updatedAt: Date;
     }>;
-    update(id: string, data: UpdateProviderDto): Promise<{
+    update(id: string, data: UpdateProviderDto, file: Express.Multer.File): Promise<{
         providerServices: {
             serviceId: number;
             id: number;

@@ -240,3 +240,51 @@ model SmsLog {
   @@index([status])
   @@index([sentAt])
 }
+
+// Settings Models
+model SystemSettings {
+  id                Int      @id @default(autoincrement())
+  key               String   @unique
+  value             String
+  description       String?
+  category          String   @default("general") // legal, social, support, ads
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model SubAdmin {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String   @unique
+  password    String
+  permissions Json     // Array of permission strings
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AdBanner {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String
+  imageUrl     String?
+  linkType     String   @default("external") // external, provider
+  externalLink String?
+  providerId   Int?
+  isActive     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Notification {
+  id              Int      @id @default(autoincrement())
+  title           String
+  message         String
+  imageUrl        String?
+  targetAudience  Json     // Array of strings: ["customers", "providers"]
+  status          String   @default("draft") // draft, sent
+  recipientsCount Int      @default(0)
+  sentAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

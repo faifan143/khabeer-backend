@@ -1009,4 +1009,321 @@ export class AdminService {
 
         return { message: 'Order rejected successfully', order };
     }
+
+    // Settings Methods
+    async getSystemSettings(category?: string) {
+        try {
+            const where = category ? { category } : {};
+            const settings = await this.prisma.systemSettings.findMany({
+                where,
+                orderBy: { category: 'asc' }
+            });
+
+            // Group settings by category
+            const groupedSettings = settings.reduce((acc, setting) => {
+                if (!acc[setting.category]) {
+                    acc[setting.category] = [];
+                }
+                acc[setting.category].push(setting);
+                return acc;
+            }, {});
+
+            return groupedSettings;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateSystemSetting(key: string, value: string, description?: string, category: string = 'general') {
+        try {
+            const setting = await this.prisma.systemSettings.upsert({
+                where: { key },
+                update: {
+                    value,
+                    description,
+                    category,
+                    updatedAt: new Date()
+                },
+                create: {
+                    key,
+                    value,
+                    description,
+                    category
+                }
+            });
+
+            return setting;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getSubAdmins() {
+        try {
+            const subAdmins = await this.prisma.subAdmin.findMany({
+                orderBy: { createdAt: 'desc' }
+            });
+
+            return subAdmins.map(admin => ({
+                ...admin,
+                permissions: JSON.parse(admin.permissions as string)
+            }));
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async createSubAdmin(name: string, email: string, password: string, permissions: string[]) {
+        try {
+            // Check if email already exists
+            const existingAdmin = await this.prisma.subAdmin.findUnique({
+                where: { email }
+            });
+
+            if (existingAdmin) {
+                throw new BadRequestException('Email already exists');
+            }
+
+            // Hash password (you should use bcrypt in production)
+            const hashedPassword = password; // Replace with bcrypt.hash(password, 10)
+
+            const subAdmin = await this.prisma.subAdmin.create({
+                data: {
+                    name,
+                    email,
+                    password: hashedPassword,
+                    permissions: JSON.stringify(permissions)
+                }
+            });
+
+            return {
+                ...subAdmin,
+                permissions: JSON.parse(subAdmin.permissions as string)
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteSubAdmin(id: number) {
+        try {
+            const subAdmin = await this.prisma.subAdmin.findUnique({
+                where: { id }
+            });
+
+            if (!subAdmin) {
+                throw new NotFoundException('Sub-admin not found');
+            }
+
+            await this.prisma.subAdmin.delete({
+                where: { id }
+            });
+
+            return { message: 'Sub-admin deleted successfully' };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getAdBanners() {
+        try {
+            const banners = await this.prisma.adBanner.findMany({
+                orderBy: { createdAt: 'desc' }
+            });
+
+            return banners;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async createAdBanner(data: {
+        title: string;
+        description: string;
+        imageUrl?: string;
+        linkType: string;
+        externalLink?: string;
+        providerId?: number;
+        isActive: boolean | string;
+    }) {
+        try {
+            // Convert string values to proper types
+            const createData: any = { ...data };
+            
+            // Convert isActive from string to boolean
+            if (typeof createData.isActive === 'string') {
+                createData.isActive = createData.isActive === 'true';
+            }
+            
+            // Convert providerId from string to number if present
+            if (createData.providerId && typeof createData.providerId === 'string') {
+                createData.providerId = parseInt(createData.providerId, 10);
+            }
+
+            const banner = await this.prisma.adBanner.create({
+                data: createData
+            });
+
+            return banner;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateAdBanner(id: number, data: {
+        title?: string;
+        description?: string;
+        imageUrl?: string;
+        linkType?: string;
+        externalLink?: string;
+        providerId?: number;
+        isActive?: boolean | string;
+    }) {
+        try {
+            const banner = await this.prisma.adBanner.findUnique({
+                where: { id }
+            });
+
+            if (!banner) {
+                throw new NotFoundException('Ad banner not found');
+            }
+
+            // Convert string values to proper types
+            const updateData: any = { ...data };
+            
+            // Convert isActive from string to boolean
+            if (typeof updateData.isActive === 'string') {
+                updateData.isActive = updateData.isActive === 'true';
+            }
+            
+            // Convert providerId from string to number if present
+            if (updateData.providerId && typeof updateData.providerId === 'string') {
+                updateData.providerId = parseInt(updateData.providerId, 10);
+            }
+
+            const updatedBanner = await this.prisma.adBanner.update({
+                where: { id },
+                data: {
+                    ...updateData,
+                    updatedAt: new Date()
+                }
+            });
+
+            return updatedBanner;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteAdBanner(id: number) {
+        try {
+            const banner = await this.prisma.adBanner.findUnique({
+                where: { id }
+            });
+
+            if (!banner) {
+                throw new NotFoundException('Ad banner not found');
+            }
+
+            await this.prisma.adBanner.delete({
+                where: { id }
+            });
+
+            return { message: 'Ad banner deleted successfully' };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    // Notification Methods
+    async getAllNotifications() {
+        try {
+            const notifications = await this.prisma.notification.findMany({
+                orderBy: { createdAt: 'desc' }
+            });
+
+            return notifications.map(notification => ({
+                ...notification,
+                targetAudience: JSON.parse(notification.targetAudience as string)
+            }));
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async createNotification(data: {
+        title: string;
+        message: string;
+        imageUrl?: string;
+        targetAudience: string[];
+    }) {
+        try {
+            const notification = await this.prisma.notification.create({
+                data: {
+                    title: data.title,
+                    message: data.message,
+                    imageUrl: data.imageUrl || null,
+                    targetAudience: JSON.stringify(data.targetAudience),
+                    status: 'draft'
+                }
+            });
+
+            return {
+                ...notification,
+                targetAudience: JSON.parse(notification.targetAudience as string)
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async sendNotification(id: number) {
+        try {
+            const notification = await this.prisma.notification.findUnique({
+                where: { id }
+            });
+
+            if (!notification) {
+                throw new NotFoundException('Notification not found');
+            }
+
+            // Here you would implement the actual sending logic
+            // For now, we'll just update the status
+            const updatedNotification = await this.prisma.notification.update({
+                where: { id },
+                data: {
+                    status: 'sent',
+                    sentAt: new Date(),
+                    recipientsCount: 1000 // Mock count - replace with actual logic
+                }
+            });
+
+            return {
+                ...updatedNotification,
+                targetAudience: JSON.parse(updatedNotification.targetAudience as string)
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteNotification(id: number) {
+        try {
+            const notification = await this.prisma.notification.findUnique({
+                where: { id }
+            });
+
+            if (!notification) {
+                throw new NotFoundException('Notification not found');
+            }
+
+            await this.prisma.notification.delete({
+                where: { id }
+            });
+
+            return { message: 'Notification deleted successfully' };
+        } catch (error) {
+            throw error;
+        }
+    }
 } 

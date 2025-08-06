@@ -13,14 +13,13 @@ export interface FileValidationOptions {
 }
 export declare class FilesService {
     private readonly configService;
-    private readonly uploadBaseUrl;
     private readonly uploadDir;
     private readonly maxFileSize;
     private readonly allowedMimeTypes;
     private readonly allowedExtensions;
     constructor(configService: ConfigService);
     private ensureUploadDirectory;
-    getPublicUrl(filename: string): string;
+    getPublicUrl(filename: string, subdirectory?: string): string;
     handleUploadedFile(file: Express.Multer.File, options?: FileValidationOptions): Promise<FileUploadResult>;
     handleMultipleFiles(files: Express.Multer.File[], options?: FileValidationOptions): Promise<FileUploadResult[]>;
     private validateFile;

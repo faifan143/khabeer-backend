@@ -38,7 +38,12 @@ let UsersController = class UsersController {
     async create(createUserDto, file) {
         const data = { ...createUserDto };
         if (file) {
-            const fileResult = await this.filesService.handleUploadedFile(file);
+            const options = {
+                maxSize: 5 * 1024 * 1024,
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+                allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+            };
+            const fileResult = await this.filesService.handleUploadedFile(file, options);
             data.image = fileResult.url;
         }
         else {
@@ -46,11 +51,21 @@ let UsersController = class UsersController {
         }
         return this.usersService.create(data);
     }
-    async update(id, data, req) {
+    async update(id, data, req, file) {
         if (req.user.userId !== Number(id) && req.user.role !== 'ADMIN') {
             return { error: 'Unauthorized' };
         }
-        return this.usersService.update(Number(id), data);
+        const updateData = { ...data };
+        if (file) {
+            const options = {
+                maxSize: 5 * 1024 * 1024,
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+                allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+            };
+            const fileResult = await this.filesService.handleUploadedFile(file, options);
+            updateData.image = fileResult.url;
+        }
+        return this.usersService.update(Number(id), updateData);
     }
     async remove(id, req) {
         if (req.user.userId !== Number(id) && req.user.role !== 'ADMIN') {
@@ -77,11 +92,11 @@ __decorate([
     (0, common_1.Post)(),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
         storage: (0, multer_1.diskStorage)({
-            destination: './uploads',
+            destination: './uploads/images/users',
             filename: (req, file, cb) => {
                 const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
                 const ext = (0, path_1.extname)(file.originalname);
-                cb(null, `${uniqueSuffix}${ext}`);
+                cb(null, `user-${uniqueSuffix}${ext}`);
             },
         }),
     })),
@@ -94,11 +109,22 @@ __decorate([
 __decorate([
     (0, common_1.Put)(':id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads/images/users',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `user-${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
+    __param(3, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_user_dto_1.UpdateUserDto, Object]),
+    __metadata("design:paramtypes", [String, update_user_dto_1.UpdateUserDto, Object, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "update", null);
 __decorate([

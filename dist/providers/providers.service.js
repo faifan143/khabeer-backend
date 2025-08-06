@@ -308,13 +308,13 @@ let ProvidersService = class ProvidersService {
                 };
             }
             const documents = verification.documents.map((url, index) => {
-                const fullUrl = url.startsWith('http')
-                    ? url
-                    : `http://localhost:3001${url}`;
+                const relativeUrl = url.startsWith('http')
+                    ? url.replace(/^https?:\/\/[^\/]+/, '')
+                    : url;
                 return {
                     id: `doc-${index}`,
                     name: url.split('/').pop() || `Document ${index + 1}`,
-                    url: fullUrl,
+                    url: relativeUrl,
                     type: this.getFileTypeFromUrl(url),
                     size: 0,
                     uploadedAt: verification.createdAt.toISOString(),

@@ -28,11 +28,11 @@ export class UsersController {
   @Post()
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
-      destination: './uploads',
+      destination: './uploads/images/users',
       filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         const ext = extname(file.originalname);
-        cb(null, `${uniqueSuffix}${ext}`);
+        cb(null, `user-${uniqueSuffix}${ext}`);
       },
     }),
   }))
@@ -42,7 +42,12 @@ export class UsersController {
   ) {
     const data = { ...createUserDto };
     if (file) {
-      const fileResult = await this.filesService.handleUploadedFile(file);
+      const options = {
+        maxSize: 5 * 1024 * 1024, // 5MB for images
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+      };
+      const fileResult = await this.filesService.handleUploadedFile(file, options);
       data.image = fileResult.url;
     } else {
       data.image = '';
@@ -52,11 +57,37 @@ export class UsersController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
-  async update(@Param('id') id: string, @Body() data: UpdateUserDto, @Request() req) {
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads/images/users',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `user-${uniqueSuffix}${ext}`);
+      },
+    }),
+  }))
+  async update(
+    @Param('id') id: string, 
+    @Body() data: UpdateUserDto, 
+    @Request() req,
+    @UploadedFile() file: Express.Multer.File
+  ) {
     if (req.user.userId !== Number(id) && req.user.role !== 'ADMIN') {
       return { error: 'Unauthorized' };
     }
-    return this.usersService.update(Number(id), data);
+    
+    const updateData = { ...data };
+    if (file) {
+      const options = {
+        maxSize: 5 * 1024 * 1024, // 5MB for images
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+      };
+      const fileResult = await this.filesService.handleUploadedFile(file, options);
+      updateData.image = fileResult.url;
+    }
+    return this.usersService.update(Number(id), updateData);
   }
 
   @Delete(':id')

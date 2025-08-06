@@ -43,13 +43,27 @@ export class ProvidersController {
 
 
   @Post('register')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads/images/providers',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `provider-${uniqueSuffix}${ext}`);
+      },
+    }),
+  }))
   async register(
     @Body() data: CreateProviderDto,
     @UploadedFile() file: Express.Multer.File
   ) {
     if (file) {
-      const fileResult = await this.filesService.handleUploadedFile(file);
+      const options = {
+        maxSize: 5 * 1024 * 1024, // 5MB for images
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+      };
+      const fileResult = await this.filesService.handleUploadedFile(file, options);
       data.image = fileResult.url;
     } else {
       data.image = '';
@@ -71,11 +85,11 @@ export class ProvidersController {
   @Post()
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
-      destination: './uploads',
+      destination: './uploads/images/providers',
       filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         const ext = extname(file.originalname);
-        cb(null, `${uniqueSuffix}${ext}`);
+        cb(null, `provider-${uniqueSuffix}${ext}`);
       },
     }),
   }))
@@ -85,7 +99,12 @@ export class ProvidersController {
   ) {
     const data = { ...createProviderDto };
     if (file) {
-      const fileResult = await this.filesService.handleUploadedFile(file);
+      const options = {
+        maxSize: 5 * 1024 * 1024, // 5MB for images
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+      };
+      const fileResult = await this.filesService.handleUploadedFile(file, options);
       data.image = fileResult.url;
     } else {
       data.image = '';
@@ -96,8 +115,32 @@ export class ProvidersController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  async update(@Param('id') id: string, @Body() data: UpdateProviderDto) {
-    return this.providersService.update(Number(id), data);
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads/images/providers',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `provider-${uniqueSuffix}${ext}`);
+      },
+    }),
+  }))
+  async update(
+    @Param('id') id: string, 
+    @Body() data: UpdateProviderDto,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const updateData = { ...data };
+    if (file) {
+      const options = {
+        maxSize: 5 * 1024 * 1024, // 5MB for images
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+      };
+      const fileResult = await this.filesService.handleUploadedFile(file, options);
+      updateData.image = fileResult.url;
+    }
+    return this.providersService.update(Number(id), updateData);
   }
 
   @Put(':id/status')

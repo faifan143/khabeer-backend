@@ -14,14 +14,20 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
+const multer_1 = require("multer");
+const path_1 = require("path");
 const admin_service_1 = require("./admin.service");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_guard_1 = require("../auth/roles.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
+const files_service_1 = require("../files/files.service");
 let AdminController = class AdminController {
     adminService;
-    constructor(adminService) {
+    filesService;
+    constructor(adminService, filesService) {
         this.adminService = adminService;
+        this.filesService = filesService;
     }
     async getDashboard() {
         return this.adminService.getDashboardStats();
@@ -137,6 +143,112 @@ let AdminController = class AdminController {
             throw new common_1.BadRequestException('Rejection reason is required');
         }
         return this.adminService.rejectOrder(id, body.reason);
+    }
+    async getSystemSettings(category) {
+        return this.adminService.getSystemSettings(category);
+    }
+    async updateSystemSetting(body) {
+        return this.adminService.updateSystemSetting(body.key, body.value, body.description, body.category);
+    }
+    async uploadLegalDocuments(files) {
+        const options = {
+            maxSize: 10 * 1024 * 1024,
+            allowedMimeTypes: [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'text/plain'
+            ],
+            allowedExtensions: ['.pdf', '.doc', '.docx', '.txt']
+        };
+        const results = await this.filesService.handleMultipleFiles(files, options);
+        const updatedResults = results.map(result => ({
+            ...result,
+            url: this.filesService.getPublicUrl(result.filename, 'documents/legal')
+        }));
+        return {
+            message: `Successfully uploaded ${results.length} legal documents`,
+            documents: updatedResults
+        };
+    }
+    async uploadBannerImage(file) {
+        const options = {
+            maxSize: 5 * 1024 * 1024,
+            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+            allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+        };
+        const result = await this.filesService.handleUploadedFile(file, options);
+        result.url = this.filesService.getPublicUrl(file.filename, 'images/banners');
+        return {
+            message: 'Banner image uploaded successfully',
+            image: result
+        };
+    }
+    async getSubAdmins() {
+        return this.adminService.getSubAdmins();
+    }
+    async createSubAdmin(body) {
+        return this.adminService.createSubAdmin(body.name, body.email, body.password, body.permissions);
+    }
+    async deleteSubAdmin(id) {
+        return this.adminService.deleteSubAdmin(id);
+    }
+    async getAdBanners() {
+        return this.adminService.getAdBanners();
+    }
+    async createAdBanner(body, file) {
+        const data = { ...body };
+        if (file) {
+            const options = {
+                maxSize: 5 * 1024 * 1024,
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+                allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+            };
+            const fileResult = await this.filesService.handleUploadedFile(file, options);
+            fileResult.url = this.filesService.getPublicUrl(file.filename, 'images/banners');
+            data.imageUrl = fileResult.url;
+        }
+        return this.adminService.createAdBanner(data);
+    }
+    async updateAdBanner(id, body, file) {
+        const data = { ...body };
+        if (file) {
+            const options = {
+                maxSize: 5 * 1024 * 1024,
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+                allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+            };
+            const fileResult = await this.filesService.handleUploadedFile(file, options);
+            fileResult.url = this.filesService.getPublicUrl(file.filename, 'images/banners');
+            data.imageUrl = fileResult.url;
+        }
+        return this.adminService.updateAdBanner(id, data);
+    }
+    async deleteAdBanner(id) {
+        return this.adminService.deleteAdBanner(id);
+    }
+    async getAllNotifications() {
+        return this.adminService.getAllNotifications();
+    }
+    async createNotification(body, file) {
+        const data = { ...body };
+        if (file) {
+            const options = {
+                maxSize: 5 * 1024 * 1024,
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+                allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+            };
+            const fileResult = await this.filesService.handleUploadedFile(file, options);
+            fileResult.url = this.filesService.getPublicUrl(file.filename, 'images/notifications');
+            data.imageUrl = fileResult.url;
+        }
+        return this.adminService.createNotification(data);
+    }
+    async sendNotification(id) {
+        return this.adminService.sendNotification(id);
+    }
+    async deleteNotification(id) {
+        return this.adminService.deleteNotification(id);
     }
 };
 exports.AdminController = AdminController;
@@ -368,10 +480,167 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "rejectOrder", null);
+__decorate([
+    (0, common_1.Get)('settings'),
+    __param(0, (0, common_1.Query)('category')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getSystemSettings", null);
+__decorate([
+    (0, common_1.Post)('settings'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "updateSystemSetting", null);
+__decorate([
+    (0, common_1.Post)('settings/upload-legal-documents'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('documents', 4, {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads/documents/legal',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `legal-${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
+    __param(0, (0, common_1.UploadedFiles)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Array]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "uploadLegalDocuments", null);
+__decorate([
+    (0, common_1.Post)('settings/upload-banner-image'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads/images/banners',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `banner-${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
+    __param(0, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "uploadBannerImage", null);
+__decorate([
+    (0, common_1.Get)('subadmins'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getSubAdmins", null);
+__decorate([
+    (0, common_1.Post)('subadmins'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "createSubAdmin", null);
+__decorate([
+    (0, common_1.Delete)('subadmins/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "deleteSubAdmin", null);
+__decorate([
+    (0, common_1.Get)('ad-banners'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAdBanners", null);
+__decorate([
+    (0, common_1.Post)('ad-banners'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads/images/banners',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `banner-${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "createAdBanner", null);
+__decorate([
+    (0, common_1.Put)('ad-banners/:id'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads/images/banners',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `banner-${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "updateAdBanner", null);
+__decorate([
+    (0, common_1.Delete)('ad-banners/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "deleteAdBanner", null);
+__decorate([
+    (0, common_1.Get)('notifications'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAllNotifications", null);
+__decorate([
+    (0, common_1.Post)('notifications'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads/images/notifications',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `notification-${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "createNotification", null);
+__decorate([
+    (0, common_1.Put)('notifications/:id/send'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "sendNotification", null);
+__decorate([
+    (0, common_1.Delete)('notifications/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "deleteNotification", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('ADMIN'),
-    __metadata("design:paramtypes", [admin_service_1.AdminService])
+    __metadata("design:paramtypes", [admin_service_1.AdminService,
+        files_service_1.FilesService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

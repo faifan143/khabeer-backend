@@ -51,7 +51,7 @@ export declare class UsersController {
         address: string;
         role: string;
     }>;
-    update(id: string, data: UpdateUserDto, req: any): Promise<{
+    update(id: string, data: UpdateUserDto, req: any, file: Express.Multer.File): Promise<{
         id: number;
         name: string;
         email: string;

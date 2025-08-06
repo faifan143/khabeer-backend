@@ -10,18 +10,28 @@ import {
     UseGuards,
     Request,
     ParseIntPipe,
-    BadRequestException
+    BadRequestException,
+    UseInterceptors,
+    UploadedFile,
+    UploadedFiles
 } from '@nestjs/common';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { FilesService } from '../files/files.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
 export class AdminController {
-    constructor(private readonly adminService: AdminService) { }
+    constructor(
+        private readonly adminService: AdminService,
+        private readonly filesService: FilesService
+    ) { }
 
     @Get('dashboard')
     async getDashboard() {
@@ -201,6 +211,231 @@ export class AdminController {
             throw new BadRequestException('Rejection reason is required');
         }
         return this.adminService.rejectOrder(id, body.reason);
+    }
+
+    // Settings Endpoints
+    @Get('settings')
+    async getSystemSettings(@Query('category') category?: string) {
+        return this.adminService.getSystemSettings(category);
+    }
+
+    @Post('settings')
+    async updateSystemSetting(@Body() body: { key: string; value: string; description?: string; category?: string }) {
+        return this.adminService.updateSystemSetting(body.key, body.value, body.description, body.category);
+    }
+
+    @Post('settings/upload-legal-documents')
+    @UseInterceptors(FilesInterceptor('documents', 4, {
+        storage: diskStorage({
+            destination: './uploads/documents/legal',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = extname(file.originalname);
+                cb(null, `legal-${uniqueSuffix}${ext}`);
+            },
+        }),
+    }))
+    async uploadLegalDocuments(@UploadedFiles() files: Express.Multer.File[]) {
+        const options = {
+            maxSize: 10 * 1024 * 1024, // 10MB for documents
+            allowedMimeTypes: [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'text/plain'
+            ],
+            allowedExtensions: ['.pdf', '.doc', '.docx', '.txt']
+        };
+
+        const results = await this.filesService.handleMultipleFiles(files, options);
+        
+        // Update URLs to include the correct subdirectory
+        const updatedResults = results.map(result => ({
+            ...result,
+            url: this.filesService.getPublicUrl(result.filename, 'documents/legal')
+        }));
+
+        return {
+            message: `Successfully uploaded ${results.length} legal documents`,
+            documents: updatedResults
+        };
+    }
+
+    @Post('settings/upload-banner-image')
+    @UseInterceptors(FileInterceptor('image', {
+        storage: diskStorage({
+            destination: './uploads/images/banners',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = extname(file.originalname);
+                cb(null, `banner-${uniqueSuffix}${ext}`);
+            },
+        }),
+    }))
+    async uploadBannerImage(@UploadedFile() file: Express.Multer.File) {
+        const options = {
+            maxSize: 5 * 1024 * 1024, // 5MB for images
+            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+            allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+        };
+
+        const result = await this.filesService.handleUploadedFile(file, options);
+        // Override the URL to include the correct subdirectory
+        result.url = this.filesService.getPublicUrl(file.filename, 'images/banners');
+        return {
+            message: 'Banner image uploaded successfully',
+            image: result
+        };
+    }
+
+    @Get('subadmins')
+    async getSubAdmins() {
+        return this.adminService.getSubAdmins();
+    }
+
+    @Post('subadmins')
+    async createSubAdmin(@Body() body: { name: string; email: string; password: string; permissions: string[] }) {
+        return this.adminService.createSubAdmin(body.name, body.email, body.password, body.permissions);
+    }
+
+    @Delete('subadmins/:id')
+    async deleteSubAdmin(@Param('id', ParseIntPipe) id: number) {
+        return this.adminService.deleteSubAdmin(id);
+    }
+
+    @Get('ad-banners')
+    async getAdBanners() {
+        return this.adminService.getAdBanners();
+    }
+
+    @Post('ad-banners')
+    @UseInterceptors(FileInterceptor('image', {
+        storage: diskStorage({
+            destination: './uploads/images/banners',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = extname(file.originalname);
+                cb(null, `banner-${uniqueSuffix}${ext}`);
+            },
+        }),
+    }))
+    async createAdBanner(
+        @Body() body: {
+            title: string;
+            description: string;
+            linkType: string;
+            externalLink?: string;
+            providerId?: number;
+            isActive: boolean;
+        },
+        @UploadedFile() file: Express.Multer.File
+    ) {
+        const data: any = { ...body };
+        if (file) {
+            const options = {
+                maxSize: 5 * 1024 * 1024, // 5MB for images
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+                allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+            };
+            const fileResult = await this.filesService.handleUploadedFile(file, options);
+            // Override the URL to include the correct subdirectory
+            fileResult.url = this.filesService.getPublicUrl(file.filename, 'images/banners');
+            data.imageUrl = fileResult.url;
+        }
+        return this.adminService.createAdBanner(data);
+    }
+
+    @Put('ad-banners/:id')
+    @UseInterceptors(FileInterceptor('image', {
+        storage: diskStorage({
+            destination: './uploads/images/banners',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = extname(file.originalname);
+                cb(null, `banner-${uniqueSuffix}${ext}`);
+            },
+        }),
+    }))
+    async updateAdBanner(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: {
+            title?: string;
+            description?: string;
+            linkType?: string;
+            externalLink?: string;
+            providerId?: number;
+            isActive?: boolean;
+        },
+        @UploadedFile() file: Express.Multer.File
+    ) {
+        const data: any = { ...body };
+        if (file) {
+            const options = {
+                maxSize: 5 * 1024 * 1024, // 5MB for images
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+                allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+            };
+            const fileResult = await this.filesService.handleUploadedFile(file, options);
+            // Override the URL to include the correct subdirectory
+            fileResult.url = this.filesService.getPublicUrl(file.filename, 'images/banners');
+            data.imageUrl = fileResult.url;
+        }
+        return this.adminService.updateAdBanner(id, data);
+    }
+
+    @Delete('ad-banners/:id')
+    async deleteAdBanner(@Param('id', ParseIntPipe) id: number) {
+        return this.adminService.deleteAdBanner(id);
+    }
+
+    // Notification Endpoints
+    @Get('notifications')
+    async getAllNotifications() {
+        return this.adminService.getAllNotifications();
+    }
+
+    @Post('notifications')
+    @UseInterceptors(FileInterceptor('image', {
+        storage: diskStorage({
+            destination: './uploads/images/notifications',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = extname(file.originalname);
+                cb(null, `notification-${uniqueSuffix}${ext}`);
+            },
+        }),
+    }))
+    async createNotification(
+        @Body() body: {
+            title: string;
+            message: string;
+            targetAudience: string[];
+        },
+        @UploadedFile() file: Express.Multer.File
+    ) {
+        const data: any = { ...body };
+        if (file) {
+            const options = {
+                maxSize: 5 * 1024 * 1024, // 5MB for images
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
+                allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+            };
+            const fileResult = await this.filesService.handleUploadedFile(file, options);
+            // Override the URL to include the correct subdirectory
+            fileResult.url = this.filesService.getPublicUrl(file.filename, 'images/notifications');
+            data.imageUrl = fileResult.url;
+        }
+        return this.adminService.createNotification(data);
+    }
+
+    @Put('notifications/:id/send')
+    async sendNotification(@Param('id', ParseIntPipe) id: number) {
+        return this.adminService.sendNotification(id);
+    }
+
+    @Delete('notifications/:id')
+    async deleteNotification(@Param('id', ParseIntPipe) id: number) {
+        return this.adminService.deleteNotification(id);
     }
 
 } 
