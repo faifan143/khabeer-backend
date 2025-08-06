@@ -35,6 +35,7 @@ export declare class OrdersController {
             isVerified: boolean;
             location: import("generated/prisma/runtime/library").JsonValue | null;
             officialDocuments: string | null;
+            fcmToken: string | null;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -48,6 +49,7 @@ export declare class OrdersController {
             phone: string;
             isActive: boolean;
             officialDocuments: string | null;
+            fcmToken: string | null;
             createdAt: Date;
             updatedAt: Date;
             address: string;

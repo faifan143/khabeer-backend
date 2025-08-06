@@ -228,6 +228,7 @@ export declare class AdminService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
+        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     })[]>;
@@ -273,6 +274,7 @@ export declare class AdminService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
+        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     })[]>;
@@ -730,11 +732,15 @@ export declare class AdminService {
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        data: import("generated/prisma/runtime/library").JsonValue | null;
         message: string;
         status: string;
         sentAt: Date | null;
         imageUrl: string | null;
+        notificationType: string;
         recipientsCount: number;
+        successCount: number;
+        failureCount: number;
     }[]>;
     createNotification(data: {
         title: string;
@@ -747,11 +753,15 @@ export declare class AdminService {
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        data: import("generated/prisma/runtime/library").JsonValue | null;
         message: string;
         status: string;
         sentAt: Date | null;
         imageUrl: string | null;
+        notificationType: string;
         recipientsCount: number;
+        successCount: number;
+        failureCount: number;
     }>;
     sendNotification(id: number): Promise<{
         targetAudience: any;
@@ -759,11 +769,15 @@ export declare class AdminService {
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        data: import("generated/prisma/runtime/library").JsonValue | null;
         message: string;
         status: string;
         sentAt: Date | null;
         imageUrl: string | null;
+        notificationType: string;
         recipientsCount: number;
+        successCount: number;
+        failureCount: number;
     }>;
     deleteNotification(id: number): Promise<{
         message: string;

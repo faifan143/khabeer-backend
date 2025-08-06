@@ -30,6 +30,7 @@ const search_module_1 = require("./search/search.module");
 const admin_module_1 = require("./admin/admin.module");
 const location_tracking_module_1 = require("./location-tracking/location-tracking.module");
 const sms_module_1 = require("./sms/sms.module");
+const notifications_module_1 = require("./notifications/notifications.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -59,6 +60,7 @@ exports.AppModule = AppModule = __decorate([
             admin_module_1.AdminModule,
             location_tracking_module_1.LocationTrackingModule,
             sms_module_1.SmsModule,
+            notifications_module_1.NotificationsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
