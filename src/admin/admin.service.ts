@@ -418,18 +418,34 @@ export class AdminService {
 
     async getAllProviders() {
         return this.prisma.provider.findMany({
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                description: true,
-                image: true,
-                state: true,
-                isActive: true,
-                isVerified: true,
-                createdAt: true,
-                updatedAt: true,
+            where: { isVerified: true },
+            include: {
+                providerServices: {
+                    include: {
+                        service: {
+                            include: {
+                                category: true
+                            }
+                        }
+                    }
+                },
+                orders: {
+                    where: { status: 'completed' },
+                    select: {
+                        id: true,
+                        totalAmount: true,
+                        providerAmount: true,
+                        commissionAmount: true
+                    }
+                },
+                offers: {
+                    where: { isActive: true },
+                    select: {
+                        id: true,
+                        originalPrice: true,
+                        offerPrice: true
+                    }
+                },
                 _count: {
                     select: {
                         orders: true,
@@ -445,17 +461,16 @@ export class AdminService {
     async getUnverifiedProviders() {
         return this.prisma.provider.findMany({
             where: { isVerified: false },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                description: true,
-                image: true,
-                state: true,
-                isActive: true,
-                createdAt: true,
-                officialDocuments: true,
+            include: {
+                providerServices: {
+                    include: {
+                        service: {
+                            include: {
+                                category: true
+                            }
+                        }
+                    }
+                },
                 _count: {
                     select: {
                         providerServices: true
@@ -812,7 +827,10 @@ export class AdminService {
             createdAt: user.createdAt,
             completedOrders: user.orders.length,
             totalSpent: user.orders.reduce((sum, order) => sum + order.totalAmount, 0),
-            ratingsGiven: user.ratings.length
+            ratingsGiven: user.ratings.length,
+            address: user.address,
+            state: user.state,
+            image: user.image
         }));
     }
 
@@ -901,7 +919,7 @@ export class AdminService {
     async acceptOrder(id: number, notes?: string) {
         const order = await this.prisma.order.update({
             where: { id },
-            data: { 
+            data: {
                 status: 'accepted',
                 // You might want to store admin notes in a separate table
             },
@@ -918,7 +936,7 @@ export class AdminService {
     async rejectOrder(id: number, reason: string) {
         const order = await this.prisma.order.update({
             where: { id },
-            data: { 
+            data: {
                 status: 'cancelled',
                 // You might want to store the rejection reason in a separate table
             },
