@@ -93,23 +93,16 @@ export class NotificationIntegrationService {
                     return;
             }
 
-            // Send to specific provider
-            const provider = await this.notificationsService['prisma'].provider.findUnique({
-                where: { id: providerId },
-                select: { fcmToken: true },
-            });
-
-            if (provider?.fcmToken) {
-                await this.notificationsService['fcmService'].sendToToken(provider.fcmToken, {
-                    title,
-                    body: message,
-                    data: {
-                        providerId: providerId.toString(),
-                        notificationType: 'system',
-                        action: 'view_profile',
-                    },
-                });
-            }
+            // Send to providers channel
+            await this.notificationsService['simplifiedChannelService'].sendToProviders(
+                title,
+                message,
+                {
+                    providerId: providerId.toString(),
+                    notificationType: 'system',
+                    action: 'view_profile',
+                }
+            );
 
             this.logger.log(`Provider verification notification sent for provider ${providerId}: ${status}`);
         } catch (error) {
@@ -132,15 +125,14 @@ export class NotificationIntegrationService {
                 action: userType === 'user' ? 'browse_services' : 'complete_profile',
             };
 
+            // Send to appropriate channel based on user type
             if (userType === 'user') {
-                await this.notificationsService.updateUserFcmToken(userId, 'temp_token');
-                // Note: In real implementation, the mobile app should send the actual FCM token
+                await this.notificationsService['simplifiedChannelService'].sendToUsers(title, message, data);
             } else {
-                await this.notificationsService.updateProviderFcmToken(userId, 'temp_token');
-                // Note: In real implementation, the mobile app should send the actual FCM token
+                await this.notificationsService['simplifiedChannelService'].sendToProviders(title, message, data);
             }
 
-            this.logger.log(`Welcome notification prepared for ${userType} ${userId}`);
+            this.logger.log(`Welcome notification sent to ${userType} channel for user ${userId}`);
         } catch (error) {
             this.logger.error(`Failed to send welcome notification for ${userType} ${userId}:`, error);
         }
@@ -159,7 +151,7 @@ export class NotificationIntegrationService {
             const notification = await this.notificationsService.createNotification({
                 title,
                 message,
-                targetAudience: [TargetAudience.ALL],
+                targetAudience: [TargetAudience.CUSTOMERS, TargetAudience.PROVIDERS],
                 notificationType: NotificationType.SYSTEM,
                 data: {
                     action: 'system_notice',

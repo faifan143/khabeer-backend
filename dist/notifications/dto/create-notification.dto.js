@@ -23,7 +23,6 @@ var TargetAudience;
 (function (TargetAudience) {
     TargetAudience["CUSTOMERS"] = "customers";
     TargetAudience["PROVIDERS"] = "providers";
-    TargetAudience["ALL"] = "all";
 })(TargetAudience || (exports.TargetAudience = TargetAudience = {}));
 class CreateNotificationDto {
     title;
@@ -40,7 +39,8 @@ __decorate([
     __metadata("design:type", String)
 ], CreateNotificationDto.prototype, "title", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Notification message' }),
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Notification message' }),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateNotificationDto.prototype, "message", void 0);

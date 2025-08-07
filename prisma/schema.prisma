@@ -50,7 +50,6 @@ model Provider {
   isVerified        Boolean  @default(false)
   location          Json?    // GPS coordinates {lat: number, lng: number}
   officialDocuments String?
-  fcmToken          String?  // Firebase Cloud Messaging token
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   providerServices  ProviderService[]
@@ -74,7 +73,6 @@ model User {
   state             String
   isActive          Boolean  @default(false)
   officialDocuments String?
-  fcmToken          String?  // Firebase Cloud Messaging token
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   orders            Order[]

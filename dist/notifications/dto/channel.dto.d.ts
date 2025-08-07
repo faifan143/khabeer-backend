@@ -1,7 +1,6 @@
 export declare enum ChannelType {
     PROVIDERS = "providers",
-    USERS = "users",
-    ALL = "all"
+    USERS = "users"
 }
 export declare enum SubscriptionAction {
     SUBSCRIBE = "subscribe",

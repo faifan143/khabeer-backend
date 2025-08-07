@@ -17,7 +17,6 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const notifications_service_1 = require("./notifications.service");
 const create_notification_dto_1 = require("./dto/create-notification.dto");
-const update_fcm_token_dto_1 = require("./dto/update-fcm-token.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_guard_1 = require("../auth/roles.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
@@ -41,17 +40,36 @@ let NotificationsController = class NotificationsController {
     async deleteNotification(id) {
         return this.notificationsService.deleteNotification(id);
     }
-    async updateUserFcmToken(userId, updateFcmTokenDto) {
-        return this.notificationsService.updateUserFcmToken(userId, updateFcmTokenDto.fcmToken);
-    }
-    async updateProviderFcmToken(providerId, updateFcmTokenDto) {
-        return this.notificationsService.updateProviderFcmToken(providerId, updateFcmTokenDto.fcmToken);
-    }
     async sendOrderNotification(orderId, body) {
-        return this.notificationsService.sendOrderNotification(orderId, body.title, body.message, body.data);
+        return this.notificationsService.sendOrderNotification(orderId, body.title, body.message, body.data, body.imageUrl);
     }
     async sendOfferNotification(offerId, body) {
-        return this.notificationsService.sendOfferNotification(offerId, body.title, body.message, body.data);
+        return this.notificationsService.sendOfferNotification(offerId, body.title, body.message, body.data, body.imageUrl);
+    }
+    async getTopicInfo() {
+        return this.notificationsService.getTopicInfo();
+    }
+    async testTopics() {
+        try {
+            const topics = ['channel_users', 'channel_providers'];
+            const results = [];
+            for (const topic of topics) {
+                const result = await this.notificationsService.sendNotificationToTopics([topic], 'Test Message', `Testing topic: ${topic}`, { test: 'true', timestamp: new Date().toISOString() });
+                results.push({
+                    topic,
+                    success: result.success,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            return {
+                message: 'Test messages sent to all topics',
+                results,
+                timestamp: new Date().toISOString()
+            };
+        }
+        catch (error) {
+            throw new Error('Failed to send test messages');
+        }
     }
 };
 exports.NotificationsController = NotificationsController;
@@ -135,36 +153,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], NotificationsController.prototype, "deleteNotification", null);
 __decorate([
-    (0, common_1.Post)('users/:userId/fcm-token'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Update FCM token for a user' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'FCM token updated successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request' }),
-    (0, swagger_1.ApiResponse)({ status: 401, description: 'Unauthorized' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'User not found' }),
-    __param(0, (0, common_1.Param)('userId', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, update_fcm_token_dto_1.UpdateFcmTokenDto]),
-    __metadata("design:returntype", Promise)
-], NotificationsController.prototype, "updateUserFcmToken", null);
-__decorate([
-    (0, common_1.Post)('providers/:providerId/fcm-token'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Update FCM token for a provider' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'FCM token updated successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request' }),
-    (0, swagger_1.ApiResponse)({ status: 401, description: 'Unauthorized' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Provider not found' }),
-    __param(0, (0, common_1.Param)('providerId', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, update_fcm_token_dto_1.UpdateFcmTokenDto]),
-    __metadata("design:returntype", Promise)
-], NotificationsController.prototype, "updateProviderFcmToken", null);
-__decorate([
     (0, common_1.Post)('orders/:orderId'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('ADMIN'),
@@ -198,6 +186,33 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], NotificationsController.prototype, "sendOfferNotification", null);
+__decorate([
+    (0, common_1.Get)('topics/info'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get FCM topic information' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Topic information retrieved successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Unauthorized' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Forbidden - Admin access required' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], NotificationsController.prototype, "getTopicInfo", null);
+__decorate([
+    (0, common_1.Post)('topics/test'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Send test messages to all FCM topics' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Test messages sent successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request' }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Unauthorized' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Forbidden - Admin access required' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], NotificationsController.prototype, "testTopics", null);
 exports.NotificationsController = NotificationsController = __decorate([
     (0, swagger_1.ApiTags)('notifications'),
     (0, common_1.Controller)('notifications'),

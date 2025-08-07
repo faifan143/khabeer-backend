@@ -21,4 +21,12 @@ export declare class FCMService {
     sendToTopic(topic: string, payload: FCMNotificationPayload): Promise<FCMResult>;
     subscribeToTopic(tokens: string[], topic: string): Promise<boolean>;
     unsubscribeFromTopic(tokens: string[], topic: string): Promise<boolean>;
+    getTopicInfo(topic: string): Promise<{
+        topic: string;
+        exists: boolean;
+        lastMessageSent?: string;
+        estimatedSubscribers?: number;
+    }>;
+    getAllTopics(): string[];
+    logTopicStats(): Promise<void>;
 }

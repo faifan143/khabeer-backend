@@ -12,10 +12,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const notifications_service_1 = require("../notifications/notifications.service");
+const create_notification_dto_1 = require("../notifications/dto/create-notification.dto");
 let AdminService = class AdminService {
     prisma;
-    constructor(prisma) {
+    notificationsService;
+    constructor(prisma, notificationsService) {
         this.prisma = prisma;
+        this.notificationsService = notificationsService;
     }
     async getDashboardStats() {
         try {
@@ -1088,18 +1092,16 @@ let AdminService = class AdminService {
     }
     async createNotification(data) {
         try {
-            const notification = await this.prisma.notification.create({
-                data: {
-                    title: data.title,
-                    message: data.message,
-                    imageUrl: data.imageUrl || null,
-                    targetAudience: JSON.stringify(data.targetAudience),
-                    status: 'draft'
-                }
+            const result = await this.notificationsService.createNotification({
+                title: data.title,
+                imageUrl: data.imageUrl,
+                targetAudience: data.targetAudience,
+                notificationType: create_notification_dto_1.NotificationType.GENERAL,
+                data: {}
             });
             return {
-                ...notification,
-                targetAudience: JSON.parse(notification.targetAudience)
+                ...result,
+                targetAudience: result.targetAudience
             };
         }
         catch (error) {
@@ -1152,6 +1154,7 @@ let AdminService = class AdminService {
 exports.AdminService = AdminService;
 exports.AdminService = AdminService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        notifications_service_1.NotificationsService])
 ], AdminService);
 //# sourceMappingURL=admin.service.js.map

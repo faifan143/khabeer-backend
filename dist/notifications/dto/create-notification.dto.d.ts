@@ -6,12 +6,11 @@ export declare enum NotificationType {
 }
 export declare enum TargetAudience {
     CUSTOMERS = "customers",
-    PROVIDERS = "providers",
-    ALL = "all"
+    PROVIDERS = "providers"
 }
 export declare class CreateNotificationDto {
     title: string;
-    message: string;
+    message?: string;
     imageUrl?: string;
     targetAudience: TargetAudience[];
     notificationType?: NotificationType;

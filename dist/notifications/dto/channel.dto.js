@@ -16,7 +16,6 @@ var ChannelType;
 (function (ChannelType) {
     ChannelType["PROVIDERS"] = "providers";
     ChannelType["USERS"] = "users";
-    ChannelType["ALL"] = "all";
 })(ChannelType || (exports.ChannelType = ChannelType = {}));
 var SubscriptionAction;
 (function (SubscriptionAction) {

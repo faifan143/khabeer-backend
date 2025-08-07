@@ -4,7 +4,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export enum ChannelType {
     PROVIDERS = 'providers',
     USERS = 'users',
-    ALL = 'all',
 }
 
 export enum SubscriptionAction {

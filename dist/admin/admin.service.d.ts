@@ -1,7 +1,9 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class AdminService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly notificationsService;
+    constructor(prisma: PrismaService, notificationsService: NotificationsService);
     getDashboardStats(): Promise<{
         overview: {
             totalUsers: number;
@@ -116,26 +118,26 @@ export declare class AdminService {
                 titleEn: string;
             } | null;
             orders: {
-                serviceId: number;
-                id: number;
-                location: string | null;
-                providerId: number;
-                scheduledDate: Date | null;
-                locationDetails: string | null;
-                quantity: number;
-                providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
                 status: string;
+                id: number;
                 bookingId: string;
                 userId: number;
+                providerId: number;
+                serviceId: number;
                 orderDate: Date;
+                scheduledDate: Date | null;
+                location: string | null;
+                locationDetails: string | null;
+                providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+                quantity: number;
                 totalAmount: number;
                 providerAmount: number;
                 commissionAmount: number;
             }[];
-            description: string;
-            id: number;
-            image: string;
             title: string;
+            id: number;
+            description: string;
+            image: string;
             commission: number;
             whatsapp: string;
             categoryId: number | null;
@@ -143,37 +145,42 @@ export declare class AdminService {
     }>;
     getPendingVerifications(): Promise<({
         provider: {
-            description: string;
             id: number;
             name: string;
+            description: string;
             image: string;
             phone: string;
         };
     } & {
-        id: string;
+        status: string;
         createdAt: Date;
         updatedAt: Date;
+        id: string;
         providerId: number;
         documents: string[];
-        status: string;
         adminNotes: string | null;
     })[]>;
     getPendingJoinRequests(): Promise<({
         provider: {
-            description: string;
             id: number;
             name: string;
+            description: string;
             image: string;
             phone: string;
         };
     } & {
+        status: string;
         id: number;
         providerId: number;
-        status: string;
         adminNotes: string | null;
         requestDate: Date;
     })[]>;
     getAllProviders(): Promise<({
+        _count: {
+            providerServices: number;
+            orders: number;
+            ratings: number;
+        };
         providerServices: ({
             service: {
                 category: {
@@ -184,55 +191,52 @@ export declare class AdminService {
                     titleEn: string;
                 } | null;
             } & {
-                description: string;
-                id: number;
-                image: string;
                 title: string;
+                id: number;
+                description: string;
+                image: string;
                 commission: number;
                 whatsapp: string;
                 categoryId: number | null;
             };
         } & {
-            serviceId: number;
             id: number;
-            isActive: boolean;
             providerId: number;
+            serviceId: number;
+            isActive: boolean;
             price: number;
         })[];
+        offers: {
+            id: number;
+            originalPrice: number;
+            offerPrice: number;
+        }[];
         orders: {
             id: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
         }[];
-        offers: {
-            originalPrice: number;
-            offerPrice: number;
-            id: number;
-        }[];
-        _count: {
-            providerServices: number;
-            orders: number;
-            ratings: number;
-        };
     } & {
-        description: string;
-        id: number;
-        name: string;
-        email: string | null;
-        password: string | null;
-        image: string;
-        state: string;
-        phone: string;
-        isActive: boolean;
-        isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
+        id: number;
+        name: string;
+        location: import("generated/prisma/runtime/library").JsonValue | null;
+        description: string;
+        isActive: boolean;
+        image: string;
+        email: string | null;
+        password: string | null;
+        state: string;
+        phone: string;
+        isVerified: boolean;
+        officialDocuments: string | null;
     })[]>;
     getUnverifiedProviders(): Promise<({
+        _count: {
+            providerServices: number;
+        };
         providerServices: ({
             service: {
                 category: {
@@ -243,40 +247,36 @@ export declare class AdminService {
                     titleEn: string;
                 } | null;
             } & {
-                description: string;
-                id: number;
-                image: string;
                 title: string;
+                id: number;
+                description: string;
+                image: string;
                 commission: number;
                 whatsapp: string;
                 categoryId: number | null;
             };
         } & {
-            serviceId: number;
             id: number;
-            isActive: boolean;
             providerId: number;
+            serviceId: number;
+            isActive: boolean;
             price: number;
         })[];
-        _count: {
-            providerServices: number;
-        };
     } & {
-        description: string;
-        id: number;
-        name: string;
-        email: string | null;
-        password: string | null;
-        image: string;
-        state: string;
-        phone: string;
-        isActive: boolean;
-        isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
+        id: number;
+        name: string;
+        location: import("generated/prisma/runtime/library").JsonValue | null;
+        description: string;
+        isActive: boolean;
+        image: string;
+        email: string | null;
+        password: string | null;
+        state: string;
+        phone: string;
+        isVerified: boolean;
+        officialDocuments: string | null;
     })[]>;
     approveVerification(id: string, notes?: string): Promise<{
         message: string;
@@ -298,34 +298,34 @@ export declare class AdminService {
     }>;
     getAllRatings(): Promise<{
         order: {
+            id: number;
+            bookingId: string;
+            totalAmount: number;
             service: {
+                title: string;
+                id: number;
                 category: {
                     id: number;
                     titleAr: string;
                     titleEn: string;
                 } | null;
-                id: number;
-                title: string;
             };
-            id: number;
-            bookingId: string;
-            totalAmount: number;
         } | null;
-        provider: {
-            id: number;
-            name: string;
-            email: string | null;
-            image: string;
-        };
         user: {
             id: number;
             name: string;
-            email: string;
             image: string;
+            email: string;
+        };
+        provider: {
+            id: number;
+            name: string;
+            image: string;
+            email: string | null;
         };
         id: number;
-        providerId: number;
         userId: number;
+        providerId: number;
         orderId: number | null;
         rating: number;
         comment: string | null;
@@ -366,8 +366,8 @@ export declare class AdminService {
             phone: string;
         };
         service: {
-            id: number;
             title: string;
+            id: number;
             commission: number;
         };
         paymentStatus: string | undefined;
@@ -422,11 +422,11 @@ export declare class AdminService {
     }[]>;
     getAllOrders(page?: number, limit?: number): Promise<{
         data: ({
-            service: {
-                description: string;
+            user: {
                 id: number;
-                title: string;
-                commission: number;
+                name: string;
+                email: string;
+                phone: string;
             };
             provider: {
                 id: number;
@@ -434,39 +434,39 @@ export declare class AdminService {
                 email: string | null;
                 phone: string;
             };
-            user: {
+            service: {
+                title: string;
                 id: number;
-                name: string;
-                email: string;
-                phone: string;
+                description: string;
+                commission: number;
             };
             invoice: {
                 id: number;
-                isVerified: boolean;
                 totalAmount: number;
                 orderId: number;
-                paymentDate: Date | null;
-                discount: number;
                 paymentStatus: string;
-                paymentMethod: string | null;
+                isVerified: boolean;
+                discount: number;
                 verifiedBy: number | null;
+                paymentDate: Date | null;
+                paymentMethod: string | null;
                 verifiedAt: Date | null;
                 payoutStatus: string;
                 payoutDate: Date | null;
             } | null;
         } & {
-            serviceId: number;
-            id: number;
-            location: string | null;
-            providerId: number;
-            scheduledDate: Date | null;
-            locationDetails: string | null;
-            quantity: number;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
             status: string;
+            id: number;
             bookingId: string;
             userId: number;
+            providerId: number;
+            serviceId: number;
             orderDate: Date;
+            scheduledDate: Date | null;
+            location: string | null;
+            locationDetails: string | null;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -481,30 +481,30 @@ export declare class AdminService {
     updateOrderStatus(id: number, status: string): Promise<{
         message: string;
         order: {
-            service: {
-                title: string;
+            user: {
+                name: string;
+                email: string;
             };
             provider: {
                 name: string;
                 email: string | null;
             };
-            user: {
-                name: string;
-                email: string;
+            service: {
+                title: string;
             };
         } & {
-            serviceId: number;
-            id: number;
-            location: string | null;
-            providerId: number;
-            scheduledDate: Date | null;
-            locationDetails: string | null;
-            quantity: number;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
             status: string;
+            id: number;
             bookingId: string;
             userId: number;
+            providerId: number;
+            serviceId: number;
             orderDate: Date;
+            scheduledDate: Date | null;
+            location: string | null;
+            locationDetails: string | null;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -513,30 +513,30 @@ export declare class AdminService {
     cancelOrder(id: number, reason?: string): Promise<{
         message: string;
         order: {
-            service: {
-                title: string;
+            user: {
+                name: string;
+                email: string;
             };
             provider: {
                 name: string;
                 email: string | null;
             };
-            user: {
-                name: string;
-                email: string;
+            service: {
+                title: string;
             };
         } & {
-            serviceId: number;
-            id: number;
-            location: string | null;
-            providerId: number;
-            scheduledDate: Date | null;
-            locationDetails: string | null;
-            quantity: number;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
             status: string;
+            id: number;
             bookingId: string;
             userId: number;
+            providerId: number;
+            serviceId: number;
             orderDate: Date;
+            scheduledDate: Date | null;
+            location: string | null;
+            locationDetails: string | null;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -545,30 +545,30 @@ export declare class AdminService {
     completeOrder(id: number): Promise<{
         message: string;
         order: {
-            service: {
-                title: string;
+            user: {
+                name: string;
+                email: string;
             };
             provider: {
                 name: string;
                 email: string | null;
             };
-            user: {
-                name: string;
-                email: string;
+            service: {
+                title: string;
             };
         } & {
-            serviceId: number;
-            id: number;
-            location: string | null;
-            providerId: number;
-            scheduledDate: Date | null;
-            locationDetails: string | null;
-            quantity: number;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
             status: string;
+            id: number;
             bookingId: string;
             userId: number;
+            providerId: number;
+            serviceId: number;
             orderDate: Date;
+            scheduledDate: Date | null;
+            location: string | null;
+            locationDetails: string | null;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -577,30 +577,30 @@ export declare class AdminService {
     acceptOrder(id: number, notes?: string): Promise<{
         message: string;
         order: {
-            service: {
-                title: string;
+            user: {
+                name: string;
+                email: string;
             };
             provider: {
                 name: string;
                 email: string | null;
             };
-            user: {
-                name: string;
-                email: string;
+            service: {
+                title: string;
             };
         } & {
-            serviceId: number;
-            id: number;
-            location: string | null;
-            providerId: number;
-            scheduledDate: Date | null;
-            locationDetails: string | null;
-            quantity: number;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
             status: string;
+            id: number;
             bookingId: string;
             userId: number;
+            providerId: number;
+            serviceId: number;
             orderDate: Date;
+            scheduledDate: Date | null;
+            location: string | null;
+            locationDetails: string | null;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -609,30 +609,30 @@ export declare class AdminService {
     rejectOrder(id: number, reason: string): Promise<{
         message: string;
         order: {
-            service: {
-                title: string;
+            user: {
+                name: string;
+                email: string;
             };
             provider: {
                 name: string;
                 email: string | null;
             };
-            user: {
-                name: string;
-                email: string;
+            service: {
+                title: string;
             };
         } & {
-            serviceId: number;
-            id: number;
-            location: string | null;
-            providerId: number;
-            scheduledDate: Date | null;
-            locationDetails: string | null;
-            quantity: number;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
             status: string;
+            id: number;
             bookingId: string;
             userId: number;
+            providerId: number;
+            serviceId: number;
             orderDate: Date;
+            scheduledDate: Date | null;
+            location: string | null;
+            locationDetails: string | null;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -640,46 +640,46 @@ export declare class AdminService {
     }>;
     getSystemSettings(category?: string): Promise<{}>;
     updateSystemSetting(key: string, value: string, description?: string, category?: string): Promise<{
-        category: string;
-        description: string | null;
-        id: number;
         createdAt: Date;
         updatedAt: Date;
+        id: number;
+        description: string | null;
+        category: string;
         key: string;
         value: string;
     }>;
     getSubAdmins(): Promise<{
         permissions: any;
-        id: number;
-        name: string;
-        email: string;
-        password: string;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        id: number;
+        name: string;
+        isActive: boolean;
+        email: string;
+        password: string;
     }[]>;
     createSubAdmin(name: string, email: string, password: string, permissions: string[]): Promise<{
         permissions: any;
-        id: number;
-        name: string;
-        email: string;
-        password: string;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        id: number;
+        name: string;
+        isActive: boolean;
+        email: string;
+        password: string;
     }>;
     deleteSubAdmin(id: number): Promise<{
         message: string;
     }>;
     getAdBanners(): Promise<{
-        description: string;
-        id: number;
-        isActive: boolean;
+        title: string;
+        imageUrl: string | null;
         createdAt: Date;
         updatedAt: Date;
-        title: string;
+        id: number;
         providerId: number | null;
-        imageUrl: string | null;
+        description: string;
+        isActive: boolean;
         linkType: string;
         externalLink: string | null;
     }[]>;
@@ -692,14 +692,14 @@ export declare class AdminService {
         providerId?: number;
         isActive: boolean | string;
     }): Promise<{
-        description: string;
-        id: number;
-        isActive: boolean;
+        title: string;
+        imageUrl: string | null;
         createdAt: Date;
         updatedAt: Date;
-        title: string;
+        id: number;
         providerId: number | null;
-        imageUrl: string | null;
+        description: string;
+        isActive: boolean;
         linkType: string;
         externalLink: string | null;
     }>;
@@ -712,14 +712,14 @@ export declare class AdminService {
         providerId?: number;
         isActive?: boolean | string;
     }): Promise<{
-        description: string;
-        id: number;
-        isActive: boolean;
+        title: string;
+        imageUrl: string | null;
         createdAt: Date;
         updatedAt: Date;
-        title: string;
+        id: number;
         providerId: number | null;
-        imageUrl: string | null;
+        description: string;
+        isActive: boolean;
         linkType: string;
         externalLink: string | null;
     }>;
@@ -728,56 +728,55 @@ export declare class AdminService {
     }>;
     getAllNotifications(): Promise<{
         targetAudience: any;
-        id: number;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         data: import("generated/prisma/runtime/library").JsonValue | null;
+        title: string;
         message: string;
-        status: string;
-        sentAt: Date | null;
         imageUrl: string | null;
         notificationType: string;
+        status: string;
         recipientsCount: number;
         successCount: number;
         failureCount: number;
+        sentAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        id: number;
     }[]>;
     createNotification(data: {
         title: string;
-        message: string;
         imageUrl?: string;
         targetAudience: string[];
     }): Promise<{
-        targetAudience: any;
-        id: number;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
-        data: import("generated/prisma/runtime/library").JsonValue | null;
-        message: string;
+        targetAudience: import("generated/prisma/runtime/library").JsonValue;
         status: string;
-        sentAt: Date | null;
+        sentAt: Date;
+        data: import("generated/prisma/runtime/library").JsonValue | null;
+        title: string;
+        message: string;
         imageUrl: string | null;
         notificationType: string;
         recipientsCount: number;
         successCount: number;
         failureCount: number;
+        createdAt: Date;
+        updatedAt: Date;
+        id: number;
     }>;
     sendNotification(id: number): Promise<{
         targetAudience: any;
-        id: number;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         data: import("generated/prisma/runtime/library").JsonValue | null;
+        title: string;
         message: string;
-        status: string;
-        sentAt: Date | null;
         imageUrl: string | null;
         notificationType: string;
+        status: string;
         recipientsCount: number;
         successCount: number;
         failureCount: number;
+        sentAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        id: number;
     }>;
     deleteNotification(id: number): Promise<{
         message: string;

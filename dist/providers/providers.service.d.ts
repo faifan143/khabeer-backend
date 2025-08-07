@@ -17,7 +17,6 @@ export declare class ProvidersService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     }[]>;
@@ -34,7 +33,6 @@ export declare class ProvidersService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     } | null>;
@@ -51,7 +49,6 @@ export declare class ProvidersService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     } | null>;
@@ -68,7 +65,6 @@ export declare class ProvidersService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -85,7 +81,6 @@ export declare class ProvidersService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -110,7 +105,6 @@ export declare class ProvidersService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -135,7 +129,6 @@ export declare class ProvidersService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -160,7 +153,6 @@ export declare class ProvidersService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -185,7 +177,6 @@ export declare class ProvidersService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     }) | null>;
@@ -210,7 +201,6 @@ export declare class ProvidersService {
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     }) | null>;

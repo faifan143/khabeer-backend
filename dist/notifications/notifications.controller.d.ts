@@ -1,47 +1,44 @@
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateFcmTokenDto } from './dto/update-fcm-token.dto';
 export declare class NotificationsController {
     private readonly notificationsService;
     constructor(notificationsService: NotificationsService);
     createNotification(createNotificationDto: CreateNotificationDto): Promise<{
-        id: number;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
-        data: import("generated/prisma/runtime/library").JsonValue | null;
-        message: string;
         status: string;
-        sentAt: Date | null;
+        sentAt: Date;
+        data: import("generated/prisma/runtime/library").JsonValue | null;
+        title: string;
+        message: string;
         imageUrl: string | null;
         targetAudience: import("generated/prisma/runtime/library").JsonValue;
         notificationType: string;
         recipientsCount: number;
         successCount: number;
         failureCount: number;
+        createdAt: Date;
+        updatedAt: Date;
+        id: number;
     }>;
     sendNotification(id: number): Promise<{
         success: boolean;
-        recipientsCount: number;
-        successCount: number;
-        failureCount: number;
+        results: boolean[];
     }>;
     getAllNotifications(page?: number, limit?: number): Promise<{
         notifications: {
-            id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            title: string;
             data: import("generated/prisma/runtime/library").JsonValue | null;
+            title: string;
             message: string;
-            status: string;
-            sentAt: Date | null;
             imageUrl: string | null;
             targetAudience: import("generated/prisma/runtime/library").JsonValue;
             notificationType: string;
+            status: string;
             recipientsCount: number;
             successCount: number;
             failureCount: number;
+            sentAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+            id: number;
         }[];
         pagination: {
             page: number;
@@ -51,58 +48,62 @@ export declare class NotificationsController {
         };
     }>;
     getNotificationById(id: number): Promise<{
-        id: number;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
         data: import("generated/prisma/runtime/library").JsonValue | null;
+        title: string;
         message: string;
-        status: string;
-        sentAt: Date | null;
         imageUrl: string | null;
         targetAudience: import("generated/prisma/runtime/library").JsonValue;
         notificationType: string;
+        status: string;
         recipientsCount: number;
         successCount: number;
         failureCount: number;
+        sentAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        id: number;
     }>;
     deleteNotification(id: number): Promise<{
-        success: boolean;
-    }>;
-    updateUserFcmToken(userId: number, updateFcmTokenDto: UpdateFcmTokenDto): Promise<{
-        success: boolean;
-    }>;
-    updateProviderFcmToken(providerId: number, updateFcmTokenDto: UpdateFcmTokenDto): Promise<{
         success: boolean;
     }>;
     sendOrderNotification(orderId: number, body: {
         title: string;
         message: string;
         data?: Record<string, any>;
+        imageUrl?: string;
     }): Promise<{
         success: boolean;
         message: string;
-        recipientsCount?: undefined;
-        results?: undefined;
-    } | {
-        success: boolean;
-        recipientsCount: number;
-        results: import("./fcm.service").FCMResult[];
-        message?: undefined;
     }>;
     sendOfferNotification(offerId: number, body: {
         title: string;
         message: string;
         data?: Record<string, any>;
+        imageUrl?: string;
     }): Promise<{
         success: boolean;
         message: string;
-        recipientsCount?: undefined;
-        results?: undefined;
-    } | {
-        success: boolean;
-        recipientsCount: number;
-        results: import("./fcm.service").FCMResult[];
-        message?: undefined;
+    }>;
+    getTopicInfo(): Promise<{
+        topics: ({
+            topic: string;
+            description: string;
+            lastMessageSent: string | null;
+            messageCount: number;
+            recentMessages: any[];
+        } | {
+            topic: string;
+            description: string;
+            lastMessageSent: string | null;
+            messageCount: number;
+            recentMessages: any[];
+        })[];
+        totalTopics: number;
+        lastUpdated: string;
+    }>;
+    testTopics(): Promise<{
+        message: string;
+        results: any[];
+        timestamp: string;
     }>;
 }

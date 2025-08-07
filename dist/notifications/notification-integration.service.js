@@ -85,21 +85,11 @@ let NotificationIntegrationService = NotificationIntegrationService_1 = class No
                 default:
                     return;
             }
-            const provider = await this.notificationsService['prisma'].provider.findUnique({
-                where: { id: providerId },
-                select: { fcmToken: true },
+            await this.notificationsService['simplifiedChannelService'].sendToProviders(title, message, {
+                providerId: providerId.toString(),
+                notificationType: 'system',
+                action: 'view_profile',
             });
-            if (provider?.fcmToken) {
-                await this.notificationsService['fcmService'].sendToToken(provider.fcmToken, {
-                    title,
-                    body: message,
-                    data: {
-                        providerId: providerId.toString(),
-                        notificationType: 'system',
-                        action: 'view_profile',
-                    },
-                });
-            }
             this.logger.log(`Provider verification notification sent for provider ${providerId}: ${status}`);
         }
         catch (error) {
@@ -117,12 +107,12 @@ let NotificationIntegrationService = NotificationIntegrationService_1 = class No
                 action: userType === 'user' ? 'browse_services' : 'complete_profile',
             };
             if (userType === 'user') {
-                await this.notificationsService.updateUserFcmToken(userId, 'temp_token');
+                await this.notificationsService['simplifiedChannelService'].sendToUsers(title, message, data);
             }
             else {
-                await this.notificationsService.updateProviderFcmToken(userId, 'temp_token');
+                await this.notificationsService['simplifiedChannelService'].sendToProviders(title, message, data);
             }
-            this.logger.log(`Welcome notification prepared for ${userType} ${userId}`);
+            this.logger.log(`Welcome notification sent to ${userType} channel for user ${userId}`);
         }
         catch (error) {
             this.logger.error(`Failed to send welcome notification for ${userType} ${userId}:`, error);
@@ -137,7 +127,7 @@ let NotificationIntegrationService = NotificationIntegrationService_1 = class No
             const notification = await this.notificationsService.createNotification({
                 title,
                 message,
-                targetAudience: [create_notification_dto_1.TargetAudience.ALL],
+                targetAudience: [create_notification_dto_1.TargetAudience.CUSTOMERS, create_notification_dto_1.TargetAudience.PROVIDERS],
                 notificationType: create_notification_dto_1.NotificationType.SYSTEM,
                 data: {
                     action: 'system_notice',

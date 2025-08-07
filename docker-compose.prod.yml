@@ -14,11 +14,15 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     ports:
-      - "127.0.0.1:5432:5432"  # Only accessible from localhost
+      - '127.0.0.1:5432:5432' # Only accessible from localhost
     networks:
       - khabeer-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-khabeer_user} -d ${POSTGRES_DB:-khabeer}"]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-khabeer_user} -d ${POSTGRES_DB:-khabeer}',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,11 +42,11 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "127.0.0.1:6379:6379"  # Only accessible from localhost
+      - '127.0.0.1:6379:6379' # Only accessible from localhost
     networks:
       - khabeer-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
       interval: 10s
       timeout: 3s
       retries: 5
@@ -78,6 +82,10 @@ services:
       SMS_API_KEY: ${SMS_API_KEY}
       SMS_API_SECRET: ${SMS_API_SECRET}
       SMS_SENDER_ID: ${SMS_SENDER_ID}
+                # Firebase FCM Configuration
+          FIREBASE_SERVICE_ACCOUNT: ${FIREBASE_SERVICE_ACCOUNT}
+          # App Configuration
+          APP_URL: ${APP_URL:-https://your-production-domain.com}
     volumes:
       - ./uploads:/app/uploads
       - app_logs:/app/logs
@@ -89,7 +97,13 @@ services:
     networks:
       - khabeer-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -114,8 +128,8 @@ services:
     container_name: khabeer-nginx-prod
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
@@ -125,7 +139,15 @@ services:
     networks:
       - khabeer-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost/health',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -142,7 +164,7 @@ services:
     container_name: khabeer-prometheus
     restart: unless-stopped
     ports:
-      - "127.0.0.1:9090:9090"
+      - '127.0.0.1:9090:9090'
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -164,7 +186,7 @@ services:
     container_name: khabeer-grafana
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3001:3000"
+      - '127.0.0.1:3001:3000'
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
     volumes:
@@ -193,4 +215,4 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16 
+        - subnet: 172.20.0.0/16

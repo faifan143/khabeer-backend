@@ -204,14 +204,16 @@ export class FCMService {
 
             const response = await this.firebaseApp.messaging().send(message);
 
-            this.logger.log(`Topic message sent successfully to topic: ${topic}, Message ID: ${response}`);
+            this.logger.log(`✅ Topic message sent successfully to topic: ${topic}, Message ID: ${response}`);
+            this.logger.log(`📱 Topic: ${topic} | Title: ${payload.title} | Body: ${payload.body}`);
 
             return {
                 success: true,
                 messageId: response,
             };
         } catch (error) {
-            this.logger.error(`Failed to send message to topic ${topic}:`, error);
+            this.logger.error(`❌ Failed to send message to topic ${topic}:`, error);
+            this.logger.error(`📱 Failed Topic: ${topic} | Title: ${payload.title} | Error: ${error.message}`);
 
             return {
                 success: false,
@@ -251,6 +253,64 @@ export class FCMService {
         } catch (error) {
             this.logger.error(`Failed to unsubscribe tokens from topic ${topic}:`, error);
             return false;
+        }
+    }
+
+    /**
+     * Get topic information and statistics
+     */
+    async getTopicInfo(topic: string): Promise<{
+        topic: string;
+        exists: boolean;
+        lastMessageSent?: string;
+        estimatedSubscribers?: number;
+    }> {
+        try {
+            if (!this.firebaseApp) {
+                throw new Error('Firebase Admin SDK not initialized');
+            }
+
+            // Note: Firebase Admin SDK doesn't provide direct topic info
+            // This is a placeholder for future implementation
+            // You can implement this by tracking topic usage in your database
+            
+            this.logger.log(`📊 Topic info requested for: ${topic}`);
+            
+            return {
+                topic,
+                exists: true,
+                lastMessageSent: new Date().toISOString(),
+                estimatedSubscribers: 0, // Would need to track this in your database
+            };
+        } catch (error) {
+            this.logger.error(`Failed to get topic info for ${topic}:`, error);
+            return {
+                topic,
+                exists: false,
+            };
+        }
+    }
+
+    /**
+     * Get all available topics (from your system)
+     */
+    getAllTopics(): string[] {
+        return [
+            'channel_users',
+            'channel_providers',
+        ];
+    }
+
+    /**
+     * Log topic statistics
+     */
+    async logTopicStats(): Promise<void> {
+        const topics = this.getAllTopics();
+        this.logger.log(`📊 Available FCM Topics: ${topics.join(', ')}`);
+        
+        for (const topic of topics) {
+            const info = await this.getTopicInfo(topic);
+            this.logger.log(`📱 Topic: ${topic} | Exists: ${info.exists} | Last Message: ${info.lastMessageSent || 'Never'}`);
         }
     }
 } 

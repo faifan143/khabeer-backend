@@ -1,9 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/dto/create-notification.dto';
 
 @Injectable()
 export class AdminService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly notificationsService: NotificationsService
+    ) { }
 
     async getDashboardStats() {
         try {
@@ -1149,12 +1154,12 @@ export class AdminService {
         try {
             // Convert string values to proper types
             const createData: any = { ...data };
-            
+
             // Convert isActive from string to boolean
             if (typeof createData.isActive === 'string') {
                 createData.isActive = createData.isActive === 'true';
             }
-            
+
             // Convert providerId from string to number if present
             if (createData.providerId && typeof createData.providerId === 'string') {
                 createData.providerId = parseInt(createData.providerId, 10);
@@ -1190,12 +1195,12 @@ export class AdminService {
 
             // Convert string values to proper types
             const updateData: any = { ...data };
-            
+
             // Convert isActive from string to boolean
             if (typeof updateData.isActive === 'string') {
                 updateData.isActive = updateData.isActive === 'true';
             }
-            
+
             // Convert providerId from string to number if present
             if (updateData.providerId && typeof updateData.providerId === 'string') {
                 updateData.providerId = parseInt(updateData.providerId, 10);
@@ -1253,24 +1258,22 @@ export class AdminService {
 
     async createNotification(data: {
         title: string;
-        message: string;
         imageUrl?: string;
         targetAudience: string[];
     }) {
         try {
-            const notification = await this.prisma.notification.create({
-                data: {
-                    title: data.title,
-                    message: data.message,
-                    imageUrl: data.imageUrl || null,
-                    targetAudience: JSON.stringify(data.targetAudience),
-                    status: 'draft'
-                }
+            // Use the notifications service to create and immediately send
+            const result = await this.notificationsService.createNotification({
+                title: data.title,
+                imageUrl: data.imageUrl,
+                targetAudience: data.targetAudience as any,
+                notificationType: NotificationType.GENERAL,
+                data: {}
             });
 
             return {
-                ...notification,
-                targetAudience: JSON.parse(notification.targetAudience as string)
+                ...result,
+                targetAudience: result.targetAudience
             };
         } catch (error) {
             throw error;

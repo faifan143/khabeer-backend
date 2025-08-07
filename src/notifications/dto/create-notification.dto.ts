@@ -11,7 +11,6 @@ export enum NotificationType {
 export enum TargetAudience {
     CUSTOMERS = 'customers',
     PROVIDERS = 'providers',
-    ALL = 'all',
 }
 
 export class CreateNotificationDto {
@@ -19,9 +18,10 @@ export class CreateNotificationDto {
     @IsString()
     title: string;
 
-    @ApiProperty({ description: 'Notification message' })
+    @ApiPropertyOptional({ description: 'Notification message' })
+    @IsOptional()
     @IsString()
-    message: string;
+    message?: string;
 
     @ApiPropertyOptional({ description: 'Notification image URL' })
     @IsOptional()

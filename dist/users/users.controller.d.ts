@@ -16,7 +16,6 @@ export declare class UsersController {
         phone: string;
         isActive: boolean;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
         address: string;
@@ -32,7 +31,6 @@ export declare class UsersController {
         phone: string;
         isActive: boolean;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
         address: string;
@@ -48,7 +46,6 @@ export declare class UsersController {
         phone: string;
         isActive: boolean;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
         address: string;
@@ -64,7 +61,6 @@ export declare class UsersController {
         phone: string;
         isActive: boolean;
         officialDocuments: string | null;
-        fcmToken: string | null;
         createdAt: Date;
         updatedAt: Date;
         address: string;

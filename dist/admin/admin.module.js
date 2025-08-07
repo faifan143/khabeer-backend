@@ -12,12 +12,13 @@ const admin_controller_1 = require("./admin.controller");
 const admin_service_1 = require("./admin.service");
 const prisma_module_1 = require("../prisma/prisma.module");
 const files_module_1 = require("../files/files.module");
+const notifications_module_1 = require("../notifications/notifications.module");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, files_module_1.FilesModule],
+        imports: [prisma_module_1.PrismaModule, files_module_1.FilesModule, notifications_module_1.NotificationsModule],
         controllers: [admin_controller_1.AdminController],
         providers: [admin_service_1.AdminService],
         exports: [admin_service_1.AdminService]

@@ -14,11 +14,15 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     ports:
-      - "5432:5432"
+      - '5432:5432'
     networks:
       - khabeer-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-khabeer_user} -d ${POSTGRES_DB:-khabeer}"]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-khabeer_user} -d ${POSTGRES_DB:-khabeer}',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,11 +36,11 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - '6379:6379'
     networks:
       - khabeer-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
       interval: 10s
       timeout: 3s
       retries: 5
@@ -67,8 +71,12 @@ services:
       SMS_API_KEY: ${SMS_API_KEY}
       SMS_API_SECRET: ${SMS_API_SECRET}
       SMS_SENDER_ID: ${SMS_SENDER_ID}
+                # Firebase FCM Configuration
+          FIREBASE_SERVICE_ACCOUNT: ${FIREBASE_SERVICE_ACCOUNT}
+          # App Configuration
+          APP_URL: ${APP_URL:-http://localhost:3001}
     ports:
-      - "${PORT:-3000}:3000"
+      - '${PORT:-3000}:3000'
     volumes:
       - ./uploads:/app/uploads:rw
     depends_on:
@@ -79,7 +87,13 @@ services:
     networks:
       - khabeer-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -91,8 +105,8 @@ services:
     container_name: khabeer-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
@@ -111,4 +125,4 @@ volumes:
 
 networks:
   khabeer-network:
-    driver: bridge 
+    driver: bridge
