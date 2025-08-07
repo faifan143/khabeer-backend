@@ -17,6 +17,9 @@ RUN npx prisma generate
 # Copy source code
 COPY . .
 
+# Regenerate Prisma client to ensure it's up to date
+RUN npx prisma generate
+
 # Build the application
 RUN npm run build
 

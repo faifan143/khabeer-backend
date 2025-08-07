@@ -166,6 +166,16 @@ cleanup_images() {
 deploy_application() {
     print_status "Building and starting application..."
     
+    # Generate Prisma client before building
+    print_status "Generating Prisma client..."
+    if command_exists npm; then
+        npm run prisma:generate || {
+            print_warning "Failed to generate Prisma client locally, will generate in container"
+        }
+    else
+        print_warning "npm not available locally, will generate Prisma client in container"
+    fi
+    
     # Pull latest images
     docker-compose pull || true
     
