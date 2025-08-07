@@ -29,7 +29,7 @@ export class SimplifiedChannelService {
         // Get base URL from config or use default
         const baseUrl = this.configService.get<string>('APP_URL') ||
           (process.env.NODE_ENV === 'production'
-            ? 'http://31.97.71.187:3001'
+            ? 'http://31.97.71.187:3000'
             : 'http://localhost:3001');
         absoluteImageUrl = `${baseUrl}${imageUrl}`;
       }
