@@ -9,8 +9,11 @@ export declare class NotificationsService {
     createNotification(createNotificationDto: CreateNotificationDto): Promise<{
         status: string;
         sentAt: Date;
-        data: import("generated/prisma/runtime/library").JsonValue | null;
+        id: number;
+        createdAt: Date;
+        updatedAt: Date;
         title: string;
+        data: import("generated/prisma/runtime/library").JsonValue | null;
         message: string;
         imageUrl: string | null;
         targetAudience: import("generated/prisma/runtime/library").JsonValue;
@@ -18,9 +21,6 @@ export declare class NotificationsService {
         recipientsCount: number;
         successCount: number;
         failureCount: number;
-        createdAt: Date;
-        updatedAt: Date;
-        id: number;
     }>;
     sendNotification(notificationId: number): Promise<{
         success: boolean;
@@ -37,20 +37,20 @@ export declare class NotificationsService {
     }>;
     getAllNotifications(page?: number, limit?: number): Promise<{
         notifications: {
-            data: import("generated/prisma/runtime/library").JsonValue | null;
+            id: number;
+            createdAt: Date;
+            updatedAt: Date;
             title: string;
+            data: import("generated/prisma/runtime/library").JsonValue | null;
             message: string;
+            status: string;
+            sentAt: Date | null;
             imageUrl: string | null;
             targetAudience: import("generated/prisma/runtime/library").JsonValue;
             notificationType: string;
-            status: string;
             recipientsCount: number;
             successCount: number;
             failureCount: number;
-            sentAt: Date | null;
-            createdAt: Date;
-            updatedAt: Date;
-            id: number;
         }[];
         pagination: {
             page: number;
@@ -60,20 +60,20 @@ export declare class NotificationsService {
         };
     }>;
     getNotificationById(id: number): Promise<{
-        data: import("generated/prisma/runtime/library").JsonValue | null;
+        id: number;
+        createdAt: Date;
+        updatedAt: Date;
         title: string;
+        data: import("generated/prisma/runtime/library").JsonValue | null;
         message: string;
+        status: string;
+        sentAt: Date | null;
         imageUrl: string | null;
         targetAudience: import("generated/prisma/runtime/library").JsonValue;
         notificationType: string;
-        status: string;
         recipientsCount: number;
         successCount: number;
         failureCount: number;
-        sentAt: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-        id: number;
     }>;
     deleteNotification(id: number): Promise<{
         success: boolean;

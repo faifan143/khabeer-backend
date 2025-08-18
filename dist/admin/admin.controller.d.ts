@@ -96,11 +96,6 @@ export declare class AdminController {
         }[];
     }>;
     getAllProviders(): Promise<({
-        _count: {
-            providerServices: number;
-            orders: number;
-            ratings: number;
-        };
         providerServices: ({
             service: {
                 category: {
@@ -111,52 +106,54 @@ export declare class AdminController {
                     titleEn: string;
                 } | null;
             } & {
-                title: string;
-                id: number;
                 description: string;
+                id: number;
                 image: string;
+                title: string;
                 commission: number;
                 whatsapp: string;
                 categoryId: number | null;
             };
         } & {
-            id: number;
-            providerId: number;
             serviceId: number;
+            id: number;
             isActive: boolean;
+            providerId: number;
             price: number;
         })[];
-        offers: {
-            id: number;
-            originalPrice: number;
-            offerPrice: number;
-        }[];
         orders: {
             id: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
         }[];
-    } & {
-        createdAt: Date;
-        updatedAt: Date;
-        id: number;
-        name: string;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
-        description: string;
-        isActive: boolean;
-        image: string;
-        email: string | null;
-        password: string | null;
-        state: string;
-        phone: string;
-        isVerified: boolean;
-        officialDocuments: string | null;
-    })[]>;
-    getUnverifiedProviders(): Promise<({
+        offers: {
+            originalPrice: number;
+            offerPrice: number;
+            id: number;
+        }[];
         _count: {
             providerServices: number;
+            orders: number;
+            ratings: number;
         };
+    } & {
+        description: string;
+        id: number;
+        name: string;
+        email: string | null;
+        password: string | null;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        isVerified: boolean;
+        location: import("generated/prisma/runtime/library").JsonValue | null;
+        officialDocuments: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    })[]>;
+    getUnverifiedProviders(): Promise<({
         providerServices: ({
             service: {
                 category: {
@@ -167,36 +164,39 @@ export declare class AdminController {
                     titleEn: string;
                 } | null;
             } & {
-                title: string;
-                id: number;
                 description: string;
+                id: number;
                 image: string;
+                title: string;
                 commission: number;
                 whatsapp: string;
                 categoryId: number | null;
             };
         } & {
-            id: number;
-            providerId: number;
             serviceId: number;
+            id: number;
             isActive: boolean;
+            providerId: number;
             price: number;
         })[];
+        _count: {
+            providerServices: number;
+        };
     } & {
-        createdAt: Date;
-        updatedAt: Date;
+        description: string;
         id: number;
         name: string;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
-        description: string;
-        isActive: boolean;
-        image: string;
         email: string | null;
         password: string | null;
+        image: string;
         state: string;
         phone: string;
+        isActive: boolean;
         isVerified: boolean;
+        location: import("generated/prisma/runtime/library").JsonValue | null;
         officialDocuments: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     })[]>;
     getOrderStats(): Promise<{
         total: number;
@@ -221,26 +221,26 @@ export declare class AdminController {
                 titleEn: string;
             } | null;
             orders: {
-                status: string;
+                serviceId: number;
                 id: number;
+                location: string | null;
+                providerId: number;
+                scheduledDate: Date | null;
+                locationDetails: string | null;
+                quantity: number;
+                providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+                status: string;
                 bookingId: string;
                 userId: number;
-                providerId: number;
-                serviceId: number;
                 orderDate: Date;
-                scheduledDate: Date | null;
-                location: string | null;
-                locationDetails: string | null;
-                providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-                quantity: number;
                 totalAmount: number;
                 providerAmount: number;
                 commissionAmount: number;
             }[];
-            title: string;
-            id: number;
             description: string;
+            id: number;
             image: string;
+            title: string;
             commission: number;
             whatsapp: string;
             categoryId: number | null;
@@ -248,33 +248,33 @@ export declare class AdminController {
     }>;
     getPendingVerifications(): Promise<({
         provider: {
+            description: string;
             id: number;
             name: string;
-            description: string;
             image: string;
             phone: string;
         };
     } & {
-        status: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
-        id: string;
         providerId: number;
         documents: string[];
+        status: string;
         adminNotes: string | null;
     })[]>;
     getPendingJoinRequests(): Promise<({
         provider: {
+            description: string;
             id: number;
             name: string;
-            description: string;
             image: string;
             phone: string;
         };
     } & {
-        status: string;
         id: number;
         providerId: number;
+        status: string;
         adminNotes: string | null;
         requestDate: Date;
     })[]>;
@@ -339,8 +339,8 @@ export declare class AdminController {
             phone: string;
         };
         service: {
-            title: string;
             id: number;
+            title: string;
             commission: number;
         };
         paymentStatus: string | undefined;
@@ -395,34 +395,34 @@ export declare class AdminController {
     }[]>;
     getAllRatings(): Promise<{
         order: {
-            id: number;
-            bookingId: string;
-            totalAmount: number;
             service: {
-                title: string;
-                id: number;
                 category: {
                     id: number;
                     titleAr: string;
                     titleEn: string;
                 } | null;
+                id: number;
+                title: string;
             };
-        } | null;
-        user: {
             id: number;
-            name: string;
-            image: string;
-            email: string;
-        };
+            bookingId: string;
+            totalAmount: number;
+        } | null;
         provider: {
             id: number;
             name: string;
-            image: string;
             email: string | null;
+            image: string;
+        };
+        user: {
+            id: number;
+            name: string;
+            email: string;
+            image: string;
         };
         id: number;
-        userId: number;
         providerId: number;
+        userId: number;
         orderId: number | null;
         rating: number;
         comment: string | null;
@@ -430,11 +430,11 @@ export declare class AdminController {
     }[]>;
     getAllOrders(page?: string, limit?: string): Promise<{
         data: ({
-            user: {
+            service: {
+                description: string;
                 id: number;
-                name: string;
-                email: string;
-                phone: string;
+                title: string;
+                commission: number;
             };
             provider: {
                 id: number;
@@ -442,39 +442,39 @@ export declare class AdminController {
                 email: string | null;
                 phone: string;
             };
-            service: {
-                title: string;
+            user: {
                 id: number;
-                description: string;
-                commission: number;
+                name: string;
+                email: string;
+                phone: string;
             };
             invoice: {
                 id: number;
+                isVerified: boolean;
                 totalAmount: number;
                 orderId: number;
-                paymentStatus: string;
-                isVerified: boolean;
-                discount: number;
-                verifiedBy: number | null;
                 paymentDate: Date | null;
+                discount: number;
+                paymentStatus: string;
                 paymentMethod: string | null;
+                verifiedBy: number | null;
                 verifiedAt: Date | null;
                 payoutStatus: string;
                 payoutDate: Date | null;
             } | null;
         } & {
-            status: string;
+            serviceId: number;
             id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
             bookingId: string;
             userId: number;
-            providerId: number;
-            serviceId: number;
             orderDate: Date;
-            scheduledDate: Date | null;
-            location: string | null;
-            locationDetails: string | null;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -491,30 +491,30 @@ export declare class AdminController {
     }): Promise<{
         message: string;
         order: {
-            user: {
-                name: string;
-                email: string;
+            service: {
+                title: string;
             };
             provider: {
                 name: string;
                 email: string | null;
             };
-            service: {
-                title: string;
+            user: {
+                name: string;
+                email: string;
             };
         } & {
-            status: string;
+            serviceId: number;
             id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
             bookingId: string;
             userId: number;
-            providerId: number;
-            serviceId: number;
             orderDate: Date;
-            scheduledDate: Date | null;
-            location: string | null;
-            locationDetails: string | null;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -525,30 +525,30 @@ export declare class AdminController {
     }): Promise<{
         message: string;
         order: {
-            user: {
-                name: string;
-                email: string;
+            service: {
+                title: string;
             };
             provider: {
                 name: string;
                 email: string | null;
             };
-            service: {
-                title: string;
+            user: {
+                name: string;
+                email: string;
             };
         } & {
-            status: string;
+            serviceId: number;
             id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
             bookingId: string;
             userId: number;
-            providerId: number;
-            serviceId: number;
             orderDate: Date;
-            scheduledDate: Date | null;
-            location: string | null;
-            locationDetails: string | null;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -557,30 +557,30 @@ export declare class AdminController {
     completeOrder(id: number): Promise<{
         message: string;
         order: {
-            user: {
-                name: string;
-                email: string;
+            service: {
+                title: string;
             };
             provider: {
                 name: string;
                 email: string | null;
             };
-            service: {
-                title: string;
+            user: {
+                name: string;
+                email: string;
             };
         } & {
-            status: string;
+            serviceId: number;
             id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
             bookingId: string;
             userId: number;
-            providerId: number;
-            serviceId: number;
             orderDate: Date;
-            scheduledDate: Date | null;
-            location: string | null;
-            locationDetails: string | null;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -591,30 +591,30 @@ export declare class AdminController {
     }): Promise<{
         message: string;
         order: {
-            user: {
-                name: string;
-                email: string;
+            service: {
+                title: string;
             };
             provider: {
                 name: string;
                 email: string | null;
             };
-            service: {
-                title: string;
+            user: {
+                name: string;
+                email: string;
             };
         } & {
-            status: string;
+            serviceId: number;
             id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
             bookingId: string;
             userId: number;
-            providerId: number;
-            serviceId: number;
             orderDate: Date;
-            scheduledDate: Date | null;
-            location: string | null;
-            locationDetails: string | null;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -625,30 +625,30 @@ export declare class AdminController {
     }): Promise<{
         message: string;
         order: {
-            user: {
-                name: string;
-                email: string;
+            service: {
+                title: string;
             };
             provider: {
                 name: string;
                 email: string | null;
             };
-            service: {
-                title: string;
+            user: {
+                name: string;
+                email: string;
             };
         } & {
-            status: string;
+            serviceId: number;
             id: number;
+            location: string | null;
+            providerId: number;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            status: string;
             bookingId: string;
             userId: number;
-            providerId: number;
-            serviceId: number;
             orderDate: Date;
-            scheduledDate: Date | null;
-            location: string | null;
-            locationDetails: string | null;
-            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            quantity: number;
             totalAmount: number;
             providerAmount: number;
             commissionAmount: number;
@@ -661,11 +661,11 @@ export declare class AdminController {
         description?: string;
         category?: string;
     }): Promise<{
+        category: string;
+        description: string | null;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        id: number;
-        description: string | null;
-        category: string;
         key: string;
         value: string;
     }>;
@@ -685,13 +685,13 @@ export declare class AdminController {
     }>;
     getSubAdmins(): Promise<{
         permissions: any;
-        createdAt: Date;
-        updatedAt: Date;
         id: number;
         name: string;
-        isActive: boolean;
         email: string;
         password: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
     }[]>;
     createSubAdmin(body: {
         name: string;
@@ -700,26 +700,26 @@ export declare class AdminController {
         permissions: string[];
     }): Promise<{
         permissions: any;
-        createdAt: Date;
-        updatedAt: Date;
         id: number;
         name: string;
-        isActive: boolean;
         email: string;
         password: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     deleteSubAdmin(id: number): Promise<{
         message: string;
     }>;
     getAdBanners(): Promise<{
-        title: string;
-        imageUrl: string | null;
+        description: string;
+        id: number;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        id: number;
+        title: string;
         providerId: number | null;
-        description: string;
-        isActive: boolean;
+        imageUrl: string | null;
         linkType: string;
         externalLink: string | null;
     }[]>;
@@ -731,14 +731,14 @@ export declare class AdminController {
         providerId?: number;
         isActive: boolean;
     }, file: Express.Multer.File): Promise<{
-        title: string;
-        imageUrl: string | null;
+        description: string;
+        id: number;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        id: number;
+        title: string;
         providerId: number | null;
-        description: string;
-        isActive: boolean;
+        imageUrl: string | null;
         linkType: string;
         externalLink: string | null;
     }>;
@@ -750,14 +750,14 @@ export declare class AdminController {
         providerId?: number;
         isActive?: boolean;
     }, file: Express.Multer.File): Promise<{
-        title: string;
-        imageUrl: string | null;
+        description: string;
+        id: number;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        id: number;
+        title: string;
         providerId: number | null;
-        description: string;
-        isActive: boolean;
+        imageUrl: string | null;
         linkType: string;
         externalLink: string | null;
     }>;
@@ -766,19 +766,19 @@ export declare class AdminController {
     }>;
     getAllNotifications(): Promise<{
         targetAudience: any;
-        data: import("generated/prisma/runtime/library").JsonValue | null;
+        id: number;
+        createdAt: Date;
+        updatedAt: Date;
         title: string;
+        data: import("generated/prisma/runtime/library").JsonValue | null;
         message: string;
+        status: string;
+        sentAt: Date | null;
         imageUrl: string | null;
         notificationType: string;
-        status: string;
         recipientsCount: number;
         successCount: number;
         failureCount: number;
-        sentAt: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-        id: number;
     }[]>;
     createNotification(body: {
         title: string;
@@ -788,33 +788,33 @@ export declare class AdminController {
         targetAudience: import("generated/prisma/runtime/library").JsonValue;
         status: string;
         sentAt: Date;
-        data: import("generated/prisma/runtime/library").JsonValue | null;
+        id: number;
+        createdAt: Date;
+        updatedAt: Date;
         title: string;
+        data: import("generated/prisma/runtime/library").JsonValue | null;
         message: string;
         imageUrl: string | null;
         notificationType: string;
         recipientsCount: number;
         successCount: number;
         failureCount: number;
-        createdAt: Date;
-        updatedAt: Date;
-        id: number;
     }>;
     sendNotification(id: number): Promise<{
         targetAudience: any;
-        data: import("generated/prisma/runtime/library").JsonValue | null;
+        id: number;
+        createdAt: Date;
+        updatedAt: Date;
         title: string;
+        data: import("generated/prisma/runtime/library").JsonValue | null;
         message: string;
+        status: string;
+        sentAt: Date | null;
         imageUrl: string | null;
         notificationType: string;
-        status: string;
         recipientsCount: number;
         successCount: number;
         failureCount: number;
-        sentAt: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-        id: number;
     }>;
     deleteNotification(id: number): Promise<{
         message: string;

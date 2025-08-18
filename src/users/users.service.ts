@@ -159,10 +159,21 @@ export class UsersService {
         return acc;
       }, {});
 
+      // Parse social media links if they exist
+      let socialMedia = {};
+      if (groupedSettings.social?.social_links) {
+        try {
+          socialMedia = JSON.parse(groupedSettings.social.social_links);
+        } catch (parseError) {
+          // If parsing fails, return empty object
+          socialMedia = {};
+        }
+      }
+
       return {
         user,
         systemInfo: {
-          socialMedia: groupedSettings.social || {},
+          socialMedia,
           legalDocuments: groupedSettings.legal || {},
           support: groupedSettings.support || {}
         }

@@ -29,7 +29,7 @@ let SimplifiedChannelService = SimplifiedChannelService_1 = class SimplifiedChan
             if (imageUrl && !imageUrl.startsWith('http')) {
                 const baseUrl = this.configService.get('APP_URL') ||
                     (process.env.NODE_ENV === 'production'
-                        ? 'http://31.97.71.187:3001'
+                        ? 'http://31.97.71.187:3000'
                         : 'http://localhost:3001');
                 absoluteImageUrl = `${baseUrl}${imageUrl}`;
             }

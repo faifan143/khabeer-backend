@@ -68,6 +68,28 @@ export declare class ProvidersService {
         createdAt: Date;
         updatedAt: Date;
     }>;
+    getProfile(providerId: number): Promise<{
+        provider: {
+            description: string;
+            id: number;
+            name: string;
+            email: string | null;
+            image: string;
+            state: string;
+            phone: string;
+            isActive: boolean;
+            isVerified: boolean;
+            location: import("generated/prisma/runtime/library").JsonValue;
+            officialDocuments: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        systemInfo: {
+            socialMedia: Record<string, string>;
+            legalDocuments: Record<string, string>;
+            support: Record<string, string>;
+        };
+    }>;
     create(data: CreateProviderDto): Promise<{
         description: string;
         id: number;

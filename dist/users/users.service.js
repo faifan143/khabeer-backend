@@ -125,6 +125,67 @@ let UsersService = class UsersService {
             throw new common_1.InternalServerErrorException('Error deleting user');
         }
     }
+    async getProfile(userId) {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    image: true,
+                    address: true,
+                    phone: true,
+                    state: true,
+                    isActive: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    updatedAt: true
+                }
+            });
+            if (!user) {
+                throw new common_1.NotFoundException(`User with ID ${userId} not found`);
+            }
+            const systemSettings = await this.prisma.systemSettings.findMany({
+                where: {
+                    category: {
+                        in: ['social', 'legal', 'support']
+                    }
+                }
+            });
+            const groupedSettings = systemSettings.reduce((acc, setting) => {
+                if (!acc[setting.category]) {
+                    acc[setting.category] = {};
+                }
+                acc[setting.category][setting.key] = setting.value;
+                return acc;
+            }, {});
+            let socialMedia = {};
+            if (groupedSettings.social?.social_links) {
+                try {
+                    socialMedia = JSON.parse(groupedSettings.social.social_links);
+                }
+                catch (parseError) {
+                    socialMedia = {};
+                }
+            }
+            return {
+                user,
+                systemInfo: {
+                    socialMedia,
+                    legalDocuments: groupedSettings.legal || {},
+                    support: groupedSettings.support || {}
+                }
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Error fetching user profile');
+        }
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

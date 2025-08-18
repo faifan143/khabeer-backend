@@ -42,6 +42,28 @@ export declare class ProvidersController {
     getStatus(id: string, req: any): Promise<{
         isActive: boolean;
     }>;
+    getProfile(req: any): Promise<{
+        provider: {
+            description: string;
+            id: number;
+            name: string;
+            email: string | null;
+            image: string;
+            state: string;
+            phone: string;
+            isActive: boolean;
+            isVerified: boolean;
+            location: import("generated/prisma/runtime/library").JsonValue;
+            officialDocuments: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        systemInfo: {
+            socialMedia: Record<string, string>;
+            legalDocuments: Record<string, string>;
+            support: Record<string, string>;
+        };
+    }>;
     register(data: CreateProviderDto, file: Express.Multer.File): Promise<{
         providerServices: {
             serviceId: number;

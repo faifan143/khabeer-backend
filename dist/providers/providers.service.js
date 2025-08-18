@@ -57,6 +57,59 @@ let ProvidersService = class ProvidersService {
             throw new common_1.InternalServerErrorException('Error finding provider');
         }
     }
+    async getProfile(providerId) {
+        try {
+            const provider = await this.prisma.provider.findUnique({
+                where: { id: providerId },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    image: true,
+                    description: true,
+                    state: true,
+                    phone: true,
+                    isActive: true,
+                    isVerified: true,
+                    location: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    updatedAt: true
+                }
+            });
+            if (!provider) {
+                throw new common_1.NotFoundException(`Provider with ID ${providerId} not found`);
+            }
+            const systemSettings = await this.prisma.systemSettings.findMany({
+                where: {
+                    category: {
+                        in: ['social', 'legal', 'support']
+                    }
+                }
+            });
+            const groupedSettings = systemSettings.reduce((acc, setting) => {
+                if (!acc[setting.category]) {
+                    acc[setting.category] = {};
+                }
+                acc[setting.category][setting.key] = setting.value;
+                return acc;
+            }, {});
+            return {
+                provider,
+                systemInfo: {
+                    socialMedia: groupedSettings.social || {},
+                    legalDocuments: groupedSettings.legal || {},
+                    support: groupedSettings.support || {}
+                }
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Error fetching provider profile');
+        }
+    }
     async create(data) {
         try {
             return await this.prisma.provider.create({ data });

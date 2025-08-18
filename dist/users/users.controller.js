@@ -32,6 +32,9 @@ let UsersController = class UsersController {
     async findAll() {
         return this.usersService.findAll();
     }
+    async getProfile(req) {
+        return this.usersService.getProfile(req.user.userId);
+    }
     async findOne(id) {
         return this.usersService.findById(Number(id));
     }
@@ -81,6 +84,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('profile'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getProfile", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

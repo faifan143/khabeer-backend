@@ -45,6 +45,9 @@ let ProvidersController = class ProvidersController {
         const provider = await this.providersService.findById(Number(id));
         return { isActive: provider.isActive };
     }
+    async getProfile(req) {
+        return this.providersService.getProfile(req.user.userId);
+    }
     async register(data, file) {
         if (file) {
             const options = {
@@ -171,6 +174,15 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "getStatus", null);
+__decorate([
+    (0, common_1.Get)('profile'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getProfile", null);
 __decorate([
     (0, common_1.Post)('register'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {

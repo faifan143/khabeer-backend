@@ -17,7 +17,13 @@ export class UsersController {
 
   @Get()
   async findAll() {
+
     return this.usersService.findAll();
+  }
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@Request() req) {
+    return this.usersService.getProfile(req.user.userId);
   }
 
   @Get(':id')
@@ -25,12 +31,6 @@ export class UsersController {
     return this.usersService.findById(Number(id));
   }
 
-  @Get('profile')
-  @UseGuards(JwtAuthGuard)
-  async getProfile(@Request() req) {
-    console.log("req.user :", req.user);
-    return this.usersService.getProfile(req.user.userId);
-  }
 
   @Post()
   @UseInterceptors(FileInterceptor('image', {
