@@ -404,20 +404,37 @@ export class AdminService {
     }
 
     async getPendingJoinRequests() {
-        return this.prisma.providerJoinRequest.findMany({
-            where: { status: 'pending' },
+        // Return all unverified providers instead of just pending join requests
+        return this.prisma.provider.findMany({
+            where: { isVerified: false },
             include: {
-                provider: {
+                providerServices: {
+                    include: {
+                        service: {
+                            include: {
+                                category: true
+                            }
+                        }
+                    }
+                },
+                providerJoinRequests: {
+                    where: { status: 'pending' },
                     select: {
                         id: true,
-                        name: true,
-                        phone: true,
-                        description: true,
-                        image: true
+                        status: true,
+                        requestDate: true,
+                        adminNotes: true
+                    }
+                },
+                _count: {
+                    select: {
+                        providerServices: true,
+                        orders: true,
+                        ratings: true
                     }
                 }
             },
-            orderBy: { requestDate: 'asc' }
+            orderBy: { createdAt: 'desc' }
         });
     }
 
