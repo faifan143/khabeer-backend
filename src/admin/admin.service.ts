@@ -417,7 +417,7 @@ export class AdminService {
                         }
                     }
                 },
-                providerJoinRequests: {
+                joinRequests: {
                     where: { status: 'pending' },
                     select: {
                         id: true,

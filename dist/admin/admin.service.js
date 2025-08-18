@@ -364,20 +364,36 @@ let AdminService = class AdminService {
         });
     }
     async getPendingJoinRequests() {
-        return this.prisma.providerJoinRequest.findMany({
-            where: { status: 'pending' },
+        return this.prisma.provider.findMany({
+            where: { isVerified: false },
             include: {
-                provider: {
+                providerServices: {
+                    include: {
+                        service: {
+                            include: {
+                                category: true
+                            }
+                        }
+                    }
+                },
+                joinRequests: {
+                    where: { status: 'pending' },
                     select: {
                         id: true,
-                        name: true,
-                        phone: true,
-                        description: true,
-                        image: true
+                        status: true,
+                        requestDate: true,
+                        adminNotes: true
+                    }
+                },
+                _count: {
+                    select: {
+                        providerServices: true,
+                        orders: true,
+                        ratings: true
                     }
                 }
             },
-            orderBy: { requestDate: 'asc' }
+            orderBy: { createdAt: 'desc' }
         });
     }
     async getAllProviders() {

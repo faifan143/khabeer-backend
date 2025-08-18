@@ -264,19 +264,57 @@ export declare class AdminController {
         adminNotes: string | null;
     })[]>;
     getPendingJoinRequests(): Promise<({
-        provider: {
-            description: string;
+        providerServices: ({
+            service: {
+                category: {
+                    id: number;
+                    image: string;
+                    state: string;
+                    titleAr: string;
+                    titleEn: string;
+                } | null;
+            } & {
+                description: string;
+                id: number;
+                image: string;
+                title: string;
+                commission: number;
+                whatsapp: string;
+                categoryId: number | null;
+            };
+        } & {
+            serviceId: number;
             id: number;
-            name: string;
-            image: string;
-            phone: string;
+            isActive: boolean;
+            providerId: number;
+            price: number;
+        })[];
+        joinRequests: {
+            id: number;
+            status: string;
+            adminNotes: string | null;
+            requestDate: Date;
+        }[];
+        _count: {
+            providerServices: number;
+            orders: number;
+            ratings: number;
         };
     } & {
+        description: string;
         id: number;
-        providerId: number;
-        status: string;
-        adminNotes: string | null;
-        requestDate: Date;
+        name: string;
+        email: string | null;
+        password: string | null;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        isVerified: boolean;
+        location: import("generated/prisma/runtime/library").JsonValue | null;
+        officialDocuments: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     })[]>;
     approveVerification(id: string, body: {
         notes?: string;
