@@ -40,6 +40,12 @@ export class ProvidersController {
     return { isActive: provider.isActive };
   }
 
+  @Get('profile')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER')
+  async getProfile(@Request() req) {
+    return this.providersService.getProfile(req.user.userId);
+  }
 
 
   @Post('register')
@@ -126,7 +132,7 @@ export class ProvidersController {
     }),
   }))
   async update(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @Body() data: UpdateProviderDto,
     @UploadedFile() file: Express.Multer.File
   ) {

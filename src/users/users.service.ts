@@ -115,4 +115,63 @@ export class UsersService {
       throw new InternalServerErrorException('Error deleting user');
     }
   }
+
+  async getProfile(userId: number) {
+    try {
+      // Get user information
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          image: true,
+          address: true,
+          phone: true,
+          state: true,
+          isActive: true,
+          officialDocuments: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${userId} not found`);
+      }
+
+      // Get system settings for social media, legal documents, and support
+      const systemSettings = await this.prisma.systemSettings.findMany({
+        where: {
+          category: {
+            in: ['social', 'legal', 'support']
+          }
+        }
+      });
+
+      // Group settings by category
+      const groupedSettings = systemSettings.reduce((acc: Record<string, Record<string, string>>, setting) => {
+        if (!acc[setting.category]) {
+          acc[setting.category] = {};
+        }
+        acc[setting.category][setting.key] = setting.value;
+        return acc;
+      }, {});
+
+      return {
+        user,
+        systemInfo: {
+          socialMedia: groupedSettings.social || {},
+          legalDocuments: groupedSettings.legal || {},
+          support: groupedSettings.support || {}
+        }
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error fetching user profile');
+    }
+  }
 }

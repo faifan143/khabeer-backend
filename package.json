@@ -14,6 +14,7 @@
     "prisma:migrate": "prisma migrate dev",
     "seed:test": "ts-node src/seed-test-data.ts",
     "seed:admin": "ts-node src/seed-admin.ts",
+    "seed:system": "ts-node src/seed-system-settings.ts",
     "test:auth": "node test-auth-flow.js"
   },
   "dependencies": {

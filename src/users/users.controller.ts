@@ -25,6 +25,12 @@ export class UsersController {
     return this.usersService.findById(Number(id));
   }
 
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@Request() req) {
+    return this.usersService.getProfile(req.user.userId);
+  }
+
   @Post()
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
@@ -68,15 +74,15 @@ export class UsersController {
     }),
   }))
   async update(
-    @Param('id') id: string, 
-    @Body() data: UpdateUserDto, 
+    @Param('id') id: string,
+    @Body() data: UpdateUserDto,
     @Request() req,
     @UploadedFile() file: Express.Multer.File
   ) {
     if (req.user.userId !== Number(id) && req.user.role !== 'ADMIN') {
       return { error: 'Unauthorized' };
     }
-    
+
     const updateData = { ...data };
     if (file) {
       const options = {

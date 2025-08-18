@@ -47,6 +47,66 @@ export class ProvidersService {
     }
   }
 
+  async getProfile(providerId: number) {
+    try {
+      // Get provider information
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          description: true,
+          state: true,
+          phone: true,
+          isActive: true,
+          isVerified: true,
+          location: true,
+          officialDocuments: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${providerId} not found`);
+      }
+
+      // Get system settings for social media, legal documents, and support
+      const systemSettings = await this.prisma.systemSettings.findMany({
+        where: {
+          category: {
+            in: ['social', 'legal', 'support']
+          }
+        }
+      });
+
+      // Group settings by category
+      const groupedSettings = systemSettings.reduce((acc: Record<string, Record<string, string>>, setting) => {
+        if (!acc[setting.category]) {
+          acc[setting.category] = {};
+        }
+        acc[setting.category][setting.key] = setting.value;
+        return acc;
+      }, {});
+
+      return {
+        provider,
+        systemInfo: {
+          socialMedia: groupedSettings.social || {},
+          legalDocuments: groupedSettings.legal || {},
+          support: groupedSettings.support || {}
+        }
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error fetching provider profile');
+    }
+  }
+
   async create(data: CreateProviderDto) {
     try {
       return await this.prisma.provider.create({ data });
