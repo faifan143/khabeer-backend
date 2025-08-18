@@ -23,6 +23,13 @@ export class ProvidersController {
     return this.providersService.findAll();
   }
 
+  @Get('profile')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER')
+  async getProfile(@Request() req) {
+    return this.providersService.getProfile(req.user.userId);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.providersService.findById(Number(id));
@@ -38,13 +45,6 @@ export class ProvidersController {
     }
     const provider = await this.providersService.findById(Number(id));
     return { isActive: provider.isActive };
-  }
-
-  @Get('profile')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PROVIDER')
-  async getProfile(@Request() req) {
-    return this.providersService.getProfile(req.user.userId);
   }
 
 
