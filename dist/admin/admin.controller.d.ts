@@ -316,6 +316,49 @@ export declare class AdminController {
         createdAt: Date;
         updatedAt: Date;
     })[]>;
+    getActualPendingJoinRequests(): Promise<({
+        provider: {
+            description: string;
+            id: number;
+            name: string;
+            email: string | null;
+            image: string;
+            phone: string;
+            isActive: boolean;
+            isVerified: boolean;
+            providerServices: ({
+                service: {
+                    category: {
+                        id: number;
+                        image: string;
+                        state: string;
+                        titleAr: string;
+                        titleEn: string;
+                    } | null;
+                } & {
+                    description: string;
+                    id: number;
+                    image: string;
+                    title: string;
+                    commission: number;
+                    whatsapp: string;
+                    categoryId: number | null;
+                };
+            } & {
+                serviceId: number;
+                id: number;
+                isActive: boolean;
+                providerId: number;
+                price: number;
+            })[];
+        };
+    } & {
+        id: number;
+        providerId: number;
+        status: string;
+        adminNotes: string | null;
+        requestDate: Date;
+    })[]>;
     approveVerification(id: string, body: {
         notes?: string;
     }): Promise<{

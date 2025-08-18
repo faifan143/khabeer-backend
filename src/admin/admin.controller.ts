@@ -90,6 +90,11 @@ export class AdminController {
         return this.adminService.getPendingJoinRequests();
     }
 
+    @Get('join-requests/actual-pending')
+    async getActualPendingJoinRequests() {
+        return this.adminService.getActualPendingJoinRequests();
+    }
+
     @Put('verifications/:id/approve')
     async approveVerification(@Param('id') id: string, @Body() body: { notes?: string }) {
         return this.adminService.approveVerification(id, body.notes);
@@ -248,7 +253,7 @@ export class AdminController {
         };
 
         const results = await this.filesService.handleMultipleFiles(files, options);
-        
+
         // Update URLs to include the correct subdirectory
         const updatedResults = results.map(result => ({
             ...result,

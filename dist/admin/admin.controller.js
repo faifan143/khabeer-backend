@@ -64,6 +64,9 @@ let AdminController = class AdminController {
     async getPendingJoinRequests() {
         return this.adminService.getPendingJoinRequests();
     }
+    async getActualPendingJoinRequests() {
+        return this.adminService.getActualPendingJoinRequests();
+    }
     async approveVerification(id, body) {
         return this.adminService.approveVerification(id, body.notes);
     }
@@ -321,6 +324,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getPendingJoinRequests", null);
+__decorate([
+    (0, common_1.Get)('join-requests/actual-pending'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getActualPendingJoinRequests", null);
 __decorate([
     (0, common_1.Put)('verifications/:id/approve'),
     __param(0, (0, common_1.Param)('id')),
