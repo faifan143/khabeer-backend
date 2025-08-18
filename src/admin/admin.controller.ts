@@ -85,6 +85,21 @@ export class AdminController {
         return this.adminService.getPendingVerifications();
     }
 
+    // Dynamic routes must come BEFORE specific static routes to avoid conflicts
+    @Put('join-requests/:id/approve')
+    async approveJoinRequest(@Param('id', ParseIntPipe) id: number, @Body() body: { notes?: string }) {
+        return this.adminService.approveJoinRequest(id, body.notes);
+    }
+
+    @Put('join-requests/:id/reject')
+    async rejectJoinRequest(@Param('id', ParseIntPipe) id: number, @Body() body: { notes: string }) {
+        if (!body.notes) {
+            throw new BadRequestException('Rejection notes are required');
+        }
+        return this.adminService.rejectJoinRequest(id, body.notes);
+    }
+
+    // Specific static routes come AFTER dynamic routes
     @Get('join-requests/pending')
     async getPendingJoinRequests() {
         return this.adminService.getPendingJoinRequests();
@@ -106,19 +121,6 @@ export class AdminController {
             throw new BadRequestException('Rejection notes are required');
         }
         return this.adminService.rejectVerification(id, body.notes);
-    }
-
-    @Put('join-requests/:id/approve')
-    async approveJoinRequest(@Param('id', ParseIntPipe) id: number, @Body() body: { notes?: string }) {
-        return this.adminService.approveJoinRequest(id, body.notes);
-    }
-
-    @Put('join-requests/:id/reject')
-    async rejectJoinRequest(@Param('id', ParseIntPipe) id: number, @Body() body: { notes: string }) {
-        if (!body.notes) {
-            throw new BadRequestException('Rejection notes are required');
-        }
-        return this.adminService.rejectJoinRequest(id, body.notes);
     }
 
     @Put('users/:id/activate')

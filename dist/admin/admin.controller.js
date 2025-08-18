@@ -61,6 +61,15 @@ let AdminController = class AdminController {
     async getPendingVerifications() {
         return this.adminService.getPendingVerifications();
     }
+    async approveJoinRequest(id, body) {
+        return this.adminService.approveJoinRequest(id, body.notes);
+    }
+    async rejectJoinRequest(id, body) {
+        if (!body.notes) {
+            throw new common_1.BadRequestException('Rejection notes are required');
+        }
+        return this.adminService.rejectJoinRequest(id, body.notes);
+    }
     async getPendingJoinRequests() {
         return this.adminService.getPendingJoinRequests();
     }
@@ -75,15 +84,6 @@ let AdminController = class AdminController {
             throw new common_1.BadRequestException('Rejection notes are required');
         }
         return this.adminService.rejectVerification(id, body.notes);
-    }
-    async approveJoinRequest(id, body) {
-        return this.adminService.approveJoinRequest(id, body.notes);
-    }
-    async rejectJoinRequest(id, body) {
-        if (!body.notes) {
-            throw new common_1.BadRequestException('Rejection notes are required');
-        }
-        return this.adminService.rejectJoinRequest(id, body.notes);
     }
     async activateUser(id) {
         return this.adminService.activateUser(id);
@@ -319,6 +319,22 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getPendingVerifications", null);
 __decorate([
+    (0, common_1.Put)('join-requests/:id/approve'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "approveJoinRequest", null);
+__decorate([
+    (0, common_1.Put)('join-requests/:id/reject'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "rejectJoinRequest", null);
+__decorate([
     (0, common_1.Get)('join-requests/pending'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -346,22 +362,6 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "rejectVerification", null);
-__decorate([
-    (0, common_1.Put)('join-requests/:id/approve'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
-    __metadata("design:returntype", Promise)
-], AdminController.prototype, "approveJoinRequest", null);
-__decorate([
-    (0, common_1.Put)('join-requests/:id/reject'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object]),
-    __metadata("design:returntype", Promise)
-], AdminController.prototype, "rejectJoinRequest", null);
 __decorate([
     (0, common_1.Put)('users/:id/activate'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),

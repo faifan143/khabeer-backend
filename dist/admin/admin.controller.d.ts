@@ -263,6 +263,16 @@ export declare class AdminController {
         status: string;
         adminNotes: string | null;
     })[]>;
+    approveJoinRequest(id: number, body: {
+        notes?: string;
+    }): Promise<{
+        message: string;
+    }>;
+    rejectJoinRequest(id: number, body: {
+        notes: string;
+    }): Promise<{
+        message: string;
+    }>;
     getPendingJoinRequests(): Promise<({
         providerServices: ({
             service: {
@@ -365,16 +375,6 @@ export declare class AdminController {
         message: string;
     }>;
     rejectVerification(id: string, body: {
-        notes: string;
-    }): Promise<{
-        message: string;
-    }>;
-    approveJoinRequest(id: number, body: {
-        notes?: string;
-    }): Promise<{
-        message: string;
-    }>;
-    rejectJoinRequest(id: number, body: {
         notes: string;
     }): Promise<{
         message: string;
