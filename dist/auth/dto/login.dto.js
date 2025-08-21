@@ -20,14 +20,20 @@ class LoginDto {
 }
 exports.LoginDto = LoginDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Email for provider login or phone for user login', required: false }),
-    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'Email for provider login (required if phone not provided)',
+        required: false
+    }),
+    (0, class_validator_1.ValidateIf)(o => !o.phone),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], LoginDto.prototype, "email", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Phone number for user login or provider login', required: false }),
-    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'Phone number for user login (required if email not provided)',
+        required: false
+    }),
+    (0, class_validator_1.ValidateIf)(o => !o.email),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], LoginDto.prototype, "phone", void 0);

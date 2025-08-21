@@ -17,11 +17,21 @@ export class AuthController {
   ) { }
 
   @Post('login')
-  @ApiOperation({ summary: 'Login with phone (users) or email (providers) and password' })
+  @ApiOperation({ summary: 'Login with email (providers) or phone (users) and password' })
   @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 400, description: 'Invalid credentials' })
+  @ApiResponse({ status: 400, description: 'Invalid credentials or missing required fields' })
   async login(@Body() body: LoginDto) {
     try {
+      // Validate that either email or phone is provided
+      if (!body.email && !body.phone) {
+        throw new BadRequestException('Either email (for providers) or phone (for users) is required');
+      }
+
+      // Validate that both email and phone are not provided
+      if (body.email && body.phone) {
+        throw new BadRequestException('Please provide either email OR phone, not both');
+      }
+
       // Debug logging
       console.log('Login request received:', {
         email: body.email,

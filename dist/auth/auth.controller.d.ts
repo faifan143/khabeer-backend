@@ -48,21 +48,21 @@ export declare class AuthController {
     upgradeToProvider(req: any, providerData: any): Promise<{
         role: string;
         message: string;
-        description: string;
         id: number;
         name: string;
         image: string;
-        state: string;
         phone: string;
+        state: string;
         isActive: boolean;
         officialDocuments: string | null;
+        email: string | null;
+        password: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        fcm: string | null;
+        description: string;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        createdAt: Date;
-        email: string | null;
-        updatedAt: Date;
-        password: string | null;
-        fcm: string | null;
     }>;
     checkAccountStatus(body: {
         email: string;
@@ -82,52 +82,52 @@ export declare class AuthController {
     activateAccount(req: any): Promise<{
         message: string;
         providerServices: {
-            serviceId: number;
             id: number;
             isActive: boolean;
             providerId: number;
+            serviceId: number;
             price: number;
         }[];
-        description: string;
         id: number;
         name: string;
         image: string;
-        state: string;
         phone: string;
+        state: string;
         isActive: boolean;
         officialDocuments: string | null;
+        email: string | null;
+        password: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        fcm: string | null;
+        description: string;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        createdAt: Date;
-        email: string | null;
-        updatedAt: Date;
-        password: string | null;
-        fcm: string | null;
     }>;
     deactivateAccount(req: any): Promise<{
         message: string;
         providerServices: {
-            serviceId: number;
             id: number;
             isActive: boolean;
             providerId: number;
+            serviceId: number;
             price: number;
         }[];
-        description: string;
         id: number;
         name: string;
         image: string;
-        state: string;
         phone: string;
+        state: string;
         isActive: boolean;
         officialDocuments: string | null;
+        email: string | null;
+        password: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        fcm: string | null;
+        description: string;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        createdAt: Date;
-        email: string | null;
-        updatedAt: Date;
-        password: string | null;
-        fcm: string | null;
     }>;
     private parseServiceIds;
 }

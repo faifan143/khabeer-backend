@@ -33,21 +33,41 @@ export class AuthService {
         };
       }
 
-      // Provider login - by email
-      if (email) {
+      // Provider login - by email (required)
+      if (email && !phone) {
+        console.log(`[DEBUG] Attempting provider login for email: ${email}`);
         const provider = await this.providersService.findByEmail(email);
-        if (provider && provider.password && provider.password.trim() !== '' && await bcrypt.compare(password, provider.password)) {
-          // Check if provider is verified
-          if (!provider.isVerified) {
-            throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
+        console.log(`[DEBUG] Provider found:`, provider ? {
+          id: provider.id,
+          email: provider.email,
+          hasPassword: !!provider.password,
+          isVerified: provider.isVerified,
+          isActive: provider.isActive
+        } : 'NOT_FOUND');
+
+        if (provider && provider.password) {
+          const isPasswordValid = await bcrypt.compare(password, provider.password);
+          console.log(`[DEBUG] Password validation result: ${isPasswordValid}`);
+
+          if (isPasswordValid) {
+            // Check if provider is verified
+            if (!provider.isVerified) {
+              console.log(`[DEBUG] Provider not verified, throwing UnauthorizedException`);
+              throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
+            }
+            const { password: _, ...result } = provider;
+            console.log(`[DEBUG] Provider authentication successful, returning:`, { id: result.id, email: result.email, role: 'PROVIDER' });
+            return { ...result, role: 'PROVIDER' };
+          } else {
+            console.log(`[DEBUG] Password validation failed for provider`);
           }
-          const { password: _, ...result } = provider;
-          return { ...result, role: 'PROVIDER' };
+        } else {
+          console.log(`[DEBUG] Provider not found or has no password`);
         }
       }
 
-      // User login - by phone
-      if (phone) {
+      // User login - by phone (required)
+      if (phone && !email) {
         const user = await this.usersService.findByPhone(phone);
         if (user && await bcrypt.compare(password, user.password)) {
           const { password: _, ...result } = user;
@@ -739,6 +759,14 @@ export class AuthService {
     try {
       const { phoneNumber, otp, ...registerData } = data;
 
+      console.log(`[DEBUG] Complete registration - Received data:`, {
+        phoneNumber,
+        otp,
+        password: registerData.password,
+        email: registerData.email,
+        role: registerData.role
+      });
+
       // Verify OTP
       const otpResult = await this.smsService.verifyOtp({
         phoneNumber,
@@ -780,6 +808,7 @@ export class AuthService {
 
       // Hash password
       const hashedPassword = await bcrypt.hash(registerData.password, 10);
+      console.log(`[DEBUG] Password hashing - Original: ${registerData.password}, Hashed: ${hashedPassword.substring(0, 20)}...`);
 
       // Prepare user data
       const userData = {
@@ -812,6 +841,13 @@ export class AuthService {
           officialDocuments: registerData.officialDocuments || undefined,
           serviceIds: registerData.serviceIds || []
         };
+
+        console.log(`[DEBUG] Creating provider with data:`, {
+          name: providerData.name,
+          email: providerData.email,
+          hasPassword: !!providerData.password,
+          phone: providerData.phone
+        });
 
         const provider = await this.providersService.registerProviderWithServices(providerData);
 
