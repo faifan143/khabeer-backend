@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { ProviderOrderResponseDto, ProviderOrdersResponseDto } from './dto/provider-orders-response.dto';
 
 @Injectable()
 export class ProvidersService {
@@ -333,9 +334,9 @@ export class ProvidersService {
     }
   }
 
-  async getProviderOrders(providerId: number) {
+  async getProviderOrders(providerId: number): Promise<ProviderOrdersResponseDto> {
     try {
-      return await this.prisma.order.findMany({
+      const orders = await this.prisma.order.findMany({
         where: { providerId },
         include: {
           user: {
@@ -360,14 +361,20 @@ export class ProvidersService {
           orderDate: 'desc'
         }
       });
+
+      return {
+        orders: orders as ProviderOrderResponseDto[],
+        total: orders.length,
+        status: 'all'
+      };
     } catch (error) {
       throw new InternalServerErrorException('Error fetching provider orders');
     }
   }
 
-  async getProviderOrdersByStatus(providerId: number, status: string) {
+  async getProviderOrdersByStatus(providerId: number, status: string): Promise<ProviderOrdersResponseDto> {
     try {
-      return await this.prisma.order.findMany({
+      const orders = await this.prisma.order.findMany({
         where: {
           providerId,
           status: status.toLowerCase()
@@ -395,6 +402,12 @@ export class ProvidersService {
           orderDate: 'desc'
         }
       });
+
+      return {
+        orders: orders as ProviderOrderResponseDto[],
+        total: orders.length,
+        status: status.toLowerCase()
+      };
     } catch (error) {
       throw new InternalServerErrorException('Error fetching provider orders by status');
     }

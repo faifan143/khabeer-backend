@@ -324,7 +324,7 @@ let ProvidersService = class ProvidersService {
     }
     async getProviderOrders(providerId) {
         try {
-            return await this.prisma.order.findMany({
+            const orders = await this.prisma.order.findMany({
                 where: { providerId },
                 include: {
                     user: {
@@ -349,6 +349,11 @@ let ProvidersService = class ProvidersService {
                     orderDate: 'desc'
                 }
             });
+            return {
+                orders: orders,
+                total: orders.length,
+                status: 'all'
+            };
         }
         catch (error) {
             throw new common_1.InternalServerErrorException('Error fetching provider orders');
@@ -356,7 +361,7 @@ let ProvidersService = class ProvidersService {
     }
     async getProviderOrdersByStatus(providerId, status) {
         try {
-            return await this.prisma.order.findMany({
+            const orders = await this.prisma.order.findMany({
                 where: {
                     providerId,
                     status: status.toLowerCase()
@@ -384,6 +389,11 @@ let ProvidersService = class ProvidersService {
                     orderDate: 'desc'
                 }
             });
+            return {
+                orders: orders,
+                total: orders.length,
+                status: status.toLowerCase()
+            };
         }
         catch (error) {
             throw new common_1.InternalServerErrorException('Error fetching provider orders by status');

@@ -1,6 +1,7 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
+import { ProviderOrdersResponseDto } from './dto/provider-orders-response.dto';
 export declare class ProvidersService {
     private readonly prisma;
     constructor(prisma: PrismaService);
@@ -266,68 +267,8 @@ export declare class ProvidersService {
         providerId: number;
         price: number;
     })[]>;
-    getProviderOrders(providerId: number): Promise<({
-        service: {
-            description: string;
-            id: number;
-            title: string;
-        };
-        user: {
-            id: number;
-            name: string;
-            phone: string;
-            email: string | null;
-            latitude: import("generated/prisma/runtime/library").Decimal | null;
-            longitude: import("generated/prisma/runtime/library").Decimal | null;
-        };
-    } & {
-        serviceId: number;
-        id: number;
-        location: string | null;
-        providerId: number;
-        status: string;
-        scheduledDate: Date | null;
-        locationDetails: string | null;
-        quantity: number;
-        providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-        userId: number;
-        orderDate: Date;
-        bookingId: string;
-        commissionAmount: number;
-        providerAmount: number;
-        totalAmount: number;
-    })[]>;
-    getProviderOrdersByStatus(providerId: number, status: string): Promise<({
-        service: {
-            description: string;
-            id: number;
-            title: string;
-        };
-        user: {
-            id: number;
-            name: string;
-            phone: string;
-            email: string | null;
-            latitude: import("generated/prisma/runtime/library").Decimal | null;
-            longitude: import("generated/prisma/runtime/library").Decimal | null;
-        };
-    } & {
-        serviceId: number;
-        id: number;
-        location: string | null;
-        providerId: number;
-        status: string;
-        scheduledDate: Date | null;
-        locationDetails: string | null;
-        quantity: number;
-        providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-        userId: number;
-        orderDate: Date;
-        bookingId: string;
-        commissionAmount: number;
-        providerAmount: number;
-        totalAmount: number;
-    })[]>;
+    getProviderOrders(providerId: number): Promise<ProviderOrdersResponseDto>;
+    getProviderOrdersByStatus(providerId: number, status: string): Promise<ProviderOrdersResponseDto>;
     getProviderRatings(providerId: number): Promise<({
         user: {
             id: number;
