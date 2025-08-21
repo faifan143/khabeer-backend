@@ -37,7 +37,7 @@ model Provider {
   image             String
   description       String
   state             String
-  phone             String
+  phone             String               @unique
   isActive          Boolean               @default(false)
   officialDocuments String?
   isVerified        Boolean               @default(false)
@@ -54,6 +54,8 @@ model Provider {
   ratings           ProviderRating[]
   providerServices  ProviderService[]
   verification      ProviderVerification?
+
+  @@unique([email, phone])
 }
 
 model User {
@@ -73,6 +75,8 @@ model User {
   fcm               String?
   orders            Order[]
   ratings           ProviderRating[]
+
+  @@unique([email, phone])
 }
 
 model Order {

@@ -10,7 +10,11 @@ export declare class AuthService {
     private readonly smsService;
     private readonly jwtService;
     constructor(usersService: UsersService, providersService: ProvidersService, smsService: SmsService, jwtService: JwtService);
-    validateUser(identifier: string, pass: string, loginType: string): Promise<any>;
+    validateUser(loginData: {
+        email?: string;
+        phone?: string;
+        password: string;
+    }): Promise<any>;
     login(user: {
         id: number;
         email?: string;

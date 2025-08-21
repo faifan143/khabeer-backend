@@ -24,14 +24,14 @@ export class AuthController {
     try {
       // Debug logging
       console.log('Login request received:', {
-        loginType: body.loginType,
-        identifier: body.identifier,
+        email: body.email,
+        phone: body.phone,
         hasPassword: !!body.password,
         hasFCM: !!body.fcm,
         fcmLength: body.fcm?.length || 0
       });
 
-      const user = await this.authService.validateUser(body.identifier, body.password, body.loginType);
+      const user = await this.authService.validateUser(body);
       if (!user) {
         throw new BadRequestException('Invalid credentials');
       }
@@ -195,8 +195,8 @@ export class AuthController {
     console.log('Initiate registration body:', body);
 
     // Validate required fields
-    if (!body.email || !body.password || !body.name || !body.phoneNumber) {
-      throw new BadRequestException('Email, password, name, and phone number are required');
+    if (!body.password || !body.name || !body.phoneNumber) {
+      throw new BadRequestException('Password, name, and phone number are required');
     }
 
     // Normalize data
@@ -228,8 +228,8 @@ export class AuthController {
     console.log('Complete registration body:', body);
 
     // Validate required fields
-    if (!body.email || !body.password || !body.name || !body.phoneNumber || !body.otp) {
-      throw new BadRequestException('Email, password, name, phone number, and OTP are required');
+    if (!body.password || !body.name || !body.phoneNumber || !body.otp) {
+      throw new BadRequestException('Password, name, phone number, and OTP are required');
     }
 
     // Normalize multipart data
