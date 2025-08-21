@@ -303,7 +303,9 @@ export class ProvidersService {
               id: true,
               name: true,
               email: true,
-              phone: true
+              phone: true,
+              latitude: true,
+              longitude: true
             }
           },
           service: {
@@ -332,7 +334,9 @@ export class ProvidersService {
             select: {
               id: true,
               name: true,
-              email: true
+              email: true,
+              latitude: true,
+              longitude: true
             }
           }
         },

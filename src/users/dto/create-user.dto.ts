@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, IsNotEmpty, IsEmail } from 'class-validator';
+import { IsString, IsBoolean, IsOptional, IsNotEmpty, IsEmail, IsNumber } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -44,4 +44,12 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   fcm?: string; // Optional FCM token
+
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
 }

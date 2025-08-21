@@ -148,7 +148,9 @@ export class OrdersService {
             id: true,
             name: true,
             phone: true,
-            email: true
+            email: true,
+            latitude: true,
+            longitude: true
           }
         },
         provider: {
@@ -189,7 +191,9 @@ export class OrdersService {
             name: true,
             phone: true,
             email: true,
-            address: true
+            address: true,
+            latitude: true,
+            longitude: true
           }
         },
         provider: {
@@ -267,7 +271,9 @@ export class OrdersService {
             id: true,
             name: true,
             phone: true,
-            email: true
+            email: true,
+            latitude: true,
+            longitude: true
           }
         },
         provider: {
@@ -337,7 +343,9 @@ export class OrdersService {
             id: true,
             name: true,
             phone: true,
-            email: true
+            email: true,
+            latitude: true,
+            longitude: true
           }
         },
         provider: {
@@ -407,7 +415,9 @@ export class OrdersService {
               id: true,
               name: true,
               phone: true,
-              email: true
+              email: true,
+              latitude: true,
+              longitude: true
             }
           },
           provider: {
@@ -538,7 +548,9 @@ export class OrdersService {
             id: true,
             name: true,
             phone: true,
-            email: true
+            email: true,
+            latitude: true,
+            longitude: true
           }
         },
         provider: {
@@ -574,7 +586,9 @@ export class OrdersService {
             id: true,
             name: true,
             phone: true,
-            email: true
+            email: true,
+            latitude: true,
+            longitude: true
           }
         },
         provider: {
@@ -615,7 +629,9 @@ export class OrdersService {
             id: true,
             name: true,
             phone: true,
-            email: true
+            email: true,
+            latitude: true,
+            longitude: true
           }
         },
         provider: {
@@ -656,7 +672,9 @@ export class OrdersService {
             id: true,
             name: true,
             phone: true,
-            email: true
+            email: true,
+            latitude: true,
+            longitude: true
           }
         },
         provider: {
