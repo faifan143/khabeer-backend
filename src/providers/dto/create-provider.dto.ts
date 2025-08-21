@@ -48,4 +48,8 @@ export class CreateProviderDto {
   @IsArray()
   @IsNumber({}, { each: true })
   serviceIds?: number[]; // IDs of services the provider offers (optional for registration)
+
+  @IsOptional()
+  @IsString()
+  fcm?: string; // Optional FCM token
 }

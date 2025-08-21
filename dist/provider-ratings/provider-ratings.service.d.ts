@@ -26,9 +26,9 @@ export declare class ProviderRatingsService {
     } & {
         id: number;
         providerId: number;
-        userId: number;
         orderId: number | null;
         rating: number;
+        userId: number;
         comment: string | null;
         ratingDate: Date;
     }>;
@@ -46,9 +46,9 @@ export declare class ProviderRatingsService {
     } & {
         id: number;
         providerId: number;
-        userId: number;
         orderId: number | null;
         rating: number;
+        userId: number;
         comment: string | null;
         ratingDate: Date;
     })[]>;
@@ -67,9 +67,9 @@ export declare class ProviderRatingsService {
         } & {
             id: number;
             providerId: number;
-            userId: number;
             orderId: number | null;
             rating: number;
+            userId: number;
             comment: string | null;
             ratingDate: Date;
         })[];
@@ -97,9 +97,9 @@ export declare class ProviderRatingsService {
     } & {
         id: number;
         providerId: number;
-        userId: number;
         orderId: number | null;
         rating: number;
+        userId: number;
         comment: string | null;
         ratingDate: Date;
     }>;
@@ -117,9 +117,9 @@ export declare class ProviderRatingsService {
     } & {
         id: number;
         providerId: number;
-        userId: number;
         orderId: number | null;
         rating: number;
+        userId: number;
         comment: string | null;
         ratingDate: Date;
     }>;
@@ -135,9 +135,9 @@ export declare class ProviderRatingsService {
     } & {
         id: number;
         providerId: number;
-        userId: number;
         orderId: number | null;
         rating: number;
+        userId: number;
         comment: string | null;
         ratingDate: Date;
     })[]>;
@@ -150,16 +150,17 @@ export declare class ProviderRatingsService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }[]>;
 }

@@ -9,15 +9,16 @@ export declare class UsersController {
     findAll(): Promise<{
         id: number;
         name: string;
-        email: string;
-        password: string;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
         officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string;
+        fcm: string | null;
         address: string;
         role: string;
     }[]>;
@@ -25,13 +26,13 @@ export declare class UsersController {
         user: {
             id: number;
             name: string;
-            email: string;
             image: string;
             state: string;
             phone: string;
             isActive: boolean;
             officialDocuments: string | null;
             createdAt: Date;
+            email: string | null;
             updatedAt: Date;
             address: string;
             role: string;
@@ -45,45 +46,48 @@ export declare class UsersController {
     findOne(id: string): Promise<{
         id: number;
         name: string;
-        email: string;
-        password: string;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
         officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string;
+        fcm: string | null;
         address: string;
         role: string;
     }>;
     create(createUserDto: CreateUserDto, file: Express.Multer.File): Promise<{
         id: number;
         name: string;
-        email: string;
-        password: string;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
         officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string;
+        fcm: string | null;
         address: string;
         role: string;
     }>;
     update(id: string, data: UpdateUserDto, req: any, file: Express.Multer.File): Promise<{
         id: number;
         name: string;
-        email: string;
-        password: string;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
         officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string;
+        fcm: string | null;
         address: string;
         role: string;
     } | {

@@ -11,4 +11,5 @@ export declare class CreateProviderDto {
     location?: any;
     officialDocuments?: string;
     serviceIds?: number[];
+    fcm?: string;
 }

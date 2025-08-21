@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BusinessFlowNotificationsService } from '../notifications/business-flow-notifications.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { UpdateOrderStatusDto, OrderStatus } from './dto/order-status.dto';
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: BusinessFlowNotificationsService
+  ) { }
 
   async create(createOrderDto: CreateOrderDto, userId: number) {
     // Validate provider and service exist
@@ -102,6 +106,18 @@ export class OrdersService {
         paymentStatus: 'pending'
       }
     });
+
+    // Send notification to provider about new order
+    try {
+      await this.notificationsService.notifyNewOrder(
+        order.id,
+        order.providerId,
+        order.service.title,
+        order.user.name
+      );
+    } catch (error) {
+      console.error('Failed to send new order notification:', error);
+    }
 
     // Add offer information to response if offer was applied
     const orderWithOffer = {
@@ -242,7 +258,7 @@ export class OrdersService {
     // Note: Payment status is managed separately by users/admins
     // Order completion does not automatically mark invoice as paid
 
-    return this.prisma.order.update({
+    const updatedOrder = await this.prisma.order.update({
       where: { id },
       data: updateData,
       include: {
@@ -273,6 +289,20 @@ export class OrdersService {
         invoice: true
       }
     });
+
+    // Send notification to customer about order status update
+    try {
+      await this.notificationsService.notifyOrderStatusUpdate(
+        updatedOrder.id,
+        updatedOrder.userId,
+        updatedOrder.status,
+        updatedOrder.provider.name
+      );
+    } catch (error) {
+      console.error('Failed to send order status notification:', error);
+    }
+
+    return updatedOrder;
   }
 
   async cancel(id: number, userId: number, role: string) {

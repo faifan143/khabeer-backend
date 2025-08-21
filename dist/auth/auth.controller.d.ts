@@ -10,7 +10,8 @@ export declare class AuthController {
         access_token: string;
         user: {
             id: number;
-            email: string;
+            email: string | undefined;
+            phone: string | undefined;
             role: string;
         };
     }>;
@@ -50,17 +51,18 @@ export declare class AuthController {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     checkAccountStatus(body: {
         email: string;
@@ -89,17 +91,18 @@ export declare class AuthController {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     deactivateAccount(req: any): Promise<{
         message: string;
@@ -113,17 +116,18 @@ export declare class AuthController {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     private parseServiceIds;
 }

@@ -8,80 +8,84 @@ export declare class ProvidersService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }[]>;
     findByEmail(email: string): Promise<{
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     } | null>;
     findByPhone(phone: string): Promise<{
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     } | null>;
     findById(id: number): Promise<{
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     getProfile(providerId: number): Promise<{
         provider: {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             state: string;
             phone: string;
             isActive: boolean;
+            officialDocuments: string | null;
             isVerified: boolean;
             location: import("generated/prisma/runtime/library").JsonValue;
-            officialDocuments: string | null;
             createdAt: Date;
+            email: string | null;
             updatedAt: Date;
         };
         systemInfo: {
@@ -94,17 +98,18 @@ export declare class ProvidersService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     registerProviderWithServices(data: CreateProviderDto): Promise<{
         providerServices: {
@@ -118,17 +123,18 @@ export declare class ProvidersService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     update(id: number, data: UpdateProviderDto): Promise<{
         providerServices: {
@@ -142,17 +148,18 @@ export declare class ProvidersService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     updateStatus(id: number, isActive: boolean): Promise<{
         providerServices: {
@@ -166,17 +173,18 @@ export declare class ProvidersService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     addServices(providerId: number, serviceIds: number[]): Promise<({
         providerServices: {
@@ -190,17 +198,18 @@ export declare class ProvidersService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }) | null>;
     removeServices(providerId: number, serviceIds: number[]): Promise<({
         providerServices: {
@@ -214,17 +223,18 @@ export declare class ProvidersService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }) | null>;
     getProviderServices(providerId: number): Promise<({
         service: {
@@ -252,38 +262,38 @@ export declare class ProvidersService {
         user: {
             id: number;
             name: string;
-            email: string;
             phone: string;
+            email: string | null;
         };
     } & {
         serviceId: number;
         id: number;
         location: string | null;
         providerId: number;
+        status: string;
         scheduledDate: Date | null;
         locationDetails: string | null;
         quantity: number;
         providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-        status: string;
-        bookingId: string;
         userId: number;
         orderDate: Date;
-        totalAmount: number;
-        providerAmount: number;
+        bookingId: string;
         commissionAmount: number;
+        providerAmount: number;
+        totalAmount: number;
     })[]>;
     getProviderRatings(providerId: number): Promise<({
         user: {
             id: number;
             name: string;
-            email: string;
+            email: string | null;
         };
     } & {
         id: number;
         providerId: number;
-        userId: number;
         orderId: number | null;
         rating: number;
+        userId: number;
         comment: string | null;
         ratingDate: Date;
     })[]>;
@@ -304,4 +314,6 @@ export declare class ProvidersService {
     remove(id: number): Promise<{
         message: string;
     }>;
+    updateFCMToken(providerId: number, fcmToken: string): Promise<any>;
+    removeFCMToken(providerId: number): Promise<any>;
 }

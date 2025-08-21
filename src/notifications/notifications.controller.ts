@@ -21,7 +21,9 @@ import { Roles } from '../auth/roles.decorator';
 @ApiTags('notifications')
 @Controller('notifications')
 export class NotificationsController {
-    constructor(private readonly notificationsService: NotificationsService) { }
+    constructor(
+        private readonly notificationsService: NotificationsService
+    ) { }
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -196,4 +198,6 @@ export class NotificationsController {
             throw new Error('Failed to send test messages');
         }
     }
+
+
 } 

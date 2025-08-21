@@ -9,9 +9,16 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RegisterDto = void 0;
+exports.RegisterDto = exports.RegisterType = void 0;
 const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
+var RegisterType;
+(function (RegisterType) {
+    RegisterType["USER"] = "user";
+    RegisterType["PROVIDER"] = "provider";
+})(RegisterType || (exports.RegisterType = RegisterType = {}));
 class RegisterDto {
+    registerType;
     name;
     email;
     password;
@@ -20,6 +27,7 @@ class RegisterDto {
     address;
     phone;
     state;
+    fcm;
     description;
     isActive;
     officialDocuments;
@@ -27,15 +35,22 @@ class RegisterDto {
 }
 exports.RegisterDto = RegisterDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Registration type - user (phone) or provider (email)', enum: RegisterType }),
+    (0, class_validator_1.IsEnum)(RegisterType),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "registerType", void 0);
+__decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "name", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(6),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "password", void 0);
 __decorate([
@@ -63,6 +78,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "fcm", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

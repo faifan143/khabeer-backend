@@ -10,16 +10,32 @@ export declare class AuthService {
     private readonly smsService;
     private readonly jwtService;
     constructor(usersService: UsersService, providersService: ProvidersService, smsService: SmsService, jwtService: JwtService);
-    validateUser(email: string, pass: string): Promise<any>;
+    validateUser(identifier: string, pass: string, loginType: string): Promise<any>;
     login(user: {
         id: number;
-        email: string;
+        email?: string;
+        phone?: string;
         role: string;
     }): Promise<{
         access_token: string;
         user: {
             id: number;
-            email: string;
+            email: string | undefined;
+            phone: string | undefined;
+            role: string;
+        };
+    }>;
+    loginWithFCM(user: {
+        id: number;
+        email?: string;
+        phone?: string;
+        role: string;
+    }, fcmToken?: string): Promise<{
+        access_token: string;
+        user: {
+            id: number;
+            email: string | undefined;
+            phone: string | undefined;
             role: string;
         };
     }>;
@@ -30,19 +46,20 @@ export declare class AuthService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
-    checkAccountStatus(email: string): Promise<{
+    checkAccountStatus(identifier: string, type?: 'email' | 'phone'): Promise<{
         exists: boolean;
         type: string;
         isActive: boolean;
@@ -67,17 +84,18 @@ export declare class AuthService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     deactivateProviderAccount(providerId: number): Promise<{
         message: string;
@@ -91,17 +109,18 @@ export declare class AuthService {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     sendPhoneLoginOtp(phoneLoginDto: PhoneLoginDto): Promise<{
         success: boolean;

@@ -8,6 +8,7 @@ const categories_service_1 = require("./categories/categories.service");
 const services_service_1 = require("./services/services.service");
 const auth_service_1 = require("./auth/auth.service");
 const files_service_1 = require("./files/files.service");
+const register_dto_1 = require("./auth/dto/register.dto");
 async function bootstrap() {
     const app = await core_1.NestFactory.createApplicationContext(app_module_1.AppModule);
     const usersService = app.get(users_service_1.UsersService);
@@ -31,6 +32,7 @@ async function bootstrap() {
         categoryId: category.id,
     });
     await authService.register({
+        registerType: register_dto_1.RegisterType.USER,
         name: 'Seed User',
         email: 'seeduser@example.com',
         password: 'password',

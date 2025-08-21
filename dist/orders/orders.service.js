@@ -12,11 +12,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrdersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const business_flow_notifications_service_1 = require("../notifications/business-flow-notifications.service");
 const order_status_dto_1 = require("./dto/order-status.dto");
 let OrdersService = class OrdersService {
     prisma;
-    constructor(prisma) {
+    notificationsService;
+    constructor(prisma, notificationsService) {
         this.prisma = prisma;
+        this.notificationsService = notificationsService;
     }
     async create(createOrderDto, userId) {
         const provider = await this.prisma.provider.findUnique({
@@ -91,6 +94,12 @@ let OrdersService = class OrdersService {
                 paymentStatus: 'pending'
             }
         });
+        try {
+            await this.notificationsService.notifyNewOrder(order.id, order.providerId, order.service.title, order.user.name);
+        }
+        catch (error) {
+            console.error('Failed to send new order notification:', error);
+        }
         const orderWithOffer = {
             ...order,
             appliedOffer: validOffer ? {
@@ -208,7 +217,7 @@ let OrdersService = class OrdersService {
         if (updateStatusDto.providerLocation && role === 'PROVIDER') {
             updateData.providerLocation = updateStatusDto.providerLocation;
         }
-        return this.prisma.order.update({
+        const updatedOrder = await this.prisma.order.update({
             where: { id },
             data: updateData,
             include: {
@@ -239,6 +248,13 @@ let OrdersService = class OrdersService {
                 invoice: true
             }
         });
+        try {
+            await this.notificationsService.notifyOrderStatusUpdate(updatedOrder.id, updatedOrder.userId, updatedOrder.status, updatedOrder.provider.name);
+        }
+        catch (error) {
+            console.error('Failed to send order status notification:', error);
+        }
+        return updatedOrder;
     }
     async cancel(id, userId, role) {
         const order = await this.prisma.order.findUnique({
@@ -636,6 +652,7 @@ let OrdersService = class OrdersService {
 exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        business_flow_notifications_service_1.BusinessFlowNotificationsService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

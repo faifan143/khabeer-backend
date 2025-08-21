@@ -37,70 +37,8 @@ async function seedSystemSettings() {
                 category: 'social'
             }
         ];
-        const legalSettings = [
-            {
-                key: 'terms_of_service',
-                value: 'https://khabeer.com/legal/terms',
-                description: 'Terms of Service document URL',
-                category: 'legal'
-            },
-            {
-                key: 'privacy_policy',
-                value: 'https://khabeer.com/legal/privacy',
-                description: 'Privacy Policy document URL',
-                category: 'legal'
-            },
-            {
-                key: 'user_agreement',
-                value: 'https://khabeer.com/legal/user-agreement',
-                description: 'User Agreement document URL',
-                category: 'legal'
-            },
-            {
-                key: 'provider_agreement',
-                value: 'https://khabeer.com/legal/provider-agreement',
-                description: 'Provider Agreement document URL',
-                category: 'legal'
-            },
-            {
-                key: 'refund_policy',
-                value: 'https://khabeer.com/legal/refund',
-                description: 'Refund Policy document URL',
-                category: 'legal'
-            }
-        ];
-        const supportSettings = [
-            {
-                key: 'support_phone',
-                value: '+966501234567',
-                description: 'Main support phone number',
-                category: 'support'
-            },
-            {
-                key: 'support_whatsapp',
-                value: '+966501234567',
-                description: 'Support WhatsApp number',
-                category: 'support'
-            },
-            {
-                key: 'support_email',
-                value: 'support@khabeer.com',
-                description: 'Support email address',
-                category: 'support'
-            },
-            {
-                key: 'emergency_phone',
-                value: '+966501234568',
-                description: 'Emergency contact number',
-                category: 'support'
-            },
-            {
-                key: 'business_hours',
-                value: '24/7',
-                description: 'Business hours for support',
-                category: 'support'
-            }
-        ];
+        const legalSettings = [];
+        const supportSettings = [];
         const allSettings = [...socialSettings, ...legalSettings, ...supportSettings];
         for (const setting of allSettings) {
             await prisma.systemSettings.upsert({

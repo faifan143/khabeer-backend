@@ -7,11 +7,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;
@@ -27,11 +27,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;
@@ -47,11 +47,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;
@@ -74,11 +74,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;
@@ -94,11 +94,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;
@@ -158,11 +158,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;
@@ -178,11 +178,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;
@@ -200,11 +200,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;
@@ -222,11 +222,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;
@@ -244,11 +244,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;
@@ -266,11 +266,11 @@ export declare class ProviderVerificationController {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: string;

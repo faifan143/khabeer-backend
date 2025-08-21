@@ -5,8 +5,9 @@ export class CreateUserDto {
   @IsNotEmpty()
   name: string;
 
+  @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -20,9 +21,9 @@ export class CreateUserDto {
   @IsString()
   address?: string;
 
-  @IsOptional()
   @IsString()
-  phone?: string;
+  @IsNotEmpty()
+  phone: string;
 
   @IsOptional()
   @IsString()
@@ -39,4 +40,8 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   officialDocuments?: string;
+
+  @IsOptional()
+  @IsString()
+  fcm?: string; // Optional FCM token
 }

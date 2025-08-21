@@ -10,9 +10,12 @@ exports.NotificationsModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const notifications_controller_1 = require("./notifications.controller");
+const notification_test_controller_1 = require("./notification-test.controller");
 const notifications_service_1 = require("./notifications.service");
 const simplified_channel_service_1 = require("./simplified-channel.service");
 const fcm_service_1 = require("./fcm.service");
+const simple_fcm_service_1 = require("./simple-fcm.service");
+const business_flow_notifications_service_1 = require("./business-flow-notifications.service");
 const notification_integration_service_1 = require("./notification-integration.service");
 const prisma_module_1 = require("../prisma/prisma.module");
 let NotificationsModule = class NotificationsModule {
@@ -21,9 +24,9 @@ exports.NotificationsModule = NotificationsModule;
 exports.NotificationsModule = NotificationsModule = __decorate([
     (0, common_1.Module)({
         imports: [config_1.ConfigModule, prisma_module_1.PrismaModule],
-        controllers: [notifications_controller_1.NotificationsController],
-        providers: [notifications_service_1.NotificationsService, simplified_channel_service_1.SimplifiedChannelService, fcm_service_1.FCMService, notification_integration_service_1.NotificationIntegrationService],
-        exports: [notifications_service_1.NotificationsService, simplified_channel_service_1.SimplifiedChannelService, fcm_service_1.FCMService, notification_integration_service_1.NotificationIntegrationService],
+        controllers: [notifications_controller_1.NotificationsController, notification_test_controller_1.NotificationTestController],
+        providers: [notifications_service_1.NotificationsService, simplified_channel_service_1.SimplifiedChannelService, fcm_service_1.FCMService, simple_fcm_service_1.SimpleFCMService, business_flow_notifications_service_1.BusinessFlowNotificationsService, notification_integration_service_1.NotificationIntegrationService],
+        exports: [notifications_service_1.NotificationsService, simplified_channel_service_1.SimplifiedChannelService, fcm_service_1.FCMService, simple_fcm_service_1.SimpleFCMService, business_flow_notifications_service_1.BusinessFlowNotificationsService, notification_integration_service_1.NotificationIntegrationService],
     })
 ], NotificationsModule);
 //# sourceMappingURL=notifications.module.js.map

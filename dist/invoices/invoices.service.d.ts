@@ -28,39 +28,39 @@ export declare class InvoicesService {
             user: {
                 id: number;
                 name: string;
-                email: string;
                 phone: string;
+                email: string | null;
             };
         } & {
             serviceId: number;
             id: number;
             location: string | null;
             providerId: number;
+            status: string;
             scheduledDate: Date | null;
             locationDetails: string | null;
             quantity: number;
             providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            status: string;
-            bookingId: string;
             userId: number;
             orderDate: Date;
-            totalAmount: number;
-            providerAmount: number;
+            bookingId: string;
             commissionAmount: number;
+            providerAmount: number;
+            totalAmount: number;
         };
     } & {
         id: number;
         isVerified: boolean;
-        totalAmount: number;
         orderId: number;
-        paymentDate: Date | null;
         discount: number;
-        paymentStatus: string;
+        totalAmount: number;
+        paymentDate: Date | null;
         paymentMethod: string | null;
-        verifiedBy: number | null;
-        verifiedAt: Date | null;
-        payoutStatus: string;
+        paymentStatus: string;
         payoutDate: Date | null;
+        payoutStatus: string;
+        verifiedAt: Date | null;
+        verifiedBy: number | null;
     }>;
     findAll(userId: number, role: string): Promise<({
         order: {
@@ -77,39 +77,39 @@ export declare class InvoicesService {
             user: {
                 id: number;
                 name: string;
-                email: string;
                 phone: string;
+                email: string | null;
             };
         } & {
             serviceId: number;
             id: number;
             location: string | null;
             providerId: number;
+            status: string;
             scheduledDate: Date | null;
             locationDetails: string | null;
             quantity: number;
             providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            status: string;
-            bookingId: string;
             userId: number;
             orderDate: Date;
-            totalAmount: number;
-            providerAmount: number;
+            bookingId: string;
             commissionAmount: number;
+            providerAmount: number;
+            totalAmount: number;
         };
     } & {
         id: number;
         isVerified: boolean;
-        totalAmount: number;
         orderId: number;
-        paymentDate: Date | null;
         discount: number;
-        paymentStatus: string;
+        totalAmount: number;
+        paymentDate: Date | null;
         paymentMethod: string | null;
-        verifiedBy: number | null;
-        verifiedAt: Date | null;
-        payoutStatus: string;
+        paymentStatus: string;
         payoutDate: Date | null;
+        payoutStatus: string;
+        verifiedAt: Date | null;
+        verifiedBy: number | null;
     })[]>;
     findOne(id: number, userId: number, role: string): Promise<{
         order: {
@@ -128,8 +128,8 @@ export declare class InvoicesService {
             user: {
                 id: number;
                 name: string;
-                email: string;
                 phone: string;
+                email: string | null;
                 address: string;
             };
         } & {
@@ -137,31 +137,31 @@ export declare class InvoicesService {
             id: number;
             location: string | null;
             providerId: number;
+            status: string;
             scheduledDate: Date | null;
             locationDetails: string | null;
             quantity: number;
             providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            status: string;
-            bookingId: string;
             userId: number;
             orderDate: Date;
-            totalAmount: number;
-            providerAmount: number;
+            bookingId: string;
             commissionAmount: number;
+            providerAmount: number;
+            totalAmount: number;
         };
     } & {
         id: number;
         isVerified: boolean;
-        totalAmount: number;
         orderId: number;
-        paymentDate: Date | null;
         discount: number;
-        paymentStatus: string;
+        totalAmount: number;
+        paymentDate: Date | null;
         paymentMethod: string | null;
-        verifiedBy: number | null;
-        verifiedAt: Date | null;
-        payoutStatus: string;
+        paymentStatus: string;
         payoutDate: Date | null;
+        payoutStatus: string;
+        verifiedAt: Date | null;
+        verifiedBy: number | null;
     }>;
     updatePaymentStatus(id: number, updatePaymentStatusDto: UpdatePaymentStatusDto, userId: number, role: string): Promise<{
         order: {
@@ -178,39 +178,39 @@ export declare class InvoicesService {
             user: {
                 id: number;
                 name: string;
-                email: string;
                 phone: string;
+                email: string | null;
             };
         } & {
             serviceId: number;
             id: number;
             location: string | null;
             providerId: number;
+            status: string;
             scheduledDate: Date | null;
             locationDetails: string | null;
             quantity: number;
             providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            status: string;
-            bookingId: string;
             userId: number;
             orderDate: Date;
-            totalAmount: number;
-            providerAmount: number;
+            bookingId: string;
             commissionAmount: number;
+            providerAmount: number;
+            totalAmount: number;
         };
     } & {
         id: number;
         isVerified: boolean;
-        totalAmount: number;
         orderId: number;
-        paymentDate: Date | null;
         discount: number;
-        paymentStatus: string;
+        totalAmount: number;
+        paymentDate: Date | null;
         paymentMethod: string | null;
-        verifiedBy: number | null;
-        verifiedAt: Date | null;
-        payoutStatus: string;
+        paymentStatus: string;
         payoutDate: Date | null;
+        payoutStatus: string;
+        verifiedAt: Date | null;
+        verifiedBy: number | null;
     }>;
     getPaymentStats(userId: number, role: string): Promise<{
         total: number;
@@ -245,38 +245,38 @@ export declare class InvoicesService {
             user: {
                 id: number;
                 name: string;
-                email: string;
+                email: string | null;
             };
         } & {
             serviceId: number;
             id: number;
             location: string | null;
             providerId: number;
+            status: string;
             scheduledDate: Date | null;
             locationDetails: string | null;
             quantity: number;
             providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            status: string;
-            bookingId: string;
             userId: number;
             orderDate: Date;
-            totalAmount: number;
-            providerAmount: number;
+            bookingId: string;
             commissionAmount: number;
+            providerAmount: number;
+            totalAmount: number;
         };
     } & {
         id: number;
         isVerified: boolean;
-        totalAmount: number;
         orderId: number;
-        paymentDate: Date | null;
         discount: number;
-        paymentStatus: string;
+        totalAmount: number;
+        paymentDate: Date | null;
         paymentMethod: string | null;
-        verifiedBy: number | null;
-        verifiedAt: Date | null;
-        payoutStatus: string;
+        paymentStatus: string;
         payoutDate: Date | null;
+        payoutStatus: string;
+        verifiedAt: Date | null;
+        verifiedBy: number | null;
     }>;
     getProviderPendingConfirmations(providerId: number): Promise<({
         order: {
@@ -286,37 +286,37 @@ export declare class InvoicesService {
             user: {
                 id: number;
                 name: string;
-                email: string;
+                email: string | null;
             };
         } & {
             serviceId: number;
             id: number;
             location: string | null;
             providerId: number;
+            status: string;
             scheduledDate: Date | null;
             locationDetails: string | null;
             quantity: number;
             providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-            status: string;
-            bookingId: string;
             userId: number;
             orderDate: Date;
-            totalAmount: number;
-            providerAmount: number;
+            bookingId: string;
             commissionAmount: number;
+            providerAmount: number;
+            totalAmount: number;
         };
     } & {
         id: number;
         isVerified: boolean;
-        totalAmount: number;
         orderId: number;
-        paymentDate: Date | null;
         discount: number;
-        paymentStatus: string;
+        totalAmount: number;
+        paymentDate: Date | null;
         paymentMethod: string | null;
-        verifiedBy: number | null;
-        verifiedAt: Date | null;
-        payoutStatus: string;
+        paymentStatus: string;
         payoutDate: Date | null;
+        payoutStatus: string;
+        verifiedAt: Date | null;
+        verifiedBy: number | null;
     })[]>;
 }

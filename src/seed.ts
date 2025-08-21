@@ -6,6 +6,7 @@ import { CategoriesService } from './categories/categories.service';
 import { ServicesService } from './services/services.service';
 import { AuthService } from './auth/auth.service';
 import { FilesService } from './files/files.service';
+import { RegisterType } from './auth/dto/register.dto';
 import * as bcrypt from 'bcryptjs';
 
 async function bootstrap() {
@@ -38,6 +39,7 @@ async function bootstrap() {
 
   // Seed a user (using AuthService for hashing)
   await authService.register({
+    registerType: RegisterType.USER,
     name: 'Seed User',
     email: 'seeduser@example.com',
     password: 'password',

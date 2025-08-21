@@ -16,11 +16,11 @@ export declare class ProviderJoinRequestsService {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: number;
@@ -34,11 +34,11 @@ export declare class ProviderJoinRequestsService {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: number;
@@ -52,11 +52,11 @@ export declare class ProviderJoinRequestsService {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: number;
@@ -70,11 +70,11 @@ export declare class ProviderJoinRequestsService {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: number;
@@ -88,11 +88,11 @@ export declare class ProviderJoinRequestsService {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: number;
@@ -109,11 +109,11 @@ export declare class ProviderJoinRequestsService {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: number;
@@ -134,11 +134,11 @@ export declare class ProviderJoinRequestsService {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: number;
@@ -152,11 +152,11 @@ export declare class ProviderJoinRequestsService {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             phone: string;
             isActive: boolean;
             isVerified: boolean;
+            email: string | null;
         };
     } & {
         id: number;

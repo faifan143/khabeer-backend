@@ -24,6 +24,7 @@ class CreateProviderDto {
     location;
     officialDocuments;
     serviceIds;
+    fcm;
 }
 exports.CreateProviderDto = CreateProviderDto;
 __decorate([
@@ -86,4 +87,9 @@ __decorate([
     (0, class_validator_1.IsNumber)({}, { each: true }),
     __metadata("design:type", Array)
 ], CreateProviderDto.prototype, "serviceIds", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateProviderDto.prototype, "fcm", void 0);
 //# sourceMappingURL=create-provider.dto.js.map

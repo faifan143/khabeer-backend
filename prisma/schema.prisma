@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -15,177 +9,179 @@ datasource db {
 }
 
 model Category {
-  id        Int      @id @default(autoincrement())
-  image     String
-  titleAr   String
-  titleEn   String
-  state     String
-  services  Service[]
+  id       Int       @id @default(autoincrement())
+  image    String
+  titleAr  String
+  titleEn  String
+  state    String
+  services Service[]
 }
 
 model Service {
-  id          Int      @id @default(autoincrement())
-  image       String
-  title       String
-  description String
-  commission  Float
-  whatsapp    String
-  category    Category? @relation(fields: [categoryId], references: [id])
-  categoryId  Int?
+  id               Int               @id @default(autoincrement())
+  image            String
+  title            String
+  description      String
+  commission       Float
+  whatsapp         String
+  categoryId       Int?
+  offers           Offer[]
+  orders           Order[]
   providerServices ProviderService[]
-  offers      Offer[]
-  orders      Order[]
+  category         Category?         @relation(fields: [categoryId], references: [id])
 }
 
 model Provider {
-  id                Int      @id @default(autoincrement())
+  id                Int                   @id @default(autoincrement())
   name              String
-  email             String?  @unique
-  password          String?  // Added password field for authentication
   image             String
   description       String
   state             String
   phone             String
-  isActive          Boolean  @default(false)
-  isVerified        Boolean  @default(false)
-  location          Json?    // GPS coordinates {lat: number, lng: number}
+  isActive          Boolean               @default(false)
   officialDocuments String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  providerServices  ProviderService[]
+  isVerified        Boolean               @default(false)
+  location          Json?
+  createdAt         DateTime              @default(now())
+  email             String?               @unique
+  updatedAt         DateTime              @updatedAt
+  password          String?
+  fcm               String?
+  locationTracking  LocationTracking[]
+  offers            Offer[]
   orders            Order[]
   joinRequests      ProviderJoinRequest[]
-  offers            Offer[]
   ratings           ProviderRating[]
+  providerServices  ProviderService[]
   verification      ProviderVerification?
-  locationTracking  LocationTracking[]
 }
 
 model User {
-  id                Int      @id @default(autoincrement())
+  id                Int              @id @default(autoincrement())
   name              String
-  email             String   @unique
-  password          String
-  role              String   @default("USER")
   image             String
   address           String
-  phone             String
+  phone             String           @unique
   state             String
-  isActive          Boolean  @default(false)
+  isActive          Boolean          @default(false)
   officialDocuments String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  email             String?          @unique
+  password          String
+  role              String           @default("USER")
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  fcm               String?
   orders            Order[]
   ratings           ProviderRating[]
 }
 
 model Order {
-  id                Int      @id @default(autoincrement())
-  bookingId         String   @unique @default(cuid())
-  user              User     @relation(fields: [userId], references: [id])
+  id                Int                @id @default(autoincrement())
   userId            Int
-  provider          Provider @relation(fields: [providerId], references: [id])
   providerId        Int
-  service           Service  @relation(fields: [serviceId], references: [id])
   serviceId         Int
-  status            String   @default("pending") // pending, accepted, in_progress, completed, cancelled
-  orderDate         DateTime @default(now())
-  scheduledDate     DateTime?
-  location          String?  // Home, Work, Other
-  locationDetails   String?
-  providerLocation  Json?    // GPS coordinates when order accepted
-  quantity          Int      @default(1)
-  totalAmount       Float
-  providerAmount    Float
+  status            String             @default("pending")
+  orderDate         DateTime           @default(now())
+  bookingId         String             @unique @default(cuid())
   commissionAmount  Float
+  location          String?
+  locationDetails   String?
+  providerAmount    Float
+  providerLocation  Json?
+  quantity          Int                @default(1)
+  scheduledDate     DateTime?
+  totalAmount       Float
+  activeConnections ActiveConnection[]
   invoice           Invoice?
   locationTracking  LocationTracking[]
-  activeConnections ActiveConnection[]
+  provider          Provider           @relation(fields: [providerId], references: [id])
+  service           Service            @relation(fields: [serviceId], references: [id])
+  user              User               @relation(fields: [userId], references: [id])
 }
 
 model Invoice {
-  id           Int      @id @default(autoincrement())
-  order        Order    @relation(fields: [orderId], references: [id])
-  orderId      Int      @unique
-  paymentDate  DateTime?
-  totalAmount  Float
-  discount     Float    @default(0)
-  paymentStatus String  @default("pending") // pending, paid, failed, refunded
+  id            Int       @id @default(autoincrement())
+  orderId       Int       @unique
+  paymentDate   DateTime?
+  totalAmount   Float
+  discount      Float     @default(0)
   paymentMethod String?
-  isVerified   Boolean  @default(false) // Admin verification of payment
-  verifiedBy   Int?     // Admin ID who verified the payment
-  verifiedAt   DateTime? // When payment was verified
-  payoutStatus String   @default("pending") // pending, paid, failed
-  payoutDate   DateTime? // When provider was paid
+  paymentStatus String    @default("pending")
+  isVerified    Boolean   @default(false)
+  payoutDate    DateTime?
+  payoutStatus  String    @default("pending")
+  verifiedAt    DateTime?
+  verifiedBy    Int?
+  order         Order     @relation(fields: [orderId], references: [id])
 }
 
 model ProviderVerification {
-  id          String   @id @default(cuid())
-  providerId  Int      @unique
-  status      String   @default("pending") // pending, approved, rejected
-  documents   String[] // document URLs
-  adminNotes  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  provider    Provider @relation(fields: [providerId], references: [id])
+  id         String   @id @default(cuid())
+  providerId Int      @unique
+  status     String   @default("pending")
+  documents  String[]
+  adminNotes String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  provider   Provider @relation(fields: [providerId], references: [id])
 }
 
 model ProviderJoinRequest {
-  id           Int      @id @default(autoincrement())
-  provider     Provider @relation(fields: [providerId], references: [id])
-  providerId   Int
-  requestDate  DateTime @default(now())
-  status       String   @default("pending") // pending, approved, rejected
-  adminNotes   String?
+  id          Int      @id @default(autoincrement())
+  providerId  Int
+  requestDate DateTime @default(now())
+  status      String   @default("pending")
+  adminNotes  String?
+  provider    Provider @relation(fields: [providerId], references: [id])
 }
 
 model ProviderService {
-  id          Int      @id @default(autoincrement())
-  provider    Provider @relation(fields: [providerId], references: [id])
-  providerId  Int
-  service     Service  @relation(fields: [serviceId], references: [id])
-  serviceId   Int
-  price       Float    @default(0)
-  isActive    Boolean  @default(true)
+  id         Int      @id @default(autoincrement())
+  providerId Int
+  serviceId  Int
+  isActive   Boolean  @default(true)
+  price      Float    @default(0)
+  provider   Provider @relation(fields: [providerId], references: [id])
+  service    Service  @relation(fields: [serviceId], references: [id])
 }
 
 model Offer {
-  id          Int      @id @default(autoincrement())
-  provider    Provider @relation(fields: [providerId], references: [id])
-  providerId  Int
-  service     Service  @relation(fields: [serviceId], references: [id])
-  serviceId   Int
-  startDate   DateTime
-  endDate     DateTime
+  id            Int      @id @default(autoincrement())
+  providerId    Int
+  serviceId     Int
+  startDate     DateTime
+  endDate       DateTime
+  description   String
+  isActive      Boolean  @default(true)
+  offerPrice    Float
   originalPrice Float
-  offerPrice   Float
-  description String
-  isActive    Boolean  @default(true)
+  provider      Provider @relation(fields: [providerId], references: [id])
+  service       Service  @relation(fields: [serviceId], references: [id])
 }
 
 model ProviderRating {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      Int
-  provider    Provider @relation(fields: [providerId], references: [id])
-  providerId  Int
-  orderId     Int?     // Reference to the completed order
-  rating      Float
-  comment     String?
-  ratingDate  DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  providerId Int
+  rating     Float
+  comment    String?
+  ratingDate DateTime @default(now())
+  orderId    Int?
+  provider   Provider @relation(fields: [providerId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model LocationTracking {
-  id          Int      @id @default(autoincrement())
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId     Int
-  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId  Int
-  latitude    Decimal  @db.Decimal(10, 8)
-  longitude   Decimal  @db.Decimal(11, 8)
-  accuracy    Decimal? @db.Decimal(5, 2)
-  timestamp   DateTime @default(now())
-  isActive    Boolean  @default(true)
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  providerId Int
+  latitude   Decimal  @db.Decimal(10, 8)
+  longitude  Decimal  @db.Decimal(11, 8)
+  accuracy   Decimal? @db.Decimal(5, 2)
+  timestamp  DateTime @default(now())
+  isActive   Boolean  @default(true)
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([providerId])
@@ -196,12 +192,12 @@ model LocationTracking {
 model ActiveConnection {
   id           Int      @id @default(autoincrement())
   userId       Int
-  userType     String   // USER or PROVIDER
+  userType     String
   socketId     String   @unique
-  order        Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId      Int?
   connectedAt  DateTime @default(now())
   lastActivity DateTime @default(now())
+  order        Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userType])
@@ -210,17 +206,16 @@ model ActiveConnection {
   @@index([lastActivity])
 }
 
-// SMS Integration Models
 model Otp {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   phoneNumber String
-  otp         String   // Hashed OTP
-  purpose     String   // login, registration, password_reset, etc.
+  otp         String
+  purpose     String
   expiresAt   DateTime
-  attempts    Int      @default(0)
-  isUsed      Boolean  @default(false)
+  attempts    Int       @default(0)
+  isUsed      Boolean   @default(false)
   usedAt      DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   @@index([phoneNumber])
   @@index([purpose])
@@ -232,8 +227,8 @@ model SmsLog {
   id          Int      @id @default(autoincrement())
   phoneNumber String
   message     String
-  status      String   // sent, failed, pending
-  response    String?  // API response
+  status      String
+  response    String?
   sentAt      DateTime @default(now())
 
   @@index([phoneNumber])
@@ -241,15 +236,14 @@ model SmsLog {
   @@index([sentAt])
 }
 
-// Settings Models
 model SystemSettings {
-  id                Int      @id @default(autoincrement())
-  key               String   @unique
-  value             String
-  description       String?
-  category          String   @default("general") // legal, social, support, ads
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  category    String   @default("general")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model SubAdmin {
@@ -257,7 +251,7 @@ model SubAdmin {
   name        String
   email       String   @unique
   password    String
-  permissions Json     // Array of permission strings
+  permissions Json
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -268,7 +262,7 @@ model AdBanner {
   title        String
   description  String
   imageUrl     String?
-  linkType     String   @default("external") // external, provider
+  linkType     String   @default("external")
   externalLink String?
   providerId   Int?
   isActive     Boolean  @default(false)
@@ -277,18 +271,18 @@ model AdBanner {
 }
 
 model Notification {
-  id              Int      @id @default(autoincrement())
-  title           String
-  message         String
-  imageUrl        String?
-  targetAudience  Json     // Array of strings: ["customers", "providers"]
-  notificationType String  @default("general") // general, order, offer, system
-  data            Json?    // Additional data for FCM payload
-  status          String   @default("draft") // draft, sent, failed
-  recipientsCount Int      @default(0)
-  successCount    Int      @default(0)
-  failureCount    Int      @default(0)
-  sentAt          DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               Int       @id @default(autoincrement())
+  title            String
+  message          String
+  imageUrl         String?
+  targetAudience   Json
+  status           String    @default("draft")
+  recipientsCount  Int       @default(0)
+  sentAt           DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  data             Json?
+  failureCount     Int       @default(0)
+  notificationType String    @default("general")
+  successCount     Int       @default(0)
 }

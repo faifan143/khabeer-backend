@@ -432,4 +432,44 @@ export class ProvidersService {
       throw new InternalServerErrorException('Error deleting provider');
     }
   }
+
+  async updateFCMToken(providerId: number, fcmToken: string): Promise<any> {
+    try {
+      const updatedProvider = await this.prisma.provider.update({
+        where: { id: providerId },
+        data: { fcm: fcmToken },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          fcm: true,
+          updatedAt: true
+        }
+      });
+
+      return updatedProvider;
+    } catch (error) {
+      throw new Error(`Failed to update FCM token for provider ${providerId}: ${error.message}`);
+    }
+  }
+
+  async removeFCMToken(providerId: number): Promise<any> {
+    try {
+      const updatedProvider = await this.prisma.provider.update({
+        where: { id: providerId },
+        data: { fcm: null },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          fcm: true,
+          updatedAt: true
+        }
+      });
+
+      return updatedProvider;
+    } catch (error) {
+      throw new Error(`Failed to remove FCM token for provider ${providerId}: ${error.message}`);
+    }
+  }
 }

@@ -11,51 +11,33 @@ export declare class ProvidersController {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }[]>;
-    findOne(id: string): Promise<{
-        description: string;
-        id: number;
-        name: string;
-        email: string | null;
-        password: string | null;
-        image: string;
-        state: string;
-        phone: string;
-        isActive: boolean;
-        isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-    }>;
-    getStatus(id: string, req: any): Promise<{
-        isActive: boolean;
-    }>;
     getProfile(req: any): Promise<{
         provider: {
             description: string;
             id: number;
             name: string;
-            email: string | null;
             image: string;
             state: string;
             phone: string;
             isActive: boolean;
+            officialDocuments: string | null;
             isVerified: boolean;
             location: import("generated/prisma/runtime/library").JsonValue;
-            officialDocuments: string | null;
             createdAt: Date;
+            email: string | null;
             updatedAt: Date;
         };
         systemInfo: {
@@ -63,6 +45,26 @@ export declare class ProvidersController {
             legalDocuments: Record<string, string>;
             support: Record<string, string>;
         };
+    }>;
+    findOne(id: string): Promise<{
+        description: string;
+        id: number;
+        name: string;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        officialDocuments: string | null;
+        isVerified: boolean;
+        location: import("generated/prisma/runtime/library").JsonValue | null;
+        createdAt: Date;
+        email: string | null;
+        updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
+    }>;
+    getStatus(id: string, req: any): Promise<{
+        isActive: boolean;
     }>;
     register(data: CreateProviderDto, file: Express.Multer.File): Promise<{
         providerServices: {
@@ -76,33 +78,35 @@ export declare class ProvidersController {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     create(createProviderDto: CreateProviderDto, file: Express.Multer.File): Promise<{
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     update(id: string, data: UpdateProviderDto, file: Express.Multer.File): Promise<{
         providerServices: {
@@ -116,17 +120,18 @@ export declare class ProvidersController {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     updateStatus(id: string, data: UpdateStatusDto, req: any): Promise<{
         providerServices: {
@@ -140,17 +145,18 @@ export declare class ProvidersController {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     remove(id: string): Promise<{
         message: string;
@@ -186,17 +192,18 @@ export declare class ProvidersController {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }) | null>;
     removeServices(id: string, body: {
         serviceIds: number[];
@@ -212,17 +219,18 @@ export declare class ProvidersController {
         description: string;
         id: number;
         name: string;
-        email: string | null;
-        password: string | null;
         image: string;
         state: string;
         phone: string;
         isActive: boolean;
+        officialDocuments: string | null;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
-        officialDocuments: string | null;
         createdAt: Date;
+        email: string | null;
         updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }) | null>;
     getProviderOrders(id: string, req: any): Promise<({
         service: {
@@ -233,38 +241,38 @@ export declare class ProvidersController {
         user: {
             id: number;
             name: string;
-            email: string;
             phone: string;
+            email: string | null;
         };
     } & {
         serviceId: number;
         id: number;
         location: string | null;
         providerId: number;
+        status: string;
         scheduledDate: Date | null;
         locationDetails: string | null;
         quantity: number;
         providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
-        status: string;
-        bookingId: string;
         userId: number;
         orderDate: Date;
-        totalAmount: number;
-        providerAmount: number;
+        bookingId: string;
         commissionAmount: number;
+        providerAmount: number;
+        totalAmount: number;
     })[]>;
     getProviderRatings(id: string, req: any): Promise<({
         user: {
             id: number;
             name: string;
-            email: string;
+            email: string | null;
         };
     } & {
         id: number;
         providerId: number;
-        userId: number;
         orderId: number | null;
         rating: number;
+        userId: number;
         comment: string | null;
         ratingDate: Date;
     })[]>;

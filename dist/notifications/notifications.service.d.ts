@@ -19,8 +19,8 @@ export declare class NotificationsService {
         targetAudience: import("generated/prisma/runtime/library").JsonValue;
         notificationType: string;
         recipientsCount: number;
-        successCount: number;
         failureCount: number;
+        successCount: number;
     }>;
     sendNotification(notificationId: number): Promise<{
         success: boolean;
@@ -43,14 +43,14 @@ export declare class NotificationsService {
             title: string;
             data: import("generated/prisma/runtime/library").JsonValue | null;
             message: string;
-            status: string;
-            sentAt: Date | null;
             imageUrl: string | null;
+            status: string;
             targetAudience: import("generated/prisma/runtime/library").JsonValue;
             notificationType: string;
             recipientsCount: number;
-            successCount: number;
+            sentAt: Date | null;
             failureCount: number;
+            successCount: number;
         }[];
         pagination: {
             page: number;
@@ -66,14 +66,14 @@ export declare class NotificationsService {
         title: string;
         data: import("generated/prisma/runtime/library").JsonValue | null;
         message: string;
-        status: string;
-        sentAt: Date | null;
         imageUrl: string | null;
+        status: string;
         targetAudience: import("generated/prisma/runtime/library").JsonValue;
         notificationType: string;
         recipientsCount: number;
-        successCount: number;
+        sentAt: Date | null;
         failureCount: number;
+        successCount: number;
     }>;
     deleteNotification(id: number): Promise<{
         success: boolean;

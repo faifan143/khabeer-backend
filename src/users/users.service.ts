@@ -185,4 +185,44 @@ export class UsersService {
       throw new InternalServerErrorException('Error fetching user profile');
     }
   }
+
+  async updateFCMToken(userId: number, fcmToken: string): Promise<any> {
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: { fcm: fcmToken },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          fcm: true,
+          updatedAt: true
+        }
+      });
+
+      return updatedUser;
+    } catch (error) {
+      throw new Error(`Failed to update FCM token for user ${userId}: ${error.message}`);
+    }
+  }
+
+  async removeFCMToken(userId: number): Promise<any> {
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: { fcm: null },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          fcm: true,
+          updatedAt: true
+        }
+      });
+
+      return updatedUser;
+    } catch (error) {
+      throw new Error(`Failed to remove FCM token for user ${userId}: ${error.message}`);
+    }
+  }
 }

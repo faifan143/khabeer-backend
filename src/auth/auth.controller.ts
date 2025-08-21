@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterDto, RegisterType } from './dto/register.dto';
 import { PhoneLoginDto, PhoneRegistrationDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
 import { FileInterceptor } from '@nestjs/platform-express/multer';
 import { FilesService } from 'src/files/files.service';
@@ -17,17 +17,35 @@ export class AuthController {
   ) { }
 
   @Post('login')
-  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiOperation({ summary: 'Login with phone (users) or email (providers) and password' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 400, description: 'Invalid credentials' })
   async login(@Body() body: LoginDto) {
     try {
-      const user = await this.authService.validateUser(body.email, body.password);
+      // Debug logging
+      console.log('Login request received:', {
+        loginType: body.loginType,
+        identifier: body.identifier,
+        hasPassword: !!body.password,
+        hasFCM: !!body.fcm,
+        fcmLength: body.fcm?.length || 0
+      });
+
+      const user = await this.authService.validateUser(body.identifier, body.password, body.loginType);
       if (!user) {
         throw new BadRequestException('Invalid credentials');
       }
+
+      // Use FCM-enabled login if FCM token is provided
+      if (body.fcm) {
+        console.log('Using FCM-enabled login for user:', user.id);
+        return this.authService.loginWithFCM(user, body.fcm);
+      }
+
+      console.log('Using regular login for user:', user.id);
       return this.authService.login(user);
     } catch (error) {
+      console.error('Login error:', error);
       // Re-throw UnauthorizedException (for unverified providers) as-is
       if (error instanceof UnauthorizedException) {
         throw error;
@@ -72,6 +90,7 @@ export class AuthController {
 
     // Normalize multipart data
     const registerData: RegisterDto & { phoneNumber: string; otp?: string } = {
+      registerType: RegisterType.USER, // Phone registration is always for users
       name: Array.isArray(body.name) ? body.name[0] : body.name,
       email: Array.isArray(body.email) ? body.email[0] : body.email || '',
       password: Array.isArray(body.password) ? body.password[0] : body.password,
@@ -117,19 +136,33 @@ export class AuthController {
 
   @Post('register')
   @UseInterceptors(FileInterceptor('image'))
-  @ApiOperation({ summary: 'Register with email and password' })
+  @ApiOperation({ summary: 'Register with phone (users) or email (providers) and password' })
   @ApiResponse({ status: 200, description: 'Registration successful' })
   @ApiResponse({ status: 400, description: 'Invalid data' })
   async register(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
     console.log('Register body:', body);
 
     // Validate required fields manually
-    if (!body.email || !body.password || !body.name) {
-      throw new BadRequestException('Email, password, and name are required');
+    if (!body.password || !body.name) {
+      throw new BadRequestException('Password and name are required');
+    }
+
+    // Determine registration type based on role or description
+    let registerType = 'user';
+    if (body.description || body.role === 'PROVIDER') {
+      registerType = 'provider';
+      if (!body.email) {
+        throw new BadRequestException('Email is required for provider registration');
+      }
+    } else {
+      if (!body.phone) {
+        throw new BadRequestException('Phone number is required for user registration');
+      }
     }
 
     // Normalize multipart data (some parsers send fields as arrays)
     const registerData: RegisterDto = {
+      registerType: registerType as any,
       name: Array.isArray(body.name) ? body.name[0] : body.name,
       email: Array.isArray(body.email) ? body.email[0] : body.email,
       password: Array.isArray(body.password) ? body.password[0] : body.password,
@@ -151,11 +184,6 @@ export class AuthController {
       registerData.image = '';
     }
 
-    // Determine role based on request context or description field
-    if (body.description || registerData.role === 'PROVIDER') {
-      registerData.role = 'PROVIDER';
-    }
-
     return this.authService.register(registerData);
   }
 
@@ -173,6 +201,7 @@ export class AuthController {
 
     // Normalize data
     const registerData = {
+      registerType: RegisterType.USER, // Phone registration is always for users
       name: Array.isArray(body.name) ? body.name[0] : body.name,
       email: Array.isArray(body.email) ? body.email[0] : body.email,
       password: Array.isArray(body.password) ? body.password[0] : body.password,

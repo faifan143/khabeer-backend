@@ -17,18 +17,13 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) { }
 
-  async validateUser(email: string, pass: string): Promise<any> {
+  async validateUser(identifier: string, pass: string, loginType: string): Promise<any> {
     try {
-      // Check both users and providers tables simultaneously
-      const [user, provider] = await Promise.all([
-        this.usersService.findByEmail(email),
-        this.providersService.findByEmail(email)
-      ]);
+      if (loginType === 'provider') {
+        // Provider authentication - use email
+        const provider = await this.providersService.findByEmail(identifier);
 
-      // If email exists in both tables, prioritize provider for provider-specific logic
-      if (user && provider) {
-        // Check provider first if password matches
-        if (provider.password && provider.password.trim() !== '' && await bcrypt.compare(pass, provider.password)) {
+        if (provider && provider.password && provider.password.trim() !== '' && await bcrypt.compare(pass, provider.password)) {
           // Check if provider is verified
           if (!provider.isVerified) {
             throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
@@ -36,26 +31,17 @@ export class AuthService {
           const { password, ...result } = provider;
           return { ...result, role: 'PROVIDER' };
         }
+      } else {
+        // User authentication - use phone
+        const user = await this.usersService.findByPhone(identifier);
 
-        // If provider password doesn't match, check user password
-        if (user.password && await bcrypt.compare(pass, user.password)) {
+        if (user && await bcrypt.compare(pass, user.password)) {
           const { password, ...result } = user;
           return { ...result, role: user.role };
         }
-      } else if (user && await bcrypt.compare(pass, user.password)) {
-        // Only user exists and password matches
-        const { password, ...result } = user;
-        return { ...result, role: user.role };
-      } else if (provider && provider.password && provider.password.trim() !== '' && await bcrypt.compare(pass, provider.password)) {
-        // Only provider exists and password matches
-        if (!provider.isVerified) {
-          throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
-        }
-        const { password, ...result } = provider;
-        return { ...result, role: 'PROVIDER' };
       }
 
-      // If we get here, either the email doesn't exist or password is wrong
+      // If we get here, either the identifier doesn't exist or password is wrong
       return null;
     } catch (error) {
       // Re-throw UnauthorizedException as-is
@@ -68,14 +54,43 @@ export class AuthService {
     }
   }
 
-  async login(user: { id: number; email: string; role: string }) {
+  async login(user: { id: number; email?: string; phone?: string; role: string }) {
     try {
-      const payload = { username: user.email, sub: user.id, role: user.role };
+      const username = user.email || user.phone;
+      const payload = { username, sub: user.id, role: user.role };
       return {
         access_token: this.jwtService.sign(payload),
         user: {
           id: user.id,
           email: user.email,
+          phone: user.phone,
+          role: user.role
+        }
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Error generating authentication token');
+    }
+  }
+
+  async loginWithFCM(user: { id: number; email?: string; phone?: string; role: string }, fcmToken?: string) {
+    try {
+      // Update FCM token if provided
+      if (fcmToken) {
+        if (user.role === 'PROVIDER') {
+          await this.providersService.updateFCMToken(user.id, fcmToken);
+        } else {
+          await this.usersService.updateFCMToken(user.id, fcmToken);
+        }
+      }
+
+      const username = user.email || user.phone;
+      const payload = { username, sub: user.id, role: user.role };
+      return {
+        access_token: this.jwtService.sign(payload),
+        user: {
+          id: user.id,
+          email: user.email,
+          phone: user.phone,
           role: user.role
         }
       };
@@ -87,14 +102,8 @@ export class AuthService {
   async register(data: RegisterDto) {
     try {
       // Validate required fields
-      if (!data.email || !data.password || !data.name) {
-        throw new BadRequestException('Email, password, and name are required');
-      }
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(data.email)) {
-        throw new BadRequestException('Invalid email format');
+      if (!data.password || !data.name) {
+        throw new BadRequestException('Password and name are required');
       }
 
       // Validate password strength
@@ -102,12 +111,34 @@ export class AuthService {
         throw new BadRequestException('Password must be at least 6 characters long');
       }
 
-      // Check if user already exists (in either users or providers table)
-      const existingUser = await this.usersService.findByEmail(data.email);
-      const existingProvider = await this.providersService.findByEmail(data.email);
+      if (data.registerType === 'provider') {
+        // Provider registration - email is required
+        if (!data.email) {
+          throw new BadRequestException('Email is required for provider registration');
+        }
 
-      if (existingUser || existingProvider) {
-        throw new ConflictException('User with this email already exists');
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(data.email)) {
+          throw new BadRequestException('Invalid email format');
+        }
+
+        // Check if provider already exists
+        const existingProvider = await this.providersService.findByEmail(data.email);
+        if (existingProvider) {
+          throw new ConflictException('Provider with this email already exists');
+        }
+      } else {
+        // User registration - phone is required
+        if (!data.phone) {
+          throw new BadRequestException('Phone number is required for user registration');
+        }
+
+        // Check if user already exists with this phone
+        const existingUser = await this.usersService.findByPhone(data.phone);
+        if (existingUser) {
+          throw new ConflictException('User with this phone number already exists');
+        }
       }
 
       // Hash password
@@ -116,7 +147,7 @@ export class AuthService {
       // Prepare user data - only include fields that CreateUserDto expects
       const userData = {
         name: data.name,
-        email: data.email,
+        email: data.email || undefined, // Optional for users
         password: hashedPassword,
         image: data.image || '',
         address: data.address || '',
@@ -124,7 +155,8 @@ export class AuthService {
         state: data.state || '',
         role: data.role || 'USER',
         isActive: data.isActive ?? true,
-        officialDocuments: data.officialDocuments
+        officialDocuments: data.officialDocuments,
+        fcm: data.fcm || undefined // Include FCM token
       };
 
       // Create user or provider based on role
@@ -132,7 +164,7 @@ export class AuthService {
         // Create provider
         const providerData = {
           name: data.name,
-          email: data.email,
+          email: data.email!, // Email is required for providers
           password: hashedPassword,
           image: data.image || '',
           description: data.description || '',
@@ -142,7 +174,8 @@ export class AuthService {
           isVerified: false,
           location: null,
           officialDocuments: data.officialDocuments || undefined,
-          serviceIds: data.serviceIds || [] // Include service IDs for linking
+          serviceIds: data.serviceIds || [], // Include service IDs for linking
+          fcm: data.fcm || undefined // Include FCM token
         };
 
         const provider = await this.providersService.registerProviderWithServices(providerData);
@@ -171,8 +204,12 @@ export class AuthService {
       if (error instanceof PrismaClientKnownRequestError) {
         switch (error.code) {
           case 'P2002':
-            if (error.meta?.target && Array.isArray(error.meta.target) && error.meta.target.includes('email')) {
-              throw new ConflictException('User with this email already exists');
+            if (error.meta?.target && Array.isArray(error.meta.target)) {
+              if (error.meta.target.includes('email')) {
+                throw new ConflictException('Provider with this email already exists');
+              } else if (error.meta.target.includes('phone')) {
+                throw new ConflictException('User with this phone number already exists');
+              }
             }
             break;
           case 'P2003':
@@ -205,16 +242,18 @@ export class AuthService {
         throw new NotFoundException('User not found');
       }
 
-      // Check if provider with this email already exists
-      const existingProvider = await this.providersService.findByEmail(user.email);
-      if (existingProvider) {
-        throw new ConflictException('Provider with this email already exists');
+      // Check if provider with this email already exists (if user has email)
+      if (user.email) {
+        const existingProvider = await this.providersService.findByEmail(user.email);
+        if (existingProvider) {
+          throw new ConflictException('Provider with this email already exists');
+        }
       }
 
       // Create provider from user data
       const newProvider = await this.providersService.create({
         name: user.name,
-        email: user.email,
+        email: user.email || `${user.phone}@khabeer.local`, // Generate email if user doesn't have one
         password: user.password, // Use existing password
         image: user.image,
         description: providerData.description || '',
@@ -242,42 +281,66 @@ export class AuthService {
     }
   }
 
-  async checkAccountStatus(email: string) {
+  async checkAccountStatus(identifier: string, type: 'email' | 'phone' = 'email') {
     try {
-      // Check if it's a user
-      const user = await this.usersService.findByEmail(email);
-      if (user) {
-        if (user.role === 'ADMIN') {
+      if (type === 'email') {
+        // Check if it's a provider (providers use email)
+        const provider = await this.providersService.findByEmail(identifier);
+        if (provider) {
           return {
             exists: true,
-            type: 'ADMIN',
-            isActive: true, // Admins are always active
-            isVerified: true, // Admins are always verified
-            message: 'Admin account is active and verified.'
-          };
-        } else {
-          return {
-            exists: true,
-            type: 'USER',
-            isActive: user.isActive,
-            isVerified: true, // Regular users don't need verification
-            message: 'User account is ready to use. isActive status does not affect login.'
+            type: 'PROVIDER',
+            isActive: provider.isActive,
+            isVerified: provider.isVerified,
+            message: !provider.isVerified ? 'Account is not verified. Please wait for admin verification.' :
+              !provider.isActive ? 'Account is verified but currently inactive. You can activate it to accept orders.' :
+                'Account is verified and active.'
           };
         }
-      }
 
-      // Check if it's a provider
-      const provider = await this.providersService.findByEmail(email);
-      if (provider) {
-        return {
-          exists: true,
-          type: 'PROVIDER',
-          isActive: provider.isActive,
-          isVerified: provider.isVerified,
-          message: !provider.isVerified ? 'Account is not verified. Please wait for admin verification.' :
-            !provider.isActive ? 'Account is verified but currently inactive. You can activate it to accept orders.' :
-              'Account is verified and active.'
-        };
+        // Check if it's a user by email (if user has email)
+        const user = await this.usersService.findByEmail(identifier);
+        if (user) {
+          if (user.role === 'ADMIN') {
+            return {
+              exists: true,
+              type: 'ADMIN',
+              isActive: true, // Admins are always active
+              isVerified: true, // Admins are always verified
+              message: 'Admin account is active and verified.'
+            };
+          } else {
+            return {
+              exists: true,
+              type: 'USER',
+              isActive: user.isActive,
+              isVerified: true, // Regular users don't need verification
+              message: 'User account is ready to use. isActive status does not affect login.'
+            };
+          }
+        }
+      } else {
+        // Check if it's a user by phone (users use phone)
+        const user = await this.usersService.findByPhone(identifier);
+        if (user) {
+          if (user.role === 'ADMIN') {
+            return {
+              exists: true,
+              type: 'ADMIN',
+              isActive: true, // Admins are always active
+              isVerified: true, // Admins are always verified
+              message: 'Admin account is active and verified.'
+            };
+          } else {
+            return {
+              exists: true,
+              type: 'USER',
+              isActive: user.isActive,
+              isVerified: true, // Regular users don't need verification
+              message: 'User account is ready to use. isActive status does not affect login.'
+            };
+          }
+        }
       }
 
       return {
@@ -716,3 +779,4 @@ export class AuthService {
     }
   }
 }
+

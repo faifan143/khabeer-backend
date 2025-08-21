@@ -18,6 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const auth_service_1 = require("./auth.service");
 const jwt_auth_guard_1 = require("./jwt-auth.guard");
 const login_dto_1 = require("./dto/login.dto");
+const register_dto_1 = require("./dto/register.dto");
 const phone_login_dto_1 = require("./dto/phone-login.dto");
 const multer_1 = require("@nestjs/platform-express/multer");
 const files_service_1 = require("../files/files.service");
@@ -30,13 +31,26 @@ let AuthController = class AuthController {
     }
     async login(body) {
         try {
-            const user = await this.authService.validateUser(body.email, body.password);
+            console.log('Login request received:', {
+                loginType: body.loginType,
+                identifier: body.identifier,
+                hasPassword: !!body.password,
+                hasFCM: !!body.fcm,
+                fcmLength: body.fcm?.length || 0
+            });
+            const user = await this.authService.validateUser(body.identifier, body.password, body.loginType);
             if (!user) {
                 throw new common_1.BadRequestException('Invalid credentials');
             }
+            if (body.fcm) {
+                console.log('Using FCM-enabled login for user:', user.id);
+                return this.authService.loginWithFCM(user, body.fcm);
+            }
+            console.log('Using regular login for user:', user.id);
             return this.authService.login(user);
         }
         catch (error) {
+            console.error('Login error:', error);
             if (error instanceof common_1.UnauthorizedException) {
                 throw error;
             }
@@ -58,6 +72,7 @@ let AuthController = class AuthController {
             throw new common_1.BadRequestException('Phone number, name, and password are required');
         }
         const registerData = {
+            registerType: register_dto_1.RegisterType.USER,
             name: Array.isArray(body.name) ? body.name[0] : body.name,
             email: Array.isArray(body.email) ? body.email[0] : body.email || '',
             password: Array.isArray(body.password) ? body.password[0] : body.password,
@@ -89,10 +104,23 @@ let AuthController = class AuthController {
     }
     async register(body, file) {
         console.log('Register body:', body);
-        if (!body.email || !body.password || !body.name) {
-            throw new common_1.BadRequestException('Email, password, and name are required');
+        if (!body.password || !body.name) {
+            throw new common_1.BadRequestException('Password and name are required');
+        }
+        let registerType = 'user';
+        if (body.description || body.role === 'PROVIDER') {
+            registerType = 'provider';
+            if (!body.email) {
+                throw new common_1.BadRequestException('Email is required for provider registration');
+            }
+        }
+        else {
+            if (!body.phone) {
+                throw new common_1.BadRequestException('Phone number is required for user registration');
+            }
         }
         const registerData = {
+            registerType: registerType,
             name: Array.isArray(body.name) ? body.name[0] : body.name,
             email: Array.isArray(body.email) ? body.email[0] : body.email,
             password: Array.isArray(body.password) ? body.password[0] : body.password,
@@ -112,9 +140,6 @@ let AuthController = class AuthController {
         else {
             registerData.image = '';
         }
-        if (body.description || registerData.role === 'PROVIDER') {
-            registerData.role = 'PROVIDER';
-        }
         return this.authService.register(registerData);
     }
     async initiateRegistration(body) {
@@ -123,6 +148,7 @@ let AuthController = class AuthController {
             throw new common_1.BadRequestException('Email, password, name, and phone number are required');
         }
         const registerData = {
+            registerType: register_dto_1.RegisterType.USER,
             name: Array.isArray(body.name) ? body.name[0] : body.name,
             email: Array.isArray(body.email) ? body.email[0] : body.email,
             password: Array.isArray(body.password) ? body.password[0] : body.password,
@@ -200,7 +226,7 @@ let AuthController = class AuthController {
 exports.AuthController = AuthController;
 __decorate([
     (0, common_1.Post)('login'),
-    (0, swagger_1.ApiOperation)({ summary: 'Login with email and password' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Login with phone (users) or email (providers) and password' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Login successful' }),
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid credentials' }),
     __param(0, (0, common_1.Body)()),
@@ -263,7 +289,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)('register'),
     (0, common_1.UseInterceptors)((0, multer_1.FileInterceptor)('image')),
-    (0, swagger_1.ApiOperation)({ summary: 'Register with email and password' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Register with phone (users) or email (providers) and password' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Registration successful' }),
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid data' }),
     __param(0, (0, common_1.Body)()),

@@ -1,4 +1,10 @@
+export declare enum LoginType {
+    USER = "user",
+    PROVIDER = "provider"
+}
 export declare class LoginDto {
-    email: string;
+    loginType: LoginType;
+    identifier: string;
     password: string;
+    fcm?: string;
 }

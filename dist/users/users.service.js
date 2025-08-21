@@ -186,6 +186,44 @@ let UsersService = class UsersService {
             throw new common_1.InternalServerErrorException('Error fetching user profile');
         }
     }
+    async updateFCMToken(userId, fcmToken) {
+        try {
+            const updatedUser = await this.prisma.user.update({
+                where: { id: userId },
+                data: { fcm: fcmToken },
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    fcm: true,
+                    updatedAt: true
+                }
+            });
+            return updatedUser;
+        }
+        catch (error) {
+            throw new Error(`Failed to update FCM token for user ${userId}: ${error.message}`);
+        }
+    }
+    async removeFCMToken(userId) {
+        try {
+            const updatedUser = await this.prisma.user.update({
+                where: { id: userId },
+                data: { fcm: null },
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    fcm: true,
+                    updatedAt: true
+                }
+            });
+            return updatedUser;
+        }
+        catch (error) {
+            throw new Error(`Failed to remove FCM token for user ${userId}: ${error.message}`);
+        }
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

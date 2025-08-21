@@ -22,6 +22,7 @@ class CreateUserDto {
     role;
     isActive;
     officialDocuments;
+    fcm;
 }
 exports.CreateUserDto = CreateUserDto;
 __decorate([
@@ -30,6 +31,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "name", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "email", void 0);
@@ -49,8 +51,8 @@ __decorate([
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "address", void 0);
 __decorate([
-    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "phone", void 0);
 __decorate([
@@ -73,4 +75,9 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "officialDocuments", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateUserDto.prototype, "fcm", void 0);
 //# sourceMappingURL=create-user.dto.js.map
