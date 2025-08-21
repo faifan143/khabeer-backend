@@ -21,6 +21,8 @@ export declare class UsersController {
         fcm: string | null;
         address: string;
         role: string;
+        latitude: import("generated/prisma/runtime/library").Decimal | null;
+        longitude: import("generated/prisma/runtime/library").Decimal | null;
     }[]>;
     getProfile(req: any): Promise<{
         user: {
@@ -38,9 +40,22 @@ export declare class UsersController {
             role: string;
         };
         systemInfo: {
-            socialMedia: {};
-            legalDocuments: Record<string, string>;
-            support: Record<string, string>;
+            socialMedia: {
+                whatsapp: string | null;
+                instagram: string | null;
+                facebook: string | null;
+                tiktok: string | null;
+                snapchat: string | null;
+            };
+            legalDocuments: {
+                terms_en: string | null;
+                terms_ar: string | null;
+                privacy_en: string | null;
+                privacy_ar: string | null;
+            };
+            support: {
+                whatsapp_support: string | null;
+            };
         };
     }>;
     findOne(id: string): Promise<{
@@ -58,6 +73,8 @@ export declare class UsersController {
         fcm: string | null;
         address: string;
         role: string;
+        latitude: import("generated/prisma/runtime/library").Decimal | null;
+        longitude: import("generated/prisma/runtime/library").Decimal | null;
     }>;
     create(createUserDto: CreateUserDto, file: Express.Multer.File): Promise<{
         id: number;
@@ -74,6 +91,8 @@ export declare class UsersController {
         fcm: string | null;
         address: string;
         role: string;
+        latitude: import("generated/prisma/runtime/library").Decimal | null;
+        longitude: import("generated/prisma/runtime/library").Decimal | null;
     }>;
     update(id: string, data: UpdateUserDto, req: any, file: Express.Multer.File): Promise<{
         id: number;
@@ -90,6 +109,8 @@ export declare class UsersController {
         fcm: string | null;
         address: string;
         role: string;
+        latitude: import("generated/prisma/runtime/library").Decimal | null;
+        longitude: import("generated/prisma/runtime/library").Decimal | null;
     } | {
         error: string;
     }>;

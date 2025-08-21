@@ -10,4 +10,6 @@ export declare class CreateUserDto {
     isActive?: boolean;
     officialDocuments?: string;
     fcm?: string;
+    latitude?: number;
+    longitude?: number;
 }

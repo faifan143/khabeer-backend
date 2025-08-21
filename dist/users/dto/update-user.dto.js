@@ -22,6 +22,8 @@ class UpdateUserDto {
     state;
     isActive;
     officialDocuments;
+    latitude;
+    longitude;
 }
 exports.UpdateUserDto = UpdateUserDto;
 __decorate([
@@ -74,4 +76,14 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateUserDto.prototype, "officialDocuments", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], UpdateUserDto.prototype, "latitude", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], UpdateUserDto.prototype, "longitude", void 0);
 //# sourceMappingURL=update-user.dto.js.map

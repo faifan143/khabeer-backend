@@ -82,7 +82,7 @@ export class ProvidersService {
         }
       });
 
-      // Group settings by category
+      // Group settings by category and map to expected field names
       const groupedSettings = systemSettings.reduce((acc: Record<string, Record<string, string>>, setting) => {
         if (!acc[setting.category]) {
           acc[setting.category] = {};
@@ -91,12 +91,32 @@ export class ProvidersService {
         return acc;
       }, {});
 
+      // Map to the exact structure expected by Flutter models
+      const socialMedia = {
+        whatsapp: groupedSettings.social?.whatsapp || null,
+        instagram: groupedSettings.social?.instagram || null,
+        facebook: groupedSettings.social?.facebook || null,
+        tiktok: groupedSettings.social?.tiktok || null,
+        snapchat: groupedSettings.social?.snapchat || null,
+      };
+
+      const legalDocuments = {
+        terms_en: groupedSettings.legal?.terms_en || null,
+        terms_ar: groupedSettings.legal?.terms_ar || null,
+        privacy_en: groupedSettings.legal?.privacy_en || null,
+        privacy_ar: groupedSettings.legal?.privacy_ar || null,
+      };
+
+      const support = {
+        whatsapp_support: groupedSettings.support?.whatsapp_support || null,
+      };
+
       return {
         provider,
         systemInfo: {
-          socialMedia: groupedSettings.social || {},
-          legalDocuments: groupedSettings.legal || {},
-          support: groupedSettings.support || {}
+          socialMedia,
+          legalDocuments,
+          support
         }
       };
     } catch (error) {

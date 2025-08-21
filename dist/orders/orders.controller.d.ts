@@ -54,6 +54,8 @@ export declare class OrdersController {
             fcm: string | null;
             address: string;
             role: string;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -103,6 +105,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -167,6 +171,8 @@ export declare class OrdersController {
                 name: string;
                 phone: string;
                 email: string | null;
+                latitude: import("generated/prisma/runtime/library").Decimal | null;
+                longitude: import("generated/prisma/runtime/library").Decimal | null;
             };
             invoice: {
                 id: number;
@@ -237,6 +243,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -290,6 +298,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -343,6 +353,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -396,6 +408,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -449,6 +463,8 @@ export declare class OrdersController {
             phone: string;
             email: string | null;
             address: string;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -499,6 +515,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -549,6 +567,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -599,6 +619,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -649,6 +671,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -699,6 +723,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;
@@ -749,6 +775,8 @@ export declare class OrdersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
         invoice: {
             id: number;

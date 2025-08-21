@@ -9,4 +9,6 @@ export declare class UpdateUserDto {
     state?: string;
     isActive?: boolean;
     officialDocuments?: string;
+    latitude?: number;
+    longitude?: number;
 }

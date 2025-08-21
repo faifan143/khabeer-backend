@@ -19,6 +19,8 @@ export declare class UsersService {
         fcm: string | null;
         address: string;
         role: string;
+        latitude: import("generated/prisma/runtime/library").Decimal | null;
+        longitude: import("generated/prisma/runtime/library").Decimal | null;
     } | null>;
     findByPhone(phone: string): Promise<{
         id: number;
@@ -35,6 +37,8 @@ export declare class UsersService {
         fcm: string | null;
         address: string;
         role: string;
+        latitude: import("generated/prisma/runtime/library").Decimal | null;
+        longitude: import("generated/prisma/runtime/library").Decimal | null;
     } | null>;
     create(data: CreateUserDto): Promise<{
         id: number;
@@ -51,6 +55,8 @@ export declare class UsersService {
         fcm: string | null;
         address: string;
         role: string;
+        latitude: import("generated/prisma/runtime/library").Decimal | null;
+        longitude: import("generated/prisma/runtime/library").Decimal | null;
     }>;
     findAll(): Promise<{
         id: number;
@@ -67,6 +73,8 @@ export declare class UsersService {
         fcm: string | null;
         address: string;
         role: string;
+        latitude: import("generated/prisma/runtime/library").Decimal | null;
+        longitude: import("generated/prisma/runtime/library").Decimal | null;
     }[]>;
     findById(id: number): Promise<{
         id: number;
@@ -83,6 +91,8 @@ export declare class UsersService {
         fcm: string | null;
         address: string;
         role: string;
+        latitude: import("generated/prisma/runtime/library").Decimal | null;
+        longitude: import("generated/prisma/runtime/library").Decimal | null;
     }>;
     update(id: number, data: UpdateUserDto): Promise<{
         id: number;
@@ -99,6 +109,8 @@ export declare class UsersService {
         fcm: string | null;
         address: string;
         role: string;
+        latitude: import("generated/prisma/runtime/library").Decimal | null;
+        longitude: import("generated/prisma/runtime/library").Decimal | null;
     }>;
     remove(id: number): Promise<{
         message: string;
@@ -119,9 +131,22 @@ export declare class UsersService {
             role: string;
         };
         systemInfo: {
-            socialMedia: {};
-            legalDocuments: Record<string, string>;
-            support: Record<string, string>;
+            socialMedia: {
+                whatsapp: string | null;
+                instagram: string | null;
+                facebook: string | null;
+                tiktok: string | null;
+                snapchat: string | null;
+            };
+            legalDocuments: {
+                terms_en: string | null;
+                terms_ar: string | null;
+                privacy_en: string | null;
+                privacy_ar: string | null;
+            };
+            support: {
+                whatsapp_support: string | null;
+            };
         };
     }>;
     updateFCMToken(userId: number, fcmToken: string): Promise<any>;

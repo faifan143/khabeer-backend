@@ -23,6 +23,8 @@ class CreateUserDto {
     isActive;
     officialDocuments;
     fcm;
+    latitude;
+    longitude;
 }
 exports.CreateUserDto = CreateUserDto;
 __decorate([
@@ -80,4 +82,14 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "fcm", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateUserDto.prototype, "latitude", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateUserDto.prototype, "longitude", void 0);
 //# sourceMappingURL=create-user.dto.js.map

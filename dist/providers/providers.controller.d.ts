@@ -41,9 +41,22 @@ export declare class ProvidersController {
             updatedAt: Date;
         };
         systemInfo: {
-            socialMedia: Record<string, string>;
-            legalDocuments: Record<string, string>;
-            support: Record<string, string>;
+            socialMedia: {
+                whatsapp: string | null;
+                instagram: string | null;
+                facebook: string | null;
+                tiktok: string | null;
+                snapchat: string | null;
+            };
+            legalDocuments: {
+                terms_en: string | null;
+                terms_ar: string | null;
+                privacy_en: string | null;
+                privacy_ar: string | null;
+            };
+            support: {
+                whatsapp_support: string | null;
+            };
         };
     }>;
     findOne(id: string): Promise<{
@@ -243,6 +256,8 @@ export declare class ProvidersController {
             name: string;
             phone: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
     } & {
         serviceId: number;
@@ -266,6 +281,8 @@ export declare class ProvidersController {
             id: number;
             name: string;
             email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
         };
     } & {
         id: number;
