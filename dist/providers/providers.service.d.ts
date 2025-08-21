@@ -90,11 +90,11 @@ export declare class ProvidersService {
         };
         systemInfo: {
             socialMedia: {
-                whatsapp: string | null;
-                instagram: string | null;
-                facebook: string | null;
-                tiktok: string | null;
-                snapchat: string | null;
+                whatsapp: null;
+                instagram: null;
+                facebook: null;
+                tiktok: null;
+                snapchat: null;
             };
             legalDocuments: {
                 terms_en: string | null;
