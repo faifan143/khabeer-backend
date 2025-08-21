@@ -297,6 +297,37 @@ export declare class ProvidersService {
         providerAmount: number;
         totalAmount: number;
     })[]>;
+    getProviderOrdersByStatus(providerId: number, status: string): Promise<({
+        service: {
+            description: string;
+            id: number;
+            title: string;
+        };
+        user: {
+            id: number;
+            name: string;
+            phone: string;
+            email: string | null;
+            latitude: import("generated/prisma/runtime/library").Decimal | null;
+            longitude: import("generated/prisma/runtime/library").Decimal | null;
+        };
+    } & {
+        serviceId: number;
+        id: number;
+        location: string | null;
+        providerId: number;
+        status: string;
+        scheduledDate: Date | null;
+        locationDetails: string | null;
+        quantity: number;
+        providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+        userId: number;
+        orderDate: Date;
+        bookingId: string;
+        commissionAmount: number;
+        providerAmount: number;
+        totalAmount: number;
+    })[]>;
     getProviderRatings(providerId: number): Promise<({
         user: {
             id: number;

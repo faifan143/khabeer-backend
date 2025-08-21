@@ -365,6 +365,41 @@ export class ProvidersService {
     }
   }
 
+  async getProviderOrdersByStatus(providerId: number, status: string) {
+    try {
+      return await this.prisma.order.findMany({
+        where: {
+          providerId,
+          status: status.toLowerCase()
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              latitude: true,
+              longitude: true
+            }
+          },
+          service: {
+            select: {
+              id: true,
+              title: true,
+              description: true
+            }
+          }
+        },
+        orderBy: {
+          orderDate: 'desc'
+        }
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Error fetching provider orders by status');
+    }
+  }
+
   async getProviderRatings(providerId: number) {
     try {
       return await this.prisma.providerRating.findMany({

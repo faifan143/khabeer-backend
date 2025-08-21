@@ -137,6 +137,12 @@ let ProvidersController = class ProvidersController {
         }
         return this.providersService.getProviderOrders(Number(id));
     }
+    async getProviderOrdersByStatus(id, status, req) {
+        if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+            throw new common_1.BadRequestException('You can only access your own orders');
+        }
+        return this.providersService.getProviderOrdersByStatus(Number(id), status);
+    }
     async getProviderRatings(id, req) {
         if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
             throw new common_1.BadRequestException('You can only access your own ratings');
@@ -302,6 +308,17 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "getProviderOrders", null);
+__decorate([
+    (0, common_1.Get)(':id/orders/:status'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('status')),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getProviderOrdersByStatus", null);
 __decorate([
     (0, common_1.Get)(':id/ratings'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

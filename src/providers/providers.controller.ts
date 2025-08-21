@@ -223,6 +223,21 @@ export class ProvidersController {
     return this.providersService.getProviderOrders(Number(id));
   }
 
+  @Get(':id/orders/:status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async getProviderOrdersByStatus(
+    @Param('id') id: string,
+    @Param('status') status: string,
+    @Request() req
+  ) {
+    // Providers can only access their own orders, admins can access any
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+      throw new BadRequestException('You can only access your own orders');
+    }
+    return this.providersService.getProviderOrdersByStatus(Number(id), status);
+  }
+
   @Get(':id/ratings')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROVIDER', 'ADMIN')
