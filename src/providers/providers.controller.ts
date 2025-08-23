@@ -8,6 +8,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
@@ -21,6 +22,15 @@ export class ProvidersController {
   @Get()
   async findAll() {
     return this.providersService.findAll();
+  }
+
+  @Get('service/:serviceId')
+  async getProvidersByService(@Param('serviceId') serviceId: string): Promise<ProvidersByServiceResponseDto> {
+    const serviceIdNum = Number(serviceId);
+    if (isNaN(serviceIdNum) || serviceIdNum <= 0) {
+      throw new BadRequestException('Invalid service ID. Must be a positive number.');
+    }
+    return this.providersService.findProvidersByServiceId(serviceIdNum);
   }
 
   @Get('profile')

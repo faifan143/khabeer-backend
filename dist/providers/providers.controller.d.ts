@@ -3,6 +3,7 @@ import { ProvidersService } from './providers.service';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
 export declare class ProvidersController {
     private readonly providersService;
     private readonly filesService;
@@ -24,6 +25,7 @@ export declare class ProvidersController {
         password: string | null;
         fcm: string | null;
     }[]>;
+    getProvidersByService(serviceId: string): Promise<ProvidersByServiceResponseDto>;
     getProfile(req: any): Promise<{
         provider: {
             description: string;

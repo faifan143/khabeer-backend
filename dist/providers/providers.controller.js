@@ -35,6 +35,13 @@ let ProvidersController = class ProvidersController {
     async findAll() {
         return this.providersService.findAll();
     }
+    async getProvidersByService(serviceId) {
+        const serviceIdNum = Number(serviceId);
+        if (isNaN(serviceIdNum) || serviceIdNum <= 0) {
+            throw new common_1.BadRequestException('Invalid service ID. Must be a positive number.');
+        }
+        return this.providersService.findProvidersByServiceId(serviceIdNum);
+    }
     async getProfile(req) {
         return this.providersService.getProfile(req.user.userId);
     }
@@ -163,6 +170,13 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('service/:serviceId'),
+    __param(0, (0, common_1.Param)('serviceId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getProvidersByService", null);
 __decorate([
     (0, common_1.Get)('profile'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

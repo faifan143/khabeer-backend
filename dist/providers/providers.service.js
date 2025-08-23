@@ -487,6 +487,61 @@ let ProvidersService = class ProvidersService {
                 return 'application/octet-stream';
         }
     }
+    async findProvidersByServiceId(serviceId) {
+        try {
+            const service = await this.prisma.service.findUnique({
+                where: { id: serviceId }
+            });
+            if (!service) {
+                throw new common_1.NotFoundException(`Service with ID ${serviceId} not found`);
+            }
+            const providers = await this.prisma.provider.findMany({
+                where: {
+                    providerServices: {
+                        some: {
+                            serviceId: serviceId,
+                            isActive: true
+                        }
+                    },
+                    isActive: true,
+                    isVerified: true
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    description: true,
+                    state: true,
+                    phone: true,
+                    location: true,
+                    isActive: true,
+                    isVerified: true,
+                    createdAt: true,
+                    providerServices: {
+                        where: {
+                            serviceId: serviceId,
+                            isActive: true
+                        },
+                        select: {
+                            price: true,
+                            isActive: true
+                        }
+                    }
+                }
+            });
+            return {
+                providers,
+                total: providers.length,
+                serviceId: serviceId
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Error fetching providers by service');
+        }
+    }
     async remove(id) {
         try {
             await this.prisma.provider.delete({ where: { id } });

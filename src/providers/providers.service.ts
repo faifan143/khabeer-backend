@@ -4,6 +4,7 @@ import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { ProviderOrderResponseDto, ProviderOrdersResponseDto } from './dto/provider-orders-response.dto';
+import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
 
 @Injectable()
 export class ProvidersService {
@@ -505,6 +506,65 @@ export class ProvidersService {
         return 'image/png';
       default:
         return 'application/octet-stream';
+    }
+  }
+
+  async findProvidersByServiceId(serviceId: number): Promise<ProvidersByServiceResponseDto> {
+    try {
+      // First check if the service exists
+      const service = await this.prisma.service.findUnique({
+        where: { id: serviceId }
+      });
+
+      if (!service) {
+        throw new NotFoundException(`Service with ID ${serviceId} not found`);
+      }
+
+      const providers = await this.prisma.provider.findMany({
+        where: {
+          providerServices: {
+            some: {
+              serviceId: serviceId,
+              isActive: true
+            }
+          },
+          isActive: true,
+          isVerified: true
+        },
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          description: true,
+          state: true,
+          phone: true,
+          location: true,
+          isActive: true,
+          isVerified: true,
+          createdAt: true,
+          providerServices: {
+            where: {
+              serviceId: serviceId,
+              isActive: true
+            },
+            select: {
+              price: true,
+              isActive: true
+            }
+          }
+        }
+      });
+
+      return {
+        providers,
+        total: providers.length,
+        serviceId: serviceId
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error fetching providers by service');
     }
   }
 

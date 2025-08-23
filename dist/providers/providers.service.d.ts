@@ -2,6 +2,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { ProviderOrdersResponseDto } from './dto/provider-orders-response.dto';
+import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
 export declare class ProvidersService {
     private readonly prisma;
     constructor(prisma: PrismaService);
@@ -300,6 +301,7 @@ export declare class ProvidersService {
         adminNotes: string | null;
     }>;
     private getFileTypeFromUrl;
+    findProvidersByServiceId(serviceId: number): Promise<ProvidersByServiceResponseDto>;
     remove(id: number): Promise<{
         message: string;
     }>;

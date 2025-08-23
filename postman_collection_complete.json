@@ -39,6 +39,11 @@
       "key": "userId",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "serviceId",
+      "value": "1",
+      "type": "string"
     }
   ],
   "item": [
@@ -1199,6 +1204,18 @@
               "host": ["{{baseUrl}}"],
               "path": ["provider-service", "provider", "1"],
               "query": [{ "key": "activeOnly", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Get Providers by Service ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/providers/service/{{serviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["providers", "service", "{{serviceId}}"]
             }
           }
         },
