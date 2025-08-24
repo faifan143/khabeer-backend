@@ -628,6 +628,21 @@ export class ProvidersService {
               // Debug: Log the current time and check for any offers
               console.log(`Checking offers for provider ${provider.id}, service ${serviceId} at ${now.toISOString()}`);
 
+              // First, let's get ALL offers for this provider/service to debug
+              const allOffers = await this.prisma.offer.findMany({
+                where: {
+                  providerId: provider.id,
+                  serviceId: serviceId,
+                  isActive: true
+                }
+              });
+
+              console.log(`Total offers found for provider ${provider.id}, service ${serviceId}: ${allOffers.length}`);
+              allOffers.forEach(offer => {
+                console.log(`Offer ${offer.id}: start=${offer.startDate}, end=${offer.endDate}, price=${offer.offerPrice}, isActive=${offer.isActive}`);
+              });
+
+              // Now find the active offer with proper date comparison
               const activeOffer = await this.prisma.offer.findFirst({
                 where: {
                   providerId: provider.id,
@@ -641,23 +656,15 @@ export class ProvidersService {
                 }
               });
 
-              // Debug: Log what we found
               if (activeOffer) {
-                console.log(`Found active offer: ${activeOffer.id}, price: ${activeOffer.offerPrice}, start: ${activeOffer.startDate}, end: ${activeOffer.endDate}`);
+                console.log(`Found ACTIVE offer: ${activeOffer.id}, price: ${activeOffer.offerPrice}, start: ${activeOffer.startDate}, end: ${activeOffer.endDate}`);
               } else {
-                console.log(`No active offer found for provider ${provider.id}, service ${serviceId}`);
-
-                // Debug: Check if there are any offers at all for this provider/service
-                const allOffers = await this.prisma.offer.findMany({
-                  where: {
-                    providerId: provider.id,
-                    serviceId: serviceId,
-                    isActive: true
-                  }
-                });
-                console.log(`Total offers found: ${allOffers.length}`);
+                console.log(`No ACTIVE offer found - date check failed`);
+                // Let's check if any offers exist but fail the date check
                 allOffers.forEach(offer => {
-                  console.log(`Offer ${offer.id}: start=${offer.startDate}, end=${offer.endDate}, price=${offer.offerPrice}`);
+                  const startCheck = offer.startDate <= now;
+                  const endCheck = offer.endDate > now;
+                  console.log(`Offer ${offer.id}: startDate <= now (${startCheck}), endDate > now (${endCheck})`);
                 });
               }
 

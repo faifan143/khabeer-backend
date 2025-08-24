@@ -589,6 +589,17 @@ let ProvidersService = class ProvidersService {
                 const enhancedProviderServices = await Promise.all(provider.providerServices.map(async (providerService) => {
                     const now = new Date();
                     console.log(`Checking offers for provider ${provider.id}, service ${serviceId} at ${now.toISOString()}`);
+                    const allOffers = await this.prisma.offer.findMany({
+                        where: {
+                            providerId: provider.id,
+                            serviceId: serviceId,
+                            isActive: true
+                        }
+                    });
+                    console.log(`Total offers found for provider ${provider.id}, service ${serviceId}: ${allOffers.length}`);
+                    allOffers.forEach(offer => {
+                        console.log(`Offer ${offer.id}: start=${offer.startDate}, end=${offer.endDate}, price=${offer.offerPrice}, isActive=${offer.isActive}`);
+                    });
                     const activeOffer = await this.prisma.offer.findFirst({
                         where: {
                             providerId: provider.id,
@@ -602,20 +613,14 @@ let ProvidersService = class ProvidersService {
                         }
                     });
                     if (activeOffer) {
-                        console.log(`Found active offer: ${activeOffer.id}, price: ${activeOffer.offerPrice}, start: ${activeOffer.startDate}, end: ${activeOffer.endDate}`);
+                        console.log(`Found ACTIVE offer: ${activeOffer.id}, price: ${activeOffer.offerPrice}, start: ${activeOffer.startDate}, end: ${activeOffer.endDate}`);
                     }
                     else {
-                        console.log(`No active offer found for provider ${provider.id}, service ${serviceId}`);
-                        const allOffers = await this.prisma.offer.findMany({
-                            where: {
-                                providerId: provider.id,
-                                serviceId: serviceId,
-                                isActive: true
-                            }
-                        });
-                        console.log(`Total offers found: ${allOffers.length}`);
+                        console.log(`No ACTIVE offer found - date check failed`);
                         allOffers.forEach(offer => {
-                            console.log(`Offer ${offer.id}: start=${offer.startDate}, end=${offer.endDate}, price=${offer.offerPrice}`);
+                            const startCheck = offer.startDate <= now;
+                            const endCheck = offer.endDate > now;
+                            console.log(`Offer ${offer.id}: startDate <= now (${startCheck}), endDate > now (${endCheck})`);
                         });
                     }
                     return {
