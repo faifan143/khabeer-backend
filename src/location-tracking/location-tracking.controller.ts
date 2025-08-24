@@ -1,66 +1,47 @@
 import {
   Controller,
   Get,
-  Post,
-  Put,
-  Delete,
-  Body,
   Param,
   Query,
   UseGuards,
   Request,
-  ParseIntPipe,
   NotFoundException,
 } from '@nestjs/common';
 import { LocationTrackingService } from './location-tracking.service';
-import { StartTrackingDto, StopTrackingDto, LocationUpdateDto } from './dto/location-update.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
 
 @Controller('location-tracking')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class LocationTrackingController {
   constructor(private readonly locationTrackingService: LocationTrackingService) { }
 
-  @Post('start')
-  @Roles('PROVIDER')
-  async startTracking(@Body() startTrackingDto: StartTrackingDto, @Request() req) {
-    // This endpoint is mainly for documentation/testing
-    // Real tracking should be done via WebSocket
-    return {
-      message: 'Please use WebSocket connection to start tracking',
-      endpoint: 'ws://localhost:3000/location-tracking',
-      event: 'start_tracking',
-      data: startTrackingDto
-    };
-  }
+  // WebSocket endpoints - these are handled by the gateway
+  // Use WebSocket connection for real-time tracking
 
-  @Post('stop')
-  @Roles('PROVIDER')
-  async stopTracking(@Body() stopTrackingDto: StopTrackingDto, @Request() req) {
-    // This endpoint is mainly for documentation/testing
-    // Real tracking should be done via WebSocket
-    return {
-      message: 'Please use WebSocket connection to stop tracking',
-      endpoint: 'ws://localhost:3000/location-tracking',
-      event: 'stop_tracking',
-      data: stopTrackingDto
-    };
-  }
-
-    @Get('order/:orderId/tracking-status')
+  @Get('order/:orderId/tracking-status')
   async getTrackingStatus(@Param('orderId') orderId: string, @Request() req) {
-    const userId = req.user.userId;
+    console.log('🔍 Tracking status requested for order:', orderId);
+    console.log('👤 User ID from request:', req.user?.userId);
+
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      console.log('❌ No user ID found in request');
+      throw new NotFoundException('User not authenticated');
+    }
 
     try {
+      console.log('✅ User authenticated, checking order access...');
+
       // Simple approach: just check if there's any location data and if tracking is active
       const currentLocation = await this.locationTrackingService.getCurrentLocation(orderId, userId);
-      
+      console.log('📍 Current location result:', currentLocation);
+
       // Get order details for additional info
       const order = await this.locationTrackingService.getOrderDetails(orderId, userId);
-      
-      return {
+      console.log('📋 Order details:', order);
+
+      const response = {
         success: true,
         orderId,
         isTracking: currentLocation.isTracking,
@@ -71,7 +52,12 @@ export class LocationTrackingController {
         lastUpdate: currentLocation.location?.timestamp || null,
         message: currentLocation.isTracking ? 'Order is being tracked' : 'Order is not being tracked'
       };
+
+      console.log('✅ Response prepared:', response);
+      return response;
+
     } catch (error) {
+      console.log('❌ Error occurred:', error.message);
       if (error instanceof NotFoundException) {
         throw new NotFoundException('Order not found or not accessible');
       }
@@ -160,74 +146,24 @@ export class LocationTrackingController {
     }
   }
 
-  @Get('active-tracking')
-  @Roles('ADMIN')
-  async getActiveTracking() {
-    return {
-      activeTracking: this.locationTrackingService.getActiveTracking(),
-      activeConnections: this.locationTrackingService.getActiveConnections()
-    };
-  }
-
-  @Get('provider/:providerId/orders')
-  @Roles('PROVIDER')
-  async getProviderOrders(
-    @Param('providerId', ParseIntPipe) providerId: number,
-    @Request() req
-  ) {
-    // Verify the provider is requesting their own data
-    if (req.user.userId !== providerId) {
-      throw new Error('Unauthorized access to provider data');
-    }
-
-    const activeTracking = this.locationTrackingService.getActiveTracking();
-    const providerOrders = activeTracking.filter(tracking => tracking.providerId === providerId);
-
-    return {
-      providerId,
-      activeOrders: providerOrders.map(tracking => ({
-        orderId: tracking.orderId,
-        startedAt: tracking.startedAt,
-        lastLocation: tracking.lastLocation
-      }))
-    };
-  }
-
-  @Get('user/:userId/orders')
-  @Roles('USER')
-  async getUserOrders(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Request() req
-  ) {
-    // Verify the user is requesting their own data
-    if (req.user.userId !== userId) {
-      throw new Error('Unauthorized access to user data');
-    }
-
-    const activeTracking = this.locationTrackingService.getActiveTracking();
-    const userOrders = activeTracking.filter(tracking => tracking.userId === userId);
-
-    return {
-      userId,
-      trackedOrders: userOrders.map(tracking => ({
-        orderId: tracking.orderId,
-        providerId: tracking.providerId,
-        startedAt: tracking.startedAt,
-        lastLocation: tracking.lastLocation
-      }))
-    };
-  }
+  // Admin and role-based endpoints removed for simplicity
+  // Use WebSocket for real-time tracking data
 
   @Get('health')
   async getHealth() {
+    console.log('🏥 Health check requested');
     const activeTracking = this.locationTrackingService.getActiveTracking();
     const activeConnections = this.locationTrackingService.getActiveConnections();
 
-    return {
+    const response = {
       status: 'healthy',
       activeTrackingCount: activeTracking.length,
       activeConnectionsCount: activeConnections.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      message: 'Location tracking service is running'
     };
+
+    console.log('✅ Health check response:', response);
+    return response;
   }
 } 
