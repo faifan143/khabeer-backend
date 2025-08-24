@@ -478,41 +478,6 @@ export class ProvidersService {
     }
   }
 
-  private isMultipleServicesOrder(order: any): boolean {
-    // Heuristic: if quantity > 1 and the total amount suggests multiple services
-    return order.quantity > 1 && order.totalAmount > (order.providerAmount * 1.5);
-  }
-
-  private reconstructMultipleServices(order: any): any[] {
-    // This is a simplified reconstruction - in a real app you might want to store this data
-    if (!this.isMultipleServicesOrder(order)) {
-      return [{
-        serviceId: order.serviceId,
-        serviceTitle: order.service.title,
-        serviceDescription: order.service.description,
-        serviceImage: order.service.image,
-        quantity: order.quantity,
-        unitPrice: order.providerAmount / order.quantity,
-        totalPrice: order.providerAmount,
-        commission: order.commissionAmount / order.quantity,
-        commissionAmount: order.commissionAmount
-      }];
-    }
-
-    // For multiple services, we'll need to estimate the breakdown
-    return [{
-      serviceId: order.serviceId,
-      serviceTitle: order.service.title,
-      serviceDescription: order.service.description,
-      serviceImage: order.service.image,
-      quantity: order.quantity,
-      unitPrice: order.providerAmount / order.quantity,
-      totalPrice: order.providerAmount,
-      commission: order.commissionAmount / order.quantity,
-      commissionAmount: order.commissionAmount
-    }];
-  }
-
   async getProviderOrders(providerId: number): Promise<ProviderOrdersResponseDto> {
     try {
       const orders = await this.prisma.order.findMany({
@@ -555,17 +520,9 @@ export class ProvidersService {
 
       // Transform orders to include calculated fields
       const transformedOrders = orders.map(order => {
-        // Check if this might be a multiple services order
-        const isMultipleServices = this.isMultipleServicesOrder(order);
-
-        // Reconstruct the services array for multiple services orders
-        const services = this.reconstructMultipleServices(order);
-
         return {
           ...order,
           duration: order.scheduledDate, // Use scheduled date as duration
-          isMultipleServices,
-          services,
           user: {
             ...order.user,
             image: order.user.image || '',
@@ -636,17 +593,9 @@ export class ProvidersService {
 
       // Transform orders to include calculated fields
       const transformedOrders = orders.map(order => {
-        // Check if this might be a multiple services order
-        const isMultipleServices = this.isMultipleServicesOrder(order);
-        
-        // Reconstruct the services array for multiple services orders
-        const services = this.reconstructMultipleServices(order);
-        
         return {
           ...order,
           duration: order.scheduledDate, // Use scheduled date as duration
-          isMultipleServices,
-          services,
           user: {
             ...order.user,
             image: order.user.image || '',

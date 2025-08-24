@@ -181,17 +181,9 @@ export class OrdersService {
     // Transform orders to include calculated fields for providers
     if (role === 'PROVIDER') {
       return orders.map(order => {
-        // Check if this might be a multiple services order
-        const isMultipleServices = this.isMultipleServicesOrder(order);
-
-        // Reconstruct the services array for multiple services orders
-        const services = this.reconstructMultipleServices(order);
-
         return {
           ...order,
           duration: order.scheduledDate, // Use scheduled date as duration
-          isMultipleServices,
-          services,
           user: {
             ...order.user,
             image: order.user.image || '',
@@ -254,19 +246,6 @@ export class OrdersService {
 
     if (!order) {
       throw new NotFoundException('Order not found');
-    }
-
-    // Add multiple services information for providers
-    if (role === 'PROVIDER') {
-      const isMultipleServices = this.isMultipleServicesOrder(order);
-      const services = this.reconstructMultipleServices(order);
-
-      return {
-        ...order,
-        isMultipleServices,
-        services,
-        duration: order.scheduledDate
-      };
     }
 
     return order;
@@ -860,44 +839,6 @@ export class OrdersService {
     return transitions[currentStatus] || [];
   }
 
-  private isMultipleServicesOrder(order: any): boolean {
-    // Heuristic: if quantity > 1 and the total amount suggests multiple services
-    // This is a simple approach - in a real app you might want more sophisticated detection
-    return order.quantity > 1 && order.totalAmount > (order.providerAmount * 1.5);
-  }
-
-  private reconstructMultipleServices(order: any): any[] {
-    // This is a simplified reconstruction - in a real app you might want to store this data
-    // For now, we'll create a basic structure based on the order data
-    if (!this.isMultipleServicesOrder(order)) {
-      return [{
-        serviceId: order.serviceId,
-        serviceTitle: order.service.title,
-        serviceDescription: order.service.description,
-        serviceImage: order.service.image,
-        quantity: order.quantity,
-        unitPrice: order.providerAmount / order.quantity,
-        totalPrice: order.providerAmount,
-        commission: order.commissionAmount / order.quantity,
-        commissionAmount: order.commissionAmount
-      }];
-    }
-
-    // For multiple services, we'll need to estimate the breakdown
-    // This is a limitation of the current approach
-    return [{
-      serviceId: order.serviceId,
-      serviceTitle: order.service.title,
-      serviceDescription: order.service.description,
-      serviceImage: order.service.image,
-      quantity: order.quantity,
-      unitPrice: order.providerAmount / order.quantity,
-      totalPrice: order.providerAmount,
-      commission: order.commissionAmount / order.quantity,
-      commissionAmount: order.commissionAmount
-    }];
-  }
-
   async createMultipleServices(createOrderDto: CreateOrderMultipleServicesDto, userId: number) {
     // Validate provider exists and is active
     const provider = await this.prisma.provider.findUnique({
@@ -1050,10 +991,6 @@ export class OrdersService {
         where: { id: createOrderDto.providerId },
         select: { id: true, name: true, phone: true, image: true }
       });
-
-      // Create order items for each service (if you want to track individual services)
-      // This would require adding an OrderItem model to your schema
-      // For now, we'll store the service breakdown in the order metadata
 
       return { order, user, provider, orderProviderLocation };
     });
