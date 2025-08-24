@@ -182,16 +182,41 @@ export class LocationTrackingService {
     };
   }
 
-  async getCurrentLocation(orderId: string, userId: number) {
-    // Verify user has access to this order
+    async getCurrentLocation(orderId: string, userId: number) {
+    console.log('🔍 getCurrentLocation called with orderId:', orderId, 'userId:', userId);
+    
+    // Parse orderId to number since we're using the database ID
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
+      throw new BadRequestException(`Invalid order ID: ${orderId}. Must be a number.`);
+    }
+    
+    // Verify user has access to this order using the numeric ID
     const order = await this.prisma.order.findFirst({
       where: {
-        bookingId: orderId,
+        id: orderIdNumber,
         userId: userId
       }
     });
 
+    console.log('📋 Order found:', order ? `ID: ${order.id}, Status: ${order.status}` : 'NOT FOUND');
+
     if (!order) {
+      // Check if order exists at all
+      const orderExists = await this.prisma.order.findFirst({
+        where: { id: orderIdNumber }
+      });
+      
+      if (!orderExists) {
+        console.log('❌ Order with ID does not exist');
+        throw new NotFoundException(`Order with ID '${orderId}' not found`);
+      }
+      
+      if (orderExists.userId !== userId) {
+        console.log('❌ Order exists but user does not own it');
+        throw new NotFoundException(`Order '${orderId}' is not accessible to user ${userId}`);
+      }
+      
       throw new NotFoundException('Order not found or not accessible');
     }
 
@@ -231,10 +256,16 @@ export class LocationTrackingService {
   }
 
   async getLocationHistory(orderId: string, userId: number, limit: number = 50) {
-    // Verify user has access to this order
+    // Parse orderId to number since we're using the database ID
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
+      throw new BadRequestException(`Invalid order ID: ${orderId}. Must be a number.`);
+    }
+    
+    // Verify user has access to this order using the numeric ID
     const order = await this.prisma.order.findFirst({
       where: {
-        bookingId: orderId,
+        id: orderIdNumber,
         userId: userId
       }
     });
@@ -282,9 +313,15 @@ export class LocationTrackingService {
   }
 
   async estimateArrivalTime(orderId: string, userId: number): Promise<number | null> {
+    // Parse orderId to number since we're using the database ID
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
+      throw new BadRequestException(`Invalid order ID: ${orderId}. Must be a number.`);
+    }
+    
     const order = await this.prisma.order.findFirst({
       where: {
-        bookingId: orderId,
+        id: orderIdNumber,
         userId: userId
       },
       include: {
@@ -364,11 +401,19 @@ export class LocationTrackingService {
     }));
   }
 
-  // Simple method to get order details
+    // Simple method to get order details
   async getOrderDetails(orderId: string, userId: number) {
+    console.log('🔍 getOrderDetails called with orderId:', orderId, 'userId:', userId);
+    
+    // Parse orderId to number since we're using the database ID
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
+      throw new BadRequestException(`Invalid order ID: ${orderId}. Must be a number.`);
+    }
+    
     const order = await this.prisma.order.findFirst({
       where: {
-        bookingId: orderId,
+        id: orderIdNumber,
         userId: userId
       },
       select: {
@@ -380,6 +425,7 @@ export class LocationTrackingService {
       }
     });
 
+    console.log('📋 Order details found:', order ? `ID: ${order.id}, Status: ${order.status}` : 'NOT FOUND');
     return order;
   }
 
