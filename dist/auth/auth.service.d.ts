@@ -1,15 +1,20 @@
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
 import { ProvidersService } from '../providers/providers.service';
 import { SmsService } from '../sms/sms.service';
+import { UsersService } from '../users/users.service';
+import { DirectPhoneLoginDto, PhoneLoginDto, PhoneLoginResponseDto } from './dto/phone-login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { PhoneLoginDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
 export declare class AuthService {
     private readonly usersService;
     private readonly providersService;
     private readonly smsService;
     private readonly jwtService;
+    private registrationCache;
     constructor(usersService: UsersService, providersService: ProvidersService, smsService: SmsService, jwtService: JwtService);
+    private storeRegistrationData;
+    private getRegistrationData;
+    private removeRegistrationData;
+    private cleanupExpiredCache;
     validateUser(loginData: {
         email?: string;
         phone?: string;
@@ -131,6 +136,11 @@ export declare class AuthService {
         message: string;
         expiresIn?: number;
     }>;
+    sendPasswordResetOtp(phoneNumber: string): Promise<{
+        success: boolean;
+        message: string;
+        expiresIn?: number;
+    }>;
     phoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto>;
     registerWithPhone(data: RegisterDto & {
         phoneNumber: string;
@@ -146,9 +156,20 @@ export declare class AuthService {
         success: boolean;
         message: string;
         expiresIn?: number;
+        registrationData?: any;
     }>;
-    completeRegistration(data: RegisterDto & {
+    completeRegistration(phoneNumber: string, otp: string): Promise<any>;
+    completeRegistrationWithData(data: RegisterDto & {
         phoneNumber: string;
         otp: string;
     }): Promise<any>;
+    checkRegistrationStatus(phoneNumber: string): Promise<{
+        exists: boolean;
+        expiresIn?: number;
+        message: string;
+    }>;
+    clearRegistrationData(phoneNumber: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }

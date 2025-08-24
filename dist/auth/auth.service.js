@@ -12,21 +12,51 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
-const users_service_1 = require("../users/users.service");
+const library_1 = require("@prisma/client/runtime/library");
+const bcrypt = require("bcryptjs");
 const providers_service_1 = require("../providers/providers.service");
 const sms_service_1 = require("../sms/sms.service");
-const bcrypt = require("bcryptjs");
-const library_1 = require("@prisma/client/runtime/library");
+const users_service_1 = require("../users/users.service");
 let AuthService = class AuthService {
     usersService;
     providersService;
     smsService;
     jwtService;
+    registrationCache = {};
     constructor(usersService, providersService, smsService, jwtService) {
         this.usersService = usersService;
         this.providersService = providersService;
         this.smsService = smsService;
         this.jwtService = jwtService;
+    }
+    storeRegistrationData(phoneNumber, data, expiresInMinutes = 10) {
+        const expiresAt = Date.now() + (expiresInMinutes * 60 * 1000);
+        this.registrationCache[phoneNumber] = {
+            data,
+            expiresAt
+        };
+        this.cleanupExpiredCache();
+    }
+    getRegistrationData(phoneNumber) {
+        const cached = this.registrationCache[phoneNumber];
+        if (!cached)
+            return null;
+        if (Date.now() > cached.expiresAt) {
+            delete this.registrationCache[phoneNumber];
+            return null;
+        }
+        return cached.data;
+    }
+    removeRegistrationData(phoneNumber) {
+        delete this.registrationCache[phoneNumber];
+    }
+    cleanupExpiredCache() {
+        const now = Date.now();
+        Object.keys(this.registrationCache).forEach(phoneNumber => {
+            if (this.registrationCache[phoneNumber].expiresAt < now) {
+                delete this.registrationCache[phoneNumber];
+            }
+        });
     }
     async validateUser(loginData) {
         try {
@@ -42,33 +72,16 @@ let AuthService = class AuthService {
                 };
             }
             if (email && !phone) {
-                console.log(`[DEBUG] Attempting provider login for email: ${email}`);
                 const provider = await this.providersService.findByEmail(email);
-                console.log(`[DEBUG] Provider found:`, provider ? {
-                    id: provider.id,
-                    email: provider.email,
-                    hasPassword: !!provider.password,
-                    isVerified: provider.isVerified,
-                    isActive: provider.isActive
-                } : 'NOT_FOUND');
                 if (provider && provider.password) {
                     const isPasswordValid = await bcrypt.compare(password, provider.password);
-                    console.log(`[DEBUG] Password validation result: ${isPasswordValid}`);
                     if (isPasswordValid) {
                         if (!provider.isVerified) {
-                            console.log(`[DEBUG] Provider not verified, throwing UnauthorizedException`);
                             throw new common_1.UnauthorizedException('Your account is not verified. Please wait for admin verification.');
                         }
                         const { password: _, ...result } = provider;
-                        console.log(`[DEBUG] Provider authentication successful, returning:`, { id: result.id, email: result.email, role: 'PROVIDER' });
                         return { ...result, role: 'PROVIDER' };
                     }
-                    else {
-                        console.log(`[DEBUG] Password validation failed for provider`);
-                    }
-                }
-                else {
-                    console.log(`[DEBUG] Provider not found or has no password`);
                 }
             }
             if (phone && !email) {
@@ -92,12 +105,6 @@ let AuthService = class AuthService {
         try {
             const username = user.email || user.phone;
             const payload = { username, sub: user.id, role: user.role };
-            console.log('=== Regular Login JWT Generation DEBUG ===');
-            console.log('User data for token:', user);
-            console.log('JWT payload being created:', payload);
-            console.log('user.id type:', typeof user.id);
-            console.log('user.id value:', user.id);
-            console.log('user.id is valid number?', !isNaN(user.id) && user.id > 0);
             const result = {
                 access_token: this.jwtService.sign(payload),
                 user: {
@@ -107,9 +114,6 @@ let AuthService = class AuthService {
                     role: user.role
                 }
             };
-            console.log('JWT token generated successfully');
-            console.log('Token length:', result.access_token.length);
-            console.log('=== Regular Login JWT Generation DEBUG END ===');
             return result;
         }
         catch (error) {
@@ -368,7 +372,6 @@ let AuthService = class AuthService {
     }
     async activateProviderAccount(providerId) {
         try {
-            console.log('Attempting to activate provider with ID:', providerId);
             const provider = await this.providersService.findById(providerId);
             if (!provider.isVerified) {
                 throw new common_1.BadRequestException('Your account must be verified by admin before you can activate it.');
@@ -389,7 +392,6 @@ let AuthService = class AuthService {
     }
     async deactivateProviderAccount(providerId) {
         try {
-            console.log('Attempting to deactivate provider with ID:', providerId);
             const provider = await this.providersService.findById(providerId);
             const updatedProvider = await this.providersService.update(provider.id, { isActive: false });
             return {
@@ -429,6 +431,33 @@ let AuthService = class AuthService {
             return {
                 success: false,
                 message: 'Failed to send OTP'
+            };
+        }
+    }
+    async sendPasswordResetOtp(phoneNumber) {
+        try {
+            const user = await this.usersService.findByPhone(phoneNumber);
+            const provider = await this.providersService.findByPhone(phoneNumber);
+            if (!user && !provider) {
+                return {
+                    success: false,
+                    message: 'No account found with this phone number'
+                };
+            }
+            const result = await this.smsService.sendOtp({
+                phoneNumber,
+                purpose: 'password_reset'
+            });
+            return {
+                success: result.success,
+                message: result.message,
+                expiresIn: result.expiresIn
+            };
+        }
+        catch (error) {
+            return {
+                success: false,
+                message: 'Failed to send password reset OTP'
             };
         }
     }
@@ -499,16 +528,7 @@ let AuthService = class AuthService {
                 role: role,
                 phone: phoneNumber
             };
-            console.log('=== JWT Token Generation DEBUG ===');
-            console.log('User data for token:', userData);
-            console.log('JWT payload being created:', payload);
-            console.log('userData.id type:', typeof userData.id);
-            console.log('userData.id value:', userData.id);
-            console.log('userData.id is valid number?', !isNaN(userData.id) && userData.id > 0);
             const access_token = this.jwtService.sign(payload);
-            console.log('JWT token generated successfully');
-            console.log('Token length:', access_token.length);
-            console.log('=== JWT Token Generation DEBUG END ===');
             return {
                 success: true,
                 message: 'Login successful',
@@ -632,10 +652,21 @@ let AuthService = class AuthService {
                 phoneNumber,
                 purpose: 'registration'
             });
+            if (otpResult.success) {
+                const dataToCache = {
+                    phoneNumber,
+                    ...registerData
+                };
+                this.storeRegistrationData(phoneNumber, dataToCache, 10);
+                return {
+                    success: otpResult.success,
+                    message: otpResult.message,
+                    expiresIn: otpResult.expiresIn
+                };
+            }
             return {
-                success: otpResult.success,
-                message: otpResult.message,
-                expiresIn: otpResult.expiresIn
+                success: false,
+                message: otpResult.message
             };
         }
         catch (error) {
@@ -645,16 +676,8 @@ let AuthService = class AuthService {
             throw new common_1.InternalServerErrorException('Registration initiation failed');
         }
     }
-    async completeRegistration(data) {
+    async completeRegistration(phoneNumber, otp) {
         try {
-            const { phoneNumber, otp, ...registerData } = data;
-            console.log(`[DEBUG] Complete registration - Received data:`, {
-                phoneNumber,
-                otp,
-                password: registerData.password,
-                email: registerData.email,
-                role: registerData.role
-            });
             const otpResult = await this.smsService.verifyOtp({
                 phoneNumber,
                 otp,
@@ -663,26 +686,21 @@ let AuthService = class AuthService {
             if (!otpResult.success) {
                 throw new common_1.BadRequestException(otpResult.message);
             }
-            if (!registerData.password || !registerData.name) {
-                throw new common_1.BadRequestException('Password and name are required');
-            }
-            if (registerData.registerType === 'provider' && !registerData.email) {
-                throw new common_1.BadRequestException('Email is required for provider registration');
-            }
-            if (registerData.email) {
-                const existingUser = await this.usersService.findByEmail(registerData.email);
-                const existingProvider = await this.providersService.findByEmail(registerData.email);
-                if (existingUser || existingProvider) {
-                    throw new common_1.ConflictException('User with this email already exists');
-                }
-            }
             const existingUserByPhone = await this.usersService.findByPhone(phoneNumber);
             const existingProviderByPhone = await this.providersService.findByPhone(phoneNumber);
             if (existingUserByPhone || existingProviderByPhone) {
-                throw new common_1.ConflictException('Phone number is already registered');
+                throw new common_1.BadRequestException('Phone number is already registered');
+            }
+            const registrationData = this.getRegistrationData(phoneNumber);
+            if (!registrationData) {
+                throw new common_1.BadRequestException('Registration data expired or not found. Please restart the registration process.');
+            }
+            this.removeRegistrationData(phoneNumber);
+            const { phoneNumber: cachedPhone, ...registerData } = registrationData;
+            if (!registerData.password || !registerData.name) {
+                throw new common_1.BadRequestException('Invalid registration data. Please restart the registration process.');
             }
             const hashedPassword = await bcrypt.hash(registerData.password, 10);
-            console.log(`[DEBUG] Password hashing - Original: ${registerData.password}, Hashed: ${hashedPassword.substring(0, 20)}...`);
             const userData = {
                 name: registerData.name,
                 email: registerData.email || undefined,
@@ -710,12 +728,88 @@ let AuthService = class AuthService {
                     officialDocuments: registerData.officialDocuments || undefined,
                     serviceIds: registerData.serviceIds || []
                 };
-                console.log(`[DEBUG] Creating provider with data:`, {
-                    name: providerData.name,
-                    email: providerData.email,
-                    hasPassword: !!providerData.password,
-                    phone: providerData.phone
-                });
+                const provider = await this.providersService.registerProviderWithServices(providerData);
+                const { password, ...result } = provider;
+                return {
+                    ...result,
+                    role: 'PROVIDER',
+                    message: 'Provider registered successfully. Please wait for admin verification to login.'
+                };
+            }
+            else {
+                const user = await this.usersService.create(userData);
+                const { password, ...result } = user;
+                return {
+                    ...result,
+                    role: 'USER',
+                    message: 'User registered successfully'
+                };
+            }
+        }
+        catch (error) {
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Registration completion failed');
+        }
+    }
+    async completeRegistrationWithData(data) {
+        try {
+            const { phoneNumber, otp, ...registerData } = data;
+            const otpResult = await this.smsService.verifyOtp({
+                phoneNumber,
+                otp,
+                purpose: 'registration'
+            });
+            if (!otpResult.success) {
+                throw new common_1.BadRequestException(otpResult.message);
+            }
+            if (!registerData.password || !registerData.name) {
+                throw new common_1.BadRequestException('Password and name are required');
+            }
+            if (registerData.registerType === 'provider' && !registerData.email) {
+                throw new common_1.BadRequestException('Email is required for provider registration');
+            }
+            if (registerData.email) {
+                const existingUser = await this.usersService.findByEmail(registerData.email);
+                const existingProvider = await this.providersService.findByEmail(registerData.email);
+                if (existingUser || existingProvider) {
+                    throw new common_1.ConflictException('User with this email already exists');
+                }
+            }
+            const existingUserByPhone = await this.usersService.findByPhone(phoneNumber);
+            const existingProviderByPhone = await this.providersService.findByPhone(phoneNumber);
+            if (existingUserByPhone || existingProviderByPhone) {
+                throw new common_1.ConflictException('Phone number is already registered');
+            }
+            const hashedPassword = await bcrypt.hash(registerData.password, 10);
+            const userData = {
+                name: registerData.name,
+                email: registerData.email || undefined,
+                password: hashedPassword,
+                image: registerData.image || '',
+                address: registerData.address || '',
+                phone: phoneNumber,
+                state: registerData.state || '',
+                role: registerData.role || 'USER',
+                isActive: registerData.isActive ?? true,
+                officialDocuments: registerData.officialDocuments
+            };
+            if (registerData.role === 'PROVIDER') {
+                const providerData = {
+                    name: registerData.name,
+                    email: registerData.email,
+                    password: hashedPassword,
+                    image: registerData.image || '',
+                    description: registerData.description || '',
+                    state: registerData.state || '',
+                    phone: phoneNumber,
+                    isActive: registerData.isActive ?? false,
+                    isVerified: false,
+                    location: null,
+                    officialDocuments: registerData.officialDocuments || undefined,
+                    serviceIds: registerData.serviceIds || []
+                };
                 const provider = await this.providersService.registerProviderWithServices(providerData);
                 const { password, ...result } = provider;
                 return {
@@ -739,6 +833,45 @@ let AuthService = class AuthService {
                 throw error;
             }
             throw new common_1.InternalServerErrorException('Registration completion failed');
+        }
+    }
+    async checkRegistrationStatus(phoneNumber) {
+        try {
+            const registrationData = this.getRegistrationData(phoneNumber);
+            if (!registrationData) {
+                return {
+                    exists: false,
+                    message: 'No registration data found for this phone number'
+                };
+            }
+            const cached = this.registrationCache[phoneNumber];
+            const remainingTime = Math.max(0, Math.ceil((cached.expiresAt - Date.now()) / 1000 / 60));
+            return {
+                exists: true,
+                expiresIn: remainingTime,
+                message: `Registration data exists and expires in ${remainingTime} minutes`
+            };
+        }
+        catch (error) {
+            return {
+                exists: false,
+                message: 'Error checking registration status'
+            };
+        }
+    }
+    async clearRegistrationData(phoneNumber) {
+        try {
+            this.removeRegistrationData(phoneNumber);
+            return {
+                success: true,
+                message: 'Registration data cleared successfully'
+            };
+        }
+        catch (error) {
+            return {
+                success: false,
+                message: 'Error clearing registration data'
+            };
         }
     }
 };

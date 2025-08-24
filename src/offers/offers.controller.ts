@@ -46,6 +46,31 @@ export class OffersController {
         return this.offersService.getActiveOffers(limitNum);
     }
 
+    @Get('available')
+    async getAvailableOffers(@Query('limit') limit?: string) {
+        const limitNum = limit ? parseInt(limit, 10) : 20;
+        return this.offersService.getAvailableOffers(limitNum);
+    }
+
+    @Get('debug/all')
+    @Roles('ADMIN')
+    async debugAllOffers() {
+        return this.offersService.debugAllOffers();
+    }
+
+    @Get('debug/active-criteria')
+    @Roles('ADMIN')
+    async debugActiveOffersCriteria() {
+        return this.offersService.debugActiveOffersCriteria();
+    }
+
+    @Get('debug/flexible')
+    @Roles('ADMIN')
+    async getFlexibleActiveOffers(@Query('limit') limit?: string) {
+        const limitNum = limit ? parseInt(limit, 10) : 20;
+        return this.offersService.getFlexibleActiveOffers(limitNum);
+    }
+
     @Get('provider/:providerId')
     async getProviderOffers(@Param('providerId', ParseIntPipe) providerId: number) {
         return this.offersService.getProviderOffers(providerId);

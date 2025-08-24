@@ -19,8 +19,10 @@ const auth_service_1 = require("./auth.service");
 const jwt_auth_guard_1 = require("./jwt-auth.guard");
 const login_dto_1 = require("./dto/login.dto");
 const register_dto_1 = require("./dto/register.dto");
-const phone_login_dto_1 = require("./dto/phone-login.dto");
+const password_reset_dto_1 = require("./dto/password-reset.dto");
 const multer_1 = require("@nestjs/platform-express/multer");
+const multer_2 = require("multer");
+const path_1 = require("path");
 const files_service_1 = require("../files/files.service");
 let AuthController = class AuthController {
     authService;
@@ -37,22 +39,13 @@ let AuthController = class AuthController {
             if (body.email && body.phone) {
                 throw new common_1.BadRequestException('Please provide either email OR phone, not both');
             }
-            console.log('Login request received:', {
-                email: body.email,
-                phone: body.phone,
-                hasPassword: !!body.password,
-                hasFCM: !!body.fcm,
-                fcmLength: body.fcm?.length || 0
-            });
             const user = await this.authService.validateUser(body);
             if (!user) {
                 throw new common_1.BadRequestException('Invalid credentials');
             }
             if (body.fcm) {
-                console.log('Using FCM-enabled login for user:', user.id);
                 return this.authService.loginWithFCM(user, body.fcm);
             }
-            console.log('Using regular login for user:', user.id);
             return this.authService.login(user);
         }
         catch (error) {
@@ -66,121 +59,22 @@ let AuthController = class AuthController {
             throw new common_1.BadRequestException('Invalid credentials');
         }
     }
-    async phoneLogin(directPhoneLoginDto) {
-        return this.authService.phoneLogin(directPhoneLoginDto);
-    }
-    async sendPhoneRegistrationOtp(phoneLoginDto) {
-        return this.authService.sendPhoneLoginOtp({ ...phoneLoginDto, purpose: 'registration' });
-    }
-    async registerWithPhone(body, file) {
-        console.log('Phone register body:', body);
-        if (!body.phoneNumber || !body.name || !body.password) {
-            throw new common_1.BadRequestException('Phone number, name, and password are required');
-        }
-        const registerData = {
-            registerType: register_dto_1.RegisterType.USER,
-            name: Array.isArray(body.name) ? body.name[0] : body.name,
-            email: Array.isArray(body.email) ? body.email[0] : body.email || '',
-            password: Array.isArray(body.password) ? body.password[0] : body.password,
-            phoneNumber: Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber,
-            otp: Array.isArray(body.otp) ? body.otp[0] : body.otp,
-            role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
-            address: Array.isArray(body.address) ? body.address[0] : body.address || '',
-            phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
-            state: Array.isArray(body.state) ? body.state[0] : body.state || '',
-            isActive: body.isActive === 'true' || body.isActive === true,
-            officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
-            description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-            serviceIds: this.parseServiceIds(body.serviceIds)
-        };
-        if (file) {
-            const uploadResult = await this.filesService.handleUploadedFile(file);
-            registerData.image = uploadResult.url;
-        }
-        return this.authService.registerWithPhone(registerData);
-    }
     async sendPasswordResetOtp(body) {
-        return this.authService.sendPhoneLoginOtp({
-            phoneNumber: body.phoneNumber,
-            purpose: 'password_reset'
-        });
+        return this.authService.sendPasswordResetOtp(body.phoneNumber);
     }
     async resetPasswordWithPhone(body) {
         return this.authService.resetPasswordWithPhone(body.phoneNumber, body.otp, body.newPassword);
     }
-    async register(body, file) {
-        console.log('Register body:', body);
-        if (!body.password || !body.name) {
-            throw new common_1.BadRequestException('Password and name are required');
-        }
-        let registerType = 'user';
-        if (body.description || body.role === 'PROVIDER') {
-            registerType = 'provider';
-            if (!body.email) {
-                throw new common_1.BadRequestException('Email is required for provider registration');
-            }
-        }
-        else {
-            if (!body.phone) {
-                throw new common_1.BadRequestException('Phone number is required for user registration');
-            }
-        }
-        const registerData = {
-            registerType: registerType,
-            name: Array.isArray(body.name) ? body.name[0] : body.name,
-            email: Array.isArray(body.email) ? body.email[0] : body.email,
-            password: Array.isArray(body.password) ? body.password[0] : body.password,
-            role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
-            address: Array.isArray(body.address) ? body.address[0] : body.address || '',
-            phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
-            state: Array.isArray(body.state) ? body.state[0] : body.state || '',
-            isActive: body.isActive === 'true' || body.isActive === true,
-            officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
-            description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-            serviceIds: this.parseServiceIds(body.serviceIds)
-        };
-        if (file) {
-            const fileResult = await this.filesService.handleUploadedFile(file);
-            registerData.image = fileResult.url;
-        }
-        else {
-            registerData.image = '';
-        }
-        return this.authService.register(registerData);
-    }
-    async initiateRegistration(body) {
-        console.log('Initiate registration body:', body);
+    async initiateRegistration(body, file) {
         if (!body.password || !body.name || !body.phoneNumber) {
             throw new common_1.BadRequestException('Password, name, and phone number are required');
         }
         const registerData = {
-            registerType: register_dto_1.RegisterType.USER,
+            registerType: body.registerType || register_dto_1.RegisterType.USER,
             name: Array.isArray(body.name) ? body.name[0] : body.name,
             email: Array.isArray(body.email) ? body.email[0] : body.email,
             password: Array.isArray(body.password) ? body.password[0] : body.password,
             phoneNumber: Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber,
-            role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
-            address: Array.isArray(body.address) ? body.address[0] : body.address || '',
-            phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
-            state: Array.isArray(body.state) ? body.state[0] : body.state || '',
-            isActive: body.isActive === 'true' || body.isActive === true,
-            officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
-            description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-            serviceIds: this.parseServiceIds(body.serviceIds)
-        };
-        return this.authService.initiateRegistration(registerData);
-    }
-    async completeRegistration(body, file) {
-        console.log('Complete registration body:', body);
-        if (!body.password || !body.name || !body.phoneNumber || !body.otp) {
-            throw new common_1.BadRequestException('Password, name, phone number, and OTP are required');
-        }
-        const registerData = {
-            name: Array.isArray(body.name) ? body.name[0] : body.name,
-            email: Array.isArray(body.email) ? body.email[0] : body.email,
-            password: Array.isArray(body.password) ? body.password[0] : body.password,
-            phoneNumber: Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber,
-            otp: Array.isArray(body.otp) ? body.otp[0] : body.otp,
             role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
             address: Array.isArray(body.address) ? body.address[0] : body.address || '',
             phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
@@ -191,10 +85,21 @@ let AuthController = class AuthController {
             serviceIds: this.parseServiceIds(body.serviceIds)
         };
         if (file) {
-            const uploadResult = await this.filesService.handleUploadedFile(file);
-            registerData.image = uploadResult.url;
+            const imageUrl = `/uploads/images/users/${file.filename}`;
+            registerData.image = imageUrl;
         }
-        return this.authService.completeRegistration(registerData);
+        else {
+            registerData.image = '';
+        }
+        return this.authService.initiateRegistration(registerData);
+    }
+    async completeRegistration(body) {
+        if (!body.phoneNumber || !body.otp) {
+            throw new common_1.BadRequestException('Phone number and OTP are required');
+        }
+        const phoneNumber = Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber;
+        const otp = Array.isArray(body.otp) ? body.otp[0] : body.otp;
+        return this.authService.completeRegistration(phoneNumber, otp);
     }
     async me(req) {
         return req.user;
@@ -210,6 +115,12 @@ let AuthController = class AuthController {
     }
     async deactivateAccount(req) {
         return this.authService.deactivateProviderAccount(req.user.userId);
+    }
+    async checkRegistrationStatus(body) {
+        if (!body.phoneNumber) {
+            throw new common_1.BadRequestException('Phone number is required');
+        }
+        return this.authService.checkRegistrationStatus(body.phoneNumber);
     }
     parseServiceIds(serviceIds) {
         if (!serviceIds)
@@ -241,89 +152,56 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([
-    (0, common_1.Post)('phone/login'),
-    (0, swagger_1.ApiOperation)({ summary: 'Phone login without OTP (optional password)' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Login successful', type: phone_login_dto_1.PhoneLoginResponseDto }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid credentials' }),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [phone_login_dto_1.DirectPhoneLoginDto]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "phoneLogin", null);
-__decorate([
-    (0, common_1.Post)('phone/register/send-otp'),
-    (0, swagger_1.ApiOperation)({ summary: 'Send OTP for phone-based registration' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'OTP sent successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid phone number' }),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [phone_login_dto_1.PhoneLoginDto]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "sendPhoneRegistrationOtp", null);
-__decorate([
-    (0, common_1.Post)('phone/register'),
-    (0, common_1.UseInterceptors)((0, multer_1.FileInterceptor)('image')),
-    (0, swagger_1.ApiOperation)({ summary: 'Register with phone verification (OTP optional)' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Registration successful' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid data or OTP' }),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.UploadedFile)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "registerWithPhone", null);
-__decorate([
     (0, common_1.Post)('phone/password-reset/send-otp'),
     (0, swagger_1.ApiOperation)({ summary: 'Send OTP for password reset' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'OTP sent successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Account not found' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'OTP sent successfully', type: password_reset_dto_1.PasswordResetResponseDto }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid phone number or account not found' }),
+    (0, swagger_1.ApiResponse)({ status: 429, description: 'Too many OTP requests, please wait' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [password_reset_dto_1.SendPasswordResetOtpDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "sendPasswordResetOtp", null);
 __decorate([
     (0, common_1.Post)('phone/password-reset'),
     (0, swagger_1.ApiOperation)({ summary: 'Reset password with phone verification' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Password reset successful' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Password reset successful', type: password_reset_dto_1.PasswordResetResponseDto }),
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid OTP or data' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Account not found' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [password_reset_dto_1.ResetPasswordDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "resetPasswordWithPhone", null);
 __decorate([
-    (0, common_1.Post)('register'),
-    (0, common_1.UseInterceptors)((0, multer_1.FileInterceptor)('image')),
-    (0, swagger_1.ApiOperation)({ summary: 'Register with phone (users) or email (providers) and password' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Registration successful' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid data' }),
+    (0, common_1.Post)('register/initiate'),
+    (0, common_1.UseInterceptors)((0, multer_1.FileInterceptor)('image', {
+        storage: (0, multer_2.diskStorage)({
+            destination: './uploads/images/users',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = (0, path_1.extname)(file.originalname);
+                cb(null, `user-${uniqueSuffix}${ext}`);
+            },
+        }),
+    })),
+    (0, swagger_1.ApiOperation)({ summary: 'Step 1: Initiate registration and send OTP - User provides all data including password' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Registration initiated, OTP sent' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid data or user already exists' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "register", null);
-__decorate([
-    (0, common_1.Post)('register/initiate'),
-    (0, swagger_1.ApiOperation)({ summary: 'Step 1: Initiate registration and send OTP' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Registration initiated, OTP sent' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid data or user already exists' }),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "initiateRegistration", null);
 __decorate([
     (0, common_1.Post)('register/complete'),
-    (0, common_1.UseInterceptors)((0, multer_1.FileInterceptor)('image')),
-    (0, swagger_1.ApiOperation)({ summary: 'Step 2: Complete registration with OTP verification' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Step 2: Complete registration with OTP verification - Only phone and OTP required' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Registration completed successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid OTP or data' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid OTP or registration data expired' }),
     __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "completeRegistration", null);
 __decorate([
@@ -376,6 +254,16 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "deactivateAccount", null);
+__decorate([
+    (0, common_1.Post)('register/check-status'),
+    (0, swagger_1.ApiOperation)({ summary: 'Check if registration data exists for a phone number' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Registration status checked' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Phone number required' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "checkRegistrationStatus", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Authentication'),
     (0, common_1.Controller)('auth'),

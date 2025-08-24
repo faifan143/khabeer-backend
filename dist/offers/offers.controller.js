@@ -36,6 +36,20 @@ let OffersController = class OffersController {
         const limitNum = limit ? parseInt(limit, 10) : 20;
         return this.offersService.getActiveOffers(limitNum);
     }
+    async getAvailableOffers(limit) {
+        const limitNum = limit ? parseInt(limit, 10) : 20;
+        return this.offersService.getAvailableOffers(limitNum);
+    }
+    async debugAllOffers() {
+        return this.offersService.debugAllOffers();
+    }
+    async debugActiveOffersCriteria() {
+        return this.offersService.debugActiveOffersCriteria();
+    }
+    async getFlexibleActiveOffers(limit) {
+        const limitNum = limit ? parseInt(limit, 10) : 20;
+        return this.offersService.getFlexibleActiveOffers(limitNum);
+    }
     async getProviderOffers(providerId) {
         return this.offersService.getProviderOffers(providerId);
     }
@@ -81,6 +95,35 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], OffersController.prototype, "getActiveOffers", null);
+__decorate([
+    (0, common_1.Get)('available'),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], OffersController.prototype, "getAvailableOffers", null);
+__decorate([
+    (0, common_1.Get)('debug/all'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], OffersController.prototype, "debugAllOffers", null);
+__decorate([
+    (0, common_1.Get)('debug/active-criteria'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], OffersController.prototype, "debugActiveOffersCriteria", null);
+__decorate([
+    (0, common_1.Get)('debug/flexible'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], OffersController.prototype, "getFlexibleActiveOffers", null);
 __decorate([
     (0, common_1.Get)('provider/:providerId'),
     __param(0, (0, common_1.Param)('providerId', common_1.ParseIntPipe)),

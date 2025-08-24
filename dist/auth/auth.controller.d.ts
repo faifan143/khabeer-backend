@@ -1,6 +1,6 @@
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { PhoneLoginDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
+import { SendPasswordResetOtpDto, ResetPasswordDto } from './dto/password-reset.dto';
 import { FilesService } from 'src/files/files.service';
 export declare class AuthController {
     private readonly authService;
@@ -15,35 +15,25 @@ export declare class AuthController {
             role: string;
         };
     }>;
-    phoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto>;
-    sendPhoneRegistrationOtp(phoneLoginDto: PhoneLoginDto): Promise<{
+    sendPasswordResetOtp(body: SendPasswordResetOtpDto): Promise<{
         success: boolean;
         message: string;
         expiresIn?: number;
     }>;
-    registerWithPhone(body: any, file: Express.Multer.File): Promise<any>;
-    sendPasswordResetOtp(body: {
-        phoneNumber: string;
-    }): Promise<{
+    resetPasswordWithPhone(body: ResetPasswordDto): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    initiateRegistration(body: any, file: Express.Multer.File): Promise<{
         success: boolean;
         message: string;
         expiresIn?: number;
+        registrationData?: any;
     }>;
-    resetPasswordWithPhone(body: {
+    completeRegistration(body: {
         phoneNumber: string;
         otp: string;
-        newPassword: string;
-    }): Promise<{
-        success: boolean;
-        message: string;
-    }>;
-    register(body: any, file: Express.Multer.File): Promise<any>;
-    initiateRegistration(body: any): Promise<{
-        success: boolean;
-        message: string;
-        expiresIn?: number;
-    }>;
-    completeRegistration(body: any, file: Express.Multer.File): Promise<any>;
+    }): Promise<any>;
     me(req: any): Promise<any>;
     upgradeToProvider(req: any, providerData: any): Promise<{
         role: string;
@@ -128,6 +118,13 @@ export declare class AuthController {
         updatedAt: Date;
         password: string | null;
         fcm: string | null;
+    }>;
+    checkRegistrationStatus(body: {
+        phoneNumber: string;
+    }): Promise<{
+        exists: boolean;
+        expiresIn?: number;
+        message: string;
     }>;
     private parseServiceIds;
 }

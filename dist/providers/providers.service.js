@@ -104,7 +104,6 @@ let ProvidersService = class ProvidersService {
             if (groupedSettings.social?.social_links) {
                 try {
                     const parsedSocialLinks = JSON.parse(groupedSettings.social.social_links);
-                    console.log('Parsed social media links:', parsedSocialLinks);
                     socialMedia = {
                         whatsapp: parsedSocialLinks.whatsapp || null,
                         instagram: parsedSocialLinks.instagram || null,
@@ -117,9 +116,6 @@ let ProvidersService = class ProvidersService {
                     console.error('Failed to parse social media links:', parseError);
                     console.error('Raw social_links value:', groupedSettings.social.social_links);
                 }
-            }
-            else {
-                console.log('No social_links found in social settings:', groupedSettings.social);
             }
             const legalDocuments = {
                 terms_en: groupedSettings.legal?.terms_en || null,
