@@ -28,11 +28,7 @@ export class UsersController {
     return this.usersService.getProfile(req.user.userId);
   }
 
-  // Parameterized route - must come after all specific routes
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.usersService.findById(Number(id));
-  }
+
 
   @Post()
   @UseInterceptors(FileInterceptor('image', {
@@ -141,5 +137,11 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   async setDefaultLocation(@Param('id') id: string, @Request() req) {
     return this.usersService.setDefaultLocation(req.user.userId, Number(id));
+  }
+
+  // Parameterized route - must come after all specific routes
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.usersService.findById(Number(id));
   }
 }
