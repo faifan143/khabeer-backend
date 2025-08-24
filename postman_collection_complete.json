@@ -1232,6 +1232,24 @@
           }
         },
         {
+          "name": "Get Category Services by Provider ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/providers/{{providerId}}/categories/{{serviceId}}/services",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "providers",
+                "{{providerId}}",
+                "categories",
+                "{{serviceId}}",
+                "services"
+              ]
+            }
+          }
+        },
+        {
           "name": "Get Service Statistics",
           "request": {
             "method": "GET",

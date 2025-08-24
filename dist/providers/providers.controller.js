@@ -132,6 +132,9 @@ let ProvidersController = class ProvidersController {
         }
         return this.providersService.getProviderServices(Number(id));
     }
+    async getCategoryServicesByProviderId(providerId, categoryId) {
+        return this.providersService.getCategoryServicesByProviderId(providerId, categoryId);
+    }
     async addServices(id, body, req) {
         if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
             throw new common_1.BadRequestException('You can only modify your own services');
@@ -304,6 +307,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "getProviderServices", null);
+__decorate([
+    (0, common_1.Get)(':id/categories/:categoryId/services'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Param)('categoryId', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getCategoryServicesByProviderId", null);
 __decorate([
     (0, common_1.Post)(':id/services'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

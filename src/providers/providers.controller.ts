@@ -203,6 +203,14 @@ export class ProvidersController {
     return this.providersService.getProviderServices(Number(id));
   }
 
+  @Get(':id/categories/:categoryId/services')
+  async getCategoryServicesByProviderId(
+    @Param('id', ParseIntPipe) providerId: number,
+    @Param('categoryId', ParseIntPipe) categoryId: number
+  ) {
+    return this.providersService.getCategoryServicesByProviderId(providerId, categoryId);
+  }
+
   @Post(':id/services')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROVIDER', 'ADMIN')

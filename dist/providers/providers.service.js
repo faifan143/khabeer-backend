@@ -789,6 +789,68 @@ let ProvidersService = class ProvidersService {
             throw new common_1.InternalServerErrorException('Error fetching provider full details');
         }
     }
+    async getCategoryServicesByProviderId(providerId, categoryId) {
+        try {
+            const [provider, category] = await Promise.all([
+                this.prisma.provider.findUnique({
+                    where: { id: providerId },
+                    select: { id: true, name: true }
+                }),
+                this.prisma.category.findUnique({
+                    where: { id: categoryId },
+                    select: { id: true, titleAr: true, titleEn: true }
+                })
+            ]);
+            if (!provider) {
+                throw new common_1.NotFoundException(`Provider with ID ${providerId} not found`);
+            }
+            if (!category) {
+                throw new common_1.NotFoundException(`Category with ID ${categoryId} not found`);
+            }
+            const providerServices = await this.prisma.providerService.findMany({
+                where: {
+                    providerId: providerId,
+                    service: {
+                        categoryId: categoryId
+                    }
+                },
+                include: {
+                    service: {
+                        include: {
+                            category: true
+                        }
+                    }
+                }
+            });
+            const services = providerServices.map(ps => ({
+                id: ps.service.id,
+                title: ps.service.title,
+                description: ps.service.description,
+                image: ps.service.image,
+                commission: ps.service.commission,
+                categoryId: ps.service.categoryId || 0,
+                providerService: {
+                    id: ps.id,
+                    price: ps.price,
+                    isActive: ps.isActive
+                }
+            }));
+            return {
+                categoryId: category.id,
+                categoryName: category.titleEn || category.titleAr,
+                providerId: provider.id,
+                providerName: provider.name,
+                services,
+                total: services.length
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Error fetching category services by provider');
+        }
+    }
 };
 exports.ProvidersService = ProvidersService;
 exports.ProvidersService = ProvidersService = __decorate([

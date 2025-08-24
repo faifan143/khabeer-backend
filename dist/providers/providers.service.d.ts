@@ -309,4 +309,24 @@ export declare class ProvidersService {
     updateFCMToken(providerId: number, fcmToken: string): Promise<any>;
     removeFCMToken(providerId: number): Promise<any>;
     getProviderFullDetails(providerId: number): Promise<ProviderFullDetailsDto>;
+    getCategoryServicesByProviderId(providerId: number, categoryId: number): Promise<{
+        categoryId: number;
+        categoryName: string;
+        providerId: number;
+        providerName: string;
+        services: {
+            id: number;
+            title: string;
+            description: string;
+            image: string;
+            commission: number;
+            categoryId: number;
+            providerService: {
+                id: number;
+                price: number;
+                isActive: boolean;
+            };
+        }[];
+        total: number;
+    }>;
 }

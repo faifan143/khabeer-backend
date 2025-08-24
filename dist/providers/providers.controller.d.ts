@@ -194,6 +194,26 @@ export declare class ProvidersController {
         providerId: number;
         price: number;
     })[]>;
+    getCategoryServicesByProviderId(providerId: number, categoryId: number): Promise<{
+        categoryId: number;
+        categoryName: string;
+        providerId: number;
+        providerName: string;
+        services: {
+            id: number;
+            title: string;
+            description: string;
+            image: string;
+            commission: number;
+            categoryId: number;
+            providerService: {
+                id: number;
+                price: number;
+                isActive: boolean;
+            };
+        }[];
+        total: number;
+    }>;
     addServices(id: string, body: {
         serviceIds: number[];
     }, req: any): Promise<({

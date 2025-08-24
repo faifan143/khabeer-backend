@@ -845,4 +845,74 @@ export class ProvidersService {
       throw new InternalServerErrorException('Error fetching provider full details');
     }
   }
+
+  async getCategoryServicesByProviderId(providerId: number, categoryId: number) {
+    try {
+      // First, verify that both provider and category exist
+      const [provider, category] = await Promise.all([
+        this.prisma.provider.findUnique({
+          where: { id: providerId },
+          select: { id: true, name: true }
+        }),
+        this.prisma.category.findUnique({
+          where: { id: categoryId },
+          select: { id: true, titleAr: true, titleEn: true }
+        })
+      ]);
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${providerId} not found`);
+      }
+
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${categoryId} not found`);
+      }
+
+      // Get all services in the specified category that the provider offers
+      const providerServices = await this.prisma.providerService.findMany({
+        where: {
+          providerId: providerId,
+          service: {
+            categoryId: categoryId
+          }
+        },
+        include: {
+          service: {
+            include: {
+              category: true
+            }
+          }
+        }
+      });
+
+      // Transform the data to match the DTO structure
+      const services = providerServices.map(ps => ({
+        id: ps.service.id,
+        title: ps.service.title,
+        description: ps.service.description,
+        image: ps.service.image,
+        commission: ps.service.commission,
+        categoryId: ps.service.categoryId || 0,
+        providerService: {
+          id: ps.id,
+          price: ps.price,
+          isActive: ps.isActive
+        }
+      }));
+
+      return {
+        categoryId: category.id,
+        categoryName: category.titleEn || category.titleAr, // Prefer English, fallback to Arabic
+        providerId: provider.id,
+        providerName: provider.name,
+        services,
+        total: services.length
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error fetching category services by provider');
+    }
+  }
 }
