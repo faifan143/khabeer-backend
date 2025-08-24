@@ -5,6 +5,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto, RegisterType } from './dto/register.dto';
 import { PhoneLoginDto, PhoneRegistrationDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
+import { SendPasswordResetOtpDto, ResetPasswordDto, PasswordResetResponseDto } from './dto/password-reset.dto';
 import { FileInterceptor } from '@nestjs/platform-express/multer';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -118,24 +119,23 @@ export class AuthController {
   //   return this.authService.registerWithPhone(registerData);
   // }
 
-  // @Post('phone/password-reset/send-otp')
-  // @ApiOperation({ summary: 'Send OTP for password reset' })
-  // @ApiResponse({ status: 200, description: 'OTP sent successfully' })
-  // @ApiResponse({ status: 404, description: 'Account not found' })
-  // async sendPasswordResetOtp(@Body() body: { phoneNumber: string }) {
-  //   return this.authService.sendPhoneLoginOtp({
-  //     phoneNumber: body.phoneNumber,
-  //     purpose: 'password_reset'
-  //   });
-  // }
+  @Post('phone/password-reset/send-otp')
+  @ApiOperation({ summary: 'Send OTP for password reset' })
+  @ApiResponse({ status: 200, description: 'OTP sent successfully', type: PasswordResetResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid phone number or account not found' })
+  @ApiResponse({ status: 429, description: 'Too many OTP requests, please wait' })
+  async sendPasswordResetOtp(@Body() body: SendPasswordResetOtpDto) {
+    return this.authService.sendPasswordResetOtp(body.phoneNumber);
+  }
 
-  // @Post('phone/password-reset')
-  // @ApiOperation({ summary: 'Reset password with phone verification' })
-  // @ApiResponse({ status: 200, description: 'Password reset successful' })
-  // @ApiResponse({ status: 400, description: 'Invalid OTP or data' })
-  // async resetPasswordWithPhone(@Body() body: { phoneNumber: string; otp: string; newPassword: string }) {
-  //   return this.authService.resetPasswordWithPhone(body.phoneNumber, body.otp, body.newPassword);
-  // }
+  @Post('phone/password-reset')
+  @ApiOperation({ summary: 'Reset password with phone verification' })
+  @ApiResponse({ status: 200, description: 'Password reset successful', type: PasswordResetResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid OTP or data' })
+  @ApiResponse({ status: 404, description: 'Account not found' })
+  async resetPasswordWithPhone(@Body() body: ResetPasswordDto) {
+    return this.authService.resetPasswordWithPhone(body.phoneNumber, body.otp, body.newPassword);
+  }
 
   // @Post('register')
   // @UseInterceptors(FileInterceptor('image'))

@@ -525,6 +525,42 @@ export class AuthService {
   }
 
   /**
+   * Send OTP specifically for password reset
+   */
+  async sendPasswordResetOtp(phoneNumber: string): Promise<{ success: boolean; message: string; expiresIn?: number }> {
+    try {
+      // Check if account exists with this phone number
+      const user = await this.usersService.findByPhone(phoneNumber);
+      const provider = await this.providersService.findByPhone(phoneNumber);
+
+      if (!user && !provider) {
+        return {
+          success: false,
+          message: 'No account found with this phone number'
+        };
+      }
+
+      // Send OTP for password reset
+      const result = await this.smsService.sendOtp({
+        phoneNumber,
+        purpose: 'password_reset'
+      });
+
+      return {
+        success: result.success,
+        message: result.message,
+        expiresIn: result.expiresIn
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to send password reset OTP'
+      };
+    }
+  }
+
+  /**
    * Phone login without OTP (main login method)
    */
   async phoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto> {
