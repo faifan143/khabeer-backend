@@ -8,6 +8,8 @@ export declare class ProvidersService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     findAll(): Promise<{
+        averageRating: number;
+        totalRatings: number;
         description: string;
         id: number;
         name: string;
@@ -15,14 +17,9 @@ export declare class ProvidersService {
         state: string;
         phone: string;
         isActive: boolean;
-        officialDocuments: string | null;
         isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
+        location: import("generated/prisma/runtime/library").JsonValue;
         createdAt: Date;
-        email: string | null;
-        updatedAt: Date;
-        password: string | null;
-        fcm: string | null;
     }[]>;
     findByEmail(email: string): Promise<{
         description: string;

@@ -16,6 +16,9 @@ export class ProviderByServiceDto {
   isVerified: boolean;
   createdAt: Date;
   providerServices: ProviderServiceInfoDto[];
+  // Add rating information
+  averageRating: number;
+  totalRatings: number;
 }
 
 export class ProvidersByServiceResponseDto {

@@ -19,6 +19,8 @@ class ProviderByServiceDto {
     isVerified;
     createdAt;
     providerServices;
+    averageRating;
+    totalRatings;
 }
 exports.ProviderByServiceDto = ProviderByServiceDto;
 class ProvidersByServiceResponseDto {

@@ -9,6 +9,8 @@ export declare class ProvidersController {
     private readonly filesService;
     constructor(providersService: ProvidersService, filesService: FilesService);
     findAll(): Promise<{
+        averageRating: number;
+        totalRatings: number;
         description: string;
         id: number;
         name: string;
@@ -16,14 +18,9 @@ export declare class ProvidersController {
         state: string;
         phone: string;
         isActive: boolean;
-        officialDocuments: string | null;
         isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
+        location: import("generated/prisma/runtime/library").JsonValue;
         createdAt: Date;
-        email: string | null;
-        updatedAt: Date;
-        password: string | null;
-        fcm: string | null;
     }[]>;
     getProvidersByService(serviceId: string): Promise<ProvidersByServiceResponseDto>;
     getProfile(req: any): Promise<{

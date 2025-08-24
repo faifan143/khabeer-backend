@@ -13,7 +13,45 @@ export class ProvidersService {
 
   async findAll() {
     try {
-      return await this.prisma.provider.findMany();
+      const providers = await this.prisma.provider.findMany({
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          description: true,
+          state: true,
+          phone: true,
+          location: true,
+          isActive: true,
+          isVerified: true,
+          createdAt: true
+        }
+      });
+
+      // Enhance providers with rating information
+      const providersWithRatings = await Promise.all(
+        providers.map(async (provider) => {
+          // Fetch ratings for this provider
+          const ratings = await this.prisma.providerRating.findMany({
+            where: { providerId: provider.id },
+            select: { rating: true }
+          });
+
+          // Calculate average rating and total ratings
+          const totalRatings = ratings.length;
+          const averageRating = totalRatings > 0
+            ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
+            : 0;
+
+          return {
+            ...provider,
+            averageRating: Math.round(averageRating * 100) / 100, // Round to 2 decimal places
+            totalRatings
+          };
+        })
+      );
+
+      return providersWithRatings;
     } catch (error) {
       throw new InternalServerErrorException('Error fetching providers');
     }
@@ -613,7 +651,8 @@ export class ProvidersService {
               price: true,
               isActive: true
             }
-          }
+          },
+
         }
       });
 
@@ -675,9 +714,23 @@ export class ProvidersService {
             })
           );
 
+          // Fetch ratings for this provider
+          const ratings = await this.prisma.providerRating.findMany({
+            where: { providerId: provider.id },
+            select: { rating: true }
+          });
+
+          // Calculate average rating and total ratings
+          const totalRatings = ratings.length;
+          const averageRating = totalRatings > 0
+            ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
+            : 0;
+
           return {
             ...provider,
-            providerServices: enhancedProviderServices
+            providerServices: enhancedProviderServices,
+            averageRating: Math.round(averageRating * 100) / 100, // Round to 2 decimal places
+            totalRatings
           };
         })
       );

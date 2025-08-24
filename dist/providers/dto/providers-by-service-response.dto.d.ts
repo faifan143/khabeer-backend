@@ -15,6 +15,8 @@ export declare class ProviderByServiceDto {
     isVerified: boolean;
     createdAt: Date;
     providerServices: ProviderServiceInfoDto[];
+    averageRating: number;
+    totalRatings: number;
 }
 export declare class ProvidersByServiceResponseDto {
     providers: ProviderByServiceDto[];

@@ -20,7 +20,36 @@ let ProvidersService = class ProvidersService {
     }
     async findAll() {
         try {
-            return await this.prisma.provider.findMany();
+            const providers = await this.prisma.provider.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    description: true,
+                    state: true,
+                    phone: true,
+                    location: true,
+                    isActive: true,
+                    isVerified: true,
+                    createdAt: true
+                }
+            });
+            const providersWithRatings = await Promise.all(providers.map(async (provider) => {
+                const ratings = await this.prisma.providerRating.findMany({
+                    where: { providerId: provider.id },
+                    select: { rating: true }
+                });
+                const totalRatings = ratings.length;
+                const averageRating = totalRatings > 0
+                    ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
+                    : 0;
+                return {
+                    ...provider,
+                    averageRating: Math.round(averageRating * 100) / 100,
+                    totalRatings
+                };
+            }));
+            return providersWithRatings;
         }
         catch (error) {
             throw new common_1.InternalServerErrorException('Error fetching providers');
@@ -582,7 +611,7 @@ let ProvidersService = class ProvidersService {
                             price: true,
                             isActive: true
                         }
-                    }
+                    },
                 }
             });
             const providersWithOffers = await Promise.all(providers.map(async (provider) => {
@@ -628,9 +657,19 @@ let ProvidersService = class ProvidersService {
                         offerPrice: activeOffer ? activeOffer.offerPrice : null
                     };
                 }));
+                const ratings = await this.prisma.providerRating.findMany({
+                    where: { providerId: provider.id },
+                    select: { rating: true }
+                });
+                const totalRatings = ratings.length;
+                const averageRating = totalRatings > 0
+                    ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
+                    : 0;
                 return {
                     ...provider,
-                    providerServices: enhancedProviderServices
+                    providerServices: enhancedProviderServices,
+                    averageRating: Math.round(averageRating * 100) / 100,
+                    totalRatings
                 };
             }));
             return {
