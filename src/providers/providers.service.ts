@@ -478,6 +478,48 @@ export class ProvidersService {
     }
   }
 
+  private isMultipleServicesOrder(order: any): boolean {
+    // Check if this order has multiple services by looking at the quantity and total amount
+    return order.quantity > 1 && order.totalAmount > (order.providerAmount * 1.2);
+  }
+
+  private getServicesBreakdown(order: any): any[] {
+    if (!this.isMultipleServicesOrder(order)) {
+      return [];
+    }
+
+    // For multiple services orders, we need to reconstruct the services array
+    // Since we don't store the individual services breakdown in the database,
+    // we'll create a reasonable approximation based on the order data
+
+    // Calculate how many services this order represents
+    const estimatedServiceCount = Math.ceil(order.quantity / 2); // Estimate based on quantity
+
+    const services: any[] = [];
+    const baseQuantity = Math.floor(order.quantity / estimatedServiceCount);
+    const remainingQuantity = order.quantity % estimatedServiceCount;
+
+    for (let i = 0; i < estimatedServiceCount; i++) {
+      const serviceQuantity = i === 0 ? baseQuantity + remainingQuantity : baseQuantity;
+      const serviceAmount = (order.providerAmount / order.quantity) * serviceQuantity;
+      const serviceCommission = (order.commissionAmount / order.quantity) * serviceQuantity;
+
+      services.push({
+        serviceId: order.serviceId,
+        serviceTitle: order.service.title,
+        serviceDescription: order.service.description,
+        serviceImage: order.service.image,
+        quantity: serviceQuantity,
+        unitPrice: order.providerAmount / order.quantity,
+        totalPrice: serviceAmount,
+        commission: order.service.commission || 0,
+        commissionAmount: serviceCommission
+      });
+    }
+
+    return services;
+  }
+
   async getProviderOrders(providerId: number): Promise<ProviderOrdersResponseDto> {
     try {
       const orders = await this.prisma.order.findMany({
@@ -520,9 +562,17 @@ export class ProvidersService {
 
       // Transform orders to include calculated fields
       const transformedOrders = orders.map(order => {
+        // Check if this is a multiple services order
+        const isMultipleServices = this.isMultipleServicesOrder(order);
+        
+        // Get the services breakdown for multiple services orders
+        const services = isMultipleServices ? this.getServicesBreakdown(order) : undefined;
+        
         return {
           ...order,
           duration: order.scheduledDate, // Use scheduled date as duration
+          isMultipleServices,
+          services,
           user: {
             ...order.user,
             image: order.user.image || '',
@@ -593,9 +643,17 @@ export class ProvidersService {
 
       // Transform orders to include calculated fields
       const transformedOrders = orders.map(order => {
+        // Check if this is a multiple services order
+        const isMultipleServices = this.isMultipleServicesOrder(order);
+        
+        // Get the services breakdown for multiple services orders
+        const services = isMultipleServices ? this.getServicesBreakdown(order) : undefined;
+        
         return {
           ...order,
           duration: order.scheduledDate, // Use scheduled date as duration
+          isMultipleServices,
+          services,
           user: {
             ...order.user,
             image: order.user.image || '',
