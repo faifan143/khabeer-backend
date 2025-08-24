@@ -28,11 +28,7 @@ export class InvoicesController {
 
     @Get()
     async findAll(@Request() req, @Query('status') status?: string) {
-        const invoices = await this.invoicesService.findAll(req.user.userId, req.user.role);
-
-        if (status) {
-            return invoices.filter(invoice => invoice.paymentStatus === status);
-        }
+        const invoices = await this.invoicesService.findAll(req.user.userId, req.user.role, status);
 
         return invoices;
     }
@@ -59,6 +55,12 @@ export class InvoicesController {
     @Roles('PROVIDER')
     async getPendingConfirmations(@Request() req) {
         return this.invoicesService.getProviderPendingConfirmations(req.user.userId);
+    }
+
+    @Get('unpaid')
+    @Roles('PROVIDER')
+    async getUnpaidInvoices(@Request() req) {
+        return this.invoicesService.getProviderUnpaidInvoices(req.user.userId);
     }
 
     @Get(':id')

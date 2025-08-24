@@ -75,10 +75,15 @@ export class InvoicesService {
     });
   }
 
-  async findAll(userId: number, role: string) {
-    const where = role === 'PROVIDER'
+  async findAll(userId: number, role: string, status?: string) {
+    const where: any = role === 'PROVIDER'
       ? { order: { providerId: userId } }
       : { order: { userId } };
+
+    // Add status filter if provided
+    if (status) {
+      where.paymentStatus = status;
+    }
 
     return this.prisma.invoice.findMany({
       where,
@@ -418,6 +423,43 @@ export class InvoicesService {
       },
       orderBy: {
         paymentDate: 'desc'
+      }
+    });
+  }
+
+  async getProviderUnpaidInvoices(providerId: number) {
+    return this.prisma.invoice.findMany({
+      where: {
+        paymentStatus: 'unpaid',
+        order: {
+          providerId: providerId
+        }
+      },
+      include: {
+        order: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true
+              }
+            },
+            service: {
+              select: {
+                id: true,
+                title: true,
+                description: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        order: {
+          orderDate: 'desc'
+        }
       }
     });
   }
