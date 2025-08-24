@@ -51,12 +51,6 @@ export class InvoicesController {
     }
 
     // Provider payment confirmation endpoints
-    @Get('pending-confirmations')
-    @Roles('PROVIDER')
-    async getPendingConfirmations(@Request() req) {
-        return this.invoicesService.getProviderPendingConfirmations(req.user.userId);
-    }
-
     @Get('unpaid')
     @Roles('PROVIDER')
     async getUnpaidInvoices(@Request() req) {
@@ -113,14 +107,5 @@ export class InvoicesController {
         };
 
         return this.invoicesService.updatePaymentStatus(id, updateDto, req.user.userId, req.user.role);
-    }
-
-    @Put(':id/confirm-payment')
-    @Roles('PROVIDER')
-    async confirmPayment(
-        @Param('id', ParseIntPipe) id: number,
-        @Request() req
-    ) {
-        return this.invoicesService.confirmPayment(id, req.user.userId);
     }
 }

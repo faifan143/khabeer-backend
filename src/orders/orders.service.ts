@@ -98,16 +98,6 @@ export class OrdersService {
       }
     });
 
-    // Create invoice with discount information
-    await this.prisma.invoice.create({
-      data: {
-        orderId: order.id,
-        totalAmount: order.totalAmount,
-        discount: discount,
-        paymentStatus: 'pending'
-      }
-    });
-
     // Send notification to provider about new order
     try {
       await this.notificationsService.notifyNewOrder(
@@ -297,18 +287,15 @@ export class OrdersService {
 
     // If order is being completed, ensure invoice exists with unpaid status
     if (updateStatusDto.status === OrderStatus.COMPLETED) {
-      // Check if invoice already exists
-      if (!order.invoice) {
-        // Create invoice with unpaid status when order is completed
-        await this.prisma.invoice.create({
-          data: {
-            orderId: order.id,
-            totalAmount: order.totalAmount,
-            discount: 0, // No discount applied
-            paymentStatus: 'unpaid'
-          }
-        });
-      }
+      // Always create invoice when order is completed
+      await this.prisma.invoice.create({
+        data: {
+          orderId: order.id,
+          totalAmount: order.totalAmount,
+          discount: 0, // No discount applied
+          paymentStatus: 'unpaid'
+        }
+      });
     }
 
     const updatedOrder = await this.prisma.order.update({
@@ -1003,16 +990,6 @@ export class OrdersService {
       const provider = await tx.provider.findUnique({
         where: { id: createOrderDto.providerId },
         select: { id: true, name: true, phone: true, image: true }
-      });
-
-      // Create invoice
-      await tx.invoice.create({
-        data: {
-          orderId: order.id,
-          totalAmount: order.totalAmount,
-          discount: appliedOffers.reduce((sum: number, o: any) => sum + o.discount, 0),
-          paymentStatus: 'pending'
-        }
       });
 
       // Create order items for each service (if you want to track individual services)

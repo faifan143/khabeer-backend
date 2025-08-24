@@ -131,11 +131,8 @@ model Invoice {
   discount      Float     @default(0)
   paymentMethod String?
   paymentStatus String    @default("pending")
-  isVerified    Boolean   @default(false)
   payoutDate    DateTime?
   payoutStatus  String    @default("pending")
-  verifiedAt    DateTime?
-  verifiedBy    Int?
   order         Order     @relation(fields: [orderId], references: [id])
 }
 
