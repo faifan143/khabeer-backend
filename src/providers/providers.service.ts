@@ -146,21 +146,10 @@ export class ProvidersService {
     try {
       const provider = await this.prisma.provider.findUnique({
         where: { id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          description: true,
-          state: true,
-          phone: true,
-          isActive: true,
-          isVerified: true,
-          location: true,
-          officialDocuments: true,
-          createdAt: true,
-          updatedAt: true,
-          fcm: true
+        include: {
+          offers: true,
+          orders: true,
+          ratings: true,
         }
       });
       if (!provider) {
