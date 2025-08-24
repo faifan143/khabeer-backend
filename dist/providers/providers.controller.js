@@ -48,6 +48,9 @@ let ProvidersController = class ProvidersController {
     async findOne(id) {
         return this.providersService.findById(Number(id));
     }
+    async getProviderFullDetails(id) {
+        return this.providersService.getProviderFullDetails(id);
+    }
     async getStatus(id, req) {
         if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
             throw new common_1.BadRequestException('You can only access your own status');
@@ -98,7 +101,10 @@ let ProvidersController = class ProvidersController {
         }
         return this.providersService.create(data);
     }
-    async update(id, data, file) {
+    async update(id, data, file, req) {
+        if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+            throw new common_1.BadRequestException('You can only update your own information');
+        }
         const updateData = { ...data };
         if (file) {
             const options = {
@@ -194,6 +200,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)(':id/full-details'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getProviderFullDetails", null);
+__decorate([
     (0, common_1.Get)(':id/status'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
@@ -242,7 +255,7 @@ __decorate([
 __decorate([
     (0, common_1.Put)(':id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, roles_decorator_1.Roles)('PROVIDER', 'ADMIN'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
         storage: (0, multer_1.diskStorage)({
             destination: './uploads/images/providers',
@@ -256,8 +269,9 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.UploadedFile)()),
+    __param(3, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_provider_dto_1.UpdateProviderDto, Object]),
+    __metadata("design:paramtypes", [String, update_provider_dto_1.UpdateProviderDto, Object, Object]),
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "update", null);
 __decorate([

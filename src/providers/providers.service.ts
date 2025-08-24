@@ -5,6 +5,7 @@ import { UpdateProviderDto } from './dto/update-provider.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { ProviderOrderResponseDto, ProviderOrdersResponseDto } from './dto/provider-orders-response.dto';
 import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
+import { ProviderFullDetailsDto } from './dto/provider-full-details.dto';
 
 @Injectable()
 export class ProvidersService {
@@ -622,6 +623,226 @@ export class ProvidersService {
       return updatedProvider;
     } catch (error) {
       throw new Error(`Failed to remove FCM token for provider ${providerId}: ${error.message}`);
+    }
+  }
+
+  async getProviderFullDetails(providerId: number): Promise<ProviderFullDetailsDto> {
+    try {
+      // Get provider with all related data
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId },
+        include: {
+          providerServices: {
+            include: {
+              service: {
+                include: {
+                  category: true
+                }
+              }
+            }
+          },
+          offers: {
+            include: {
+              service: true
+            }
+          },
+          ratings: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true
+                }
+              }
+            }
+          },
+          orders: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  latitude: true,
+                  longitude: true
+                }
+              },
+              service: {
+                select: {
+                  id: true,
+                  title: true,
+                  description: true
+                }
+              }
+            }
+          },
+          verification: true,
+          joinRequests: {
+            orderBy: {
+              requestDate: 'desc'
+            },
+            take: 1
+          }
+        }
+      });
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${providerId} not found`);
+      }
+
+      // Calculate statistics
+      const totalOrders = provider.orders.length;
+      const completedOrders = provider.orders.filter(order => order.status === 'completed').length;
+      const pendingOrders = provider.orders.filter(order => order.status === 'pending').length;
+
+      const totalEarnings = provider.orders
+        .filter(order => order.status === 'completed')
+        .reduce((sum, order) => sum + order.providerAmount, 0);
+
+      const totalCommission = provider.orders
+        .filter(order => order.status === 'completed')
+        .reduce((sum, order) => sum + order.commissionAmount, 0);
+
+      // Calculate average rating
+      const totalRatings = provider.ratings.length;
+      const averageRating = totalRatings > 0
+        ? provider.ratings.reduce((sum, rating) => sum + rating.rating, 0) / totalRatings
+        : 0;
+
+      // Transform data to match DTO structure
+      const providerServices = provider.providerServices.map(ps => ({
+        id: ps.id,
+        price: ps.price,
+        isActive: ps.isActive,
+        service: {
+          id: ps.service.id,
+          title: ps.service.title,
+          description: ps.service.description,
+          image: ps.service.image,
+          commission: ps.service.commission,
+          categoryId: ps.service.categoryId || 0
+        }
+      }));
+
+      const offers = provider.offers.map(offer => ({
+        id: offer.id,
+        startDate: offer.startDate,
+        endDate: offer.endDate,
+        description: offer.description,
+        isActive: offer.isActive,
+        offerPrice: offer.offerPrice,
+        originalPrice: offer.originalPrice,
+        service: {
+          id: offer.service.id,
+          title: offer.service.title,
+          description: offer.service.description
+        }
+      }));
+
+      const ratings = provider.ratings.map(rating => ({
+        id: rating.id,
+        rating: rating.rating,
+        comment: rating.comment,
+        ratingDate: rating.ratingDate,
+        orderId: rating.orderId,
+        user: {
+          id: rating.user.id,
+          name: rating.user.name,
+          email: rating.user.email,
+          phone: rating.user.phone
+        }
+      }));
+
+      const orders = provider.orders.map(order => ({
+        id: order.id,
+        status: order.status,
+        orderDate: order.orderDate,
+        scheduledDate: order.scheduledDate,
+        location: order.location,
+        locationDetails: order.locationDetails,
+        quantity: order.quantity,
+        totalAmount: order.totalAmount,
+        providerAmount: order.providerAmount,
+        commissionAmount: order.commissionAmount,
+        bookingId: order.bookingId,
+        user: {
+          id: order.user.id,
+          name: order.user.name,
+          email: order.user.email,
+          phone: order.user.phone,
+          latitude: order.user.latitude ? Number(order.user.latitude) : null,
+          longitude: order.user.longitude ? Number(order.user.longitude) : null
+        },
+        service: {
+          id: order.service.id,
+          title: order.service.title,
+          description: order.service.description
+        }
+      }));
+
+      return {
+        // Basic provider information
+        id: provider.id,
+        name: provider.name,
+        email: provider.email,
+        image: provider.image,
+        description: provider.description,
+        state: provider.state,
+        phone: provider.phone,
+        isActive: provider.isActive,
+        isVerified: provider.isVerified,
+        location: provider.location,
+        officialDocuments: provider.officialDocuments,
+        createdAt: provider.createdAt,
+        updatedAt: provider.updatedAt,
+        fcm: provider.fcm,
+
+        // Related services
+        providerServices,
+
+        // Offers
+        offers,
+
+        // Ratings and reviews
+        ratings,
+        averageRating: Math.round(averageRating * 100) / 100, // Round to 2 decimal places
+        totalRatings,
+
+        // Orders
+        orders,
+        totalOrders,
+        completedOrders,
+        pendingOrders,
+
+        // Verification and join request
+        verification: provider.verification ? {
+          id: provider.verification.id,
+          status: provider.verification.status,
+          documents: provider.verification.documents,
+          adminNotes: provider.verification.adminNotes,
+          createdAt: provider.verification.createdAt,
+          updatedAt: provider.verification.updatedAt
+        } : undefined,
+
+        joinRequest: provider.joinRequests.length > 0 ? {
+          id: provider.joinRequests[0].id,
+          requestDate: provider.joinRequests[0].requestDate,
+          status: provider.joinRequests[0].status,
+          adminNotes: provider.joinRequests[0].adminNotes
+        } : undefined,
+
+        // Statistics
+        totalEarnings: Math.round(totalEarnings * 100) / 100,
+        totalCommission: Math.round(totalCommission * 100) / 100
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error fetching provider full details');
     }
   }
 }

@@ -1220,6 +1220,18 @@
           }
         },
         {
+          "name": "Get Provider Full Details by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/providers/{{providerId}}/full-details",
+              "host": ["{{baseUrl}}"],
+              "path": ["providers", "{{providerId}}", "full-details"]
+            }
+          }
+        },
+        {
           "name": "Get Service Statistics",
           "request": {
             "method": "GET",

@@ -3,6 +3,7 @@ import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { ProviderOrdersResponseDto } from './dto/provider-orders-response.dto';
 import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
+import { ProviderFullDetailsDto } from './dto/provider-full-details.dto';
 export declare class ProvidersService {
     private readonly prisma;
     constructor(prisma: PrismaService);
@@ -307,4 +308,5 @@ export declare class ProvidersService {
     }>;
     updateFCMToken(providerId: number, fcmToken: string): Promise<any>;
     removeFCMToken(providerId: number): Promise<any>;
+    getProviderFullDetails(providerId: number): Promise<ProviderFullDetailsDto>;
 }

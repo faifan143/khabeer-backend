@@ -78,6 +78,7 @@ export declare class ProvidersController {
         password: string | null;
         fcm: string | null;
     }>;
+    getProviderFullDetails(id: number): Promise<import("./dto/provider-full-details.dto").ProviderFullDetailsDto>;
     getStatus(id: string, req: any): Promise<{
         isActive: boolean;
     }>;
@@ -123,7 +124,7 @@ export declare class ProvidersController {
         password: string | null;
         fcm: string | null;
     }>;
-    update(id: string, data: UpdateProviderDto, file: Express.Multer.File): Promise<{
+    update(id: string, data: UpdateProviderDto, file: Express.Multer.File, req: any): Promise<{
         providerServices: {
             serviceId: number;
             id: number;

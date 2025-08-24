@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, UploadedFile, UseInterceptors, BadRequestException, ParseIntPipe } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { ProvidersService } from './providers.service';
@@ -43,6 +43,11 @@ export class ProvidersController {
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.providersService.findById(Number(id));
+  }
+
+  @Get(':id/full-details')
+  async getProviderFullDetails(@Param('id', ParseIntPipe) id: number) {
+    return this.providersService.getProviderFullDetails(id);
   }
 
   @Get(':id/status')
@@ -130,7 +135,7 @@ export class ProvidersController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('PROVIDER', 'ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads/images/providers',
@@ -144,8 +149,14 @@ export class ProvidersController {
   async update(
     @Param('id') id: string,
     @Body() data: UpdateProviderDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req
   ) {
+    // Providers can only update their own information, admins can update any
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+      throw new BadRequestException('You can only update your own information');
+    }
+
     const updateData = { ...data };
     if (file) {
       const options = {
