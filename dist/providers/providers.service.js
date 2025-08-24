@@ -808,12 +808,7 @@ let ProvidersService = class ProvidersService {
                 throw new common_1.NotFoundException(`Category with ID ${categoryId} not found`);
             }
             const providerServices = await this.prisma.providerService.findMany({
-                where: {
-                    providerId: providerId,
-                    service: {
-                        categoryId: categoryId
-                    }
-                },
+                where: { providerId: providerId },
                 include: {
                     service: {
                         include: {
@@ -822,7 +817,8 @@ let ProvidersService = class ProvidersService {
                     }
                 }
             });
-            const services = providerServices.map(ps => ({
+            const filteredServices = providerServices.filter(ps => ps.service.categoryId === categoryId);
+            const services = filteredServices.map(ps => ({
                 id: ps.service.id,
                 title: ps.service.title,
                 description: ps.service.description,
@@ -841,7 +837,7 @@ let ProvidersService = class ProvidersService {
                 providerId: provider.id,
                 providerName: provider.name,
                 services,
-                total: services.length
+                total: filteredServices.length
             };
         }
         catch (error) {

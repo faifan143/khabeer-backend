@@ -870,12 +870,7 @@ export class ProvidersService {
 
       // Get all services in the specified category that the provider offers
       const providerServices = await this.prisma.providerService.findMany({
-        where: {
-          providerId: providerId,
-          service: {
-            categoryId: categoryId
-          }
-        },
+        where: { providerId: providerId },
         include: {
           service: {
             include: {
@@ -885,8 +880,11 @@ export class ProvidersService {
         }
       });
 
+      // Filter by category in JavaScript for better reliability
+      const filteredServices = providerServices.filter(ps => ps.service.categoryId === categoryId);
+
       // Transform the data to match the DTO structure
-      const services = providerServices.map(ps => ({
+      const services = filteredServices.map(ps => ({
         id: ps.service.id,
         title: ps.service.title,
         description: ps.service.description,
@@ -906,7 +904,7 @@ export class ProvidersService {
         providerId: provider.id,
         providerName: provider.name,
         services,
-        total: services.length
+        total: filteredServices.length
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
