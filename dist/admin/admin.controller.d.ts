@@ -96,7 +96,18 @@ export declare class AdminController {
             rating: number;
         }[];
     }>;
-    getAllProviders(): Promise<({
+    getAllProviders(): Promise<{
+        description: string;
+        id: number;
+        name: string;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        isVerified: boolean;
+        createdAt: Date;
+        email: string | null;
+        updatedAt: Date;
         offers: {
             originalPrice: number;
             offerPrice: number;
@@ -138,7 +149,8 @@ export declare class AdminController {
             ratings: number;
             providerServices: number;
         };
-    } & {
+    }[]>;
+    getUnverifiedProviders(): Promise<{
         description: string;
         id: number;
         name: string;
@@ -146,16 +158,10 @@ export declare class AdminController {
         state: string;
         phone: string;
         isActive: boolean;
-        officialDocuments: string | null;
         isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
-        fcm: string | null;
-    })[]>;
-    getUnverifiedProviders(): Promise<({
         providerServices: ({
             service: {
                 category: {
@@ -184,23 +190,7 @@ export declare class AdminController {
         _count: {
             providerServices: number;
         };
-    } & {
-        description: string;
-        id: number;
-        name: string;
-        image: string;
-        state: string;
-        phone: string;
-        isActive: boolean;
-        officialDocuments: string | null;
-        isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
-        createdAt: Date;
-        email: string | null;
-        updatedAt: Date;
-        password: string | null;
-        fcm: string | null;
-    })[]>;
+    }[]>;
     getOrderStats(): Promise<{
         total: number;
         today: number;

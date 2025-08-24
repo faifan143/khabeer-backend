@@ -10,6 +10,39 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
 
+  // Internal methods for authentication (return passwords)
+  async findByEmailWithPassword(email: string) {
+    try {
+      return await this.prisma.user.findUnique({ where: { email } });
+    } catch (error) {
+      throw new InternalServerErrorException('Error finding user by email');
+    }
+  }
+
+  async findByPhoneWithPassword(phone: string) {
+    try {
+      return await this.prisma.user.findFirst({ where: { phone } });
+    } catch (error) {
+      throw new InternalServerErrorException('Error finding user by phone');
+    }
+  }
+
+  async findByIdWithPassword(id: number) {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { id } });
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+      return user;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error finding user');
+    }
+  }
+
+  // Public methods (no passwords)
   async findByEmail(email: string) {
     try {
       return await this.prisma.user.findUnique({

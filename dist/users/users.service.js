@@ -18,6 +18,37 @@ let UsersService = class UsersService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    async findByEmailWithPassword(email) {
+        try {
+            return await this.prisma.user.findUnique({ where: { email } });
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error finding user by email');
+        }
+    }
+    async findByPhoneWithPassword(phone) {
+        try {
+            return await this.prisma.user.findFirst({ where: { phone } });
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error finding user by phone');
+        }
+    }
+    async findByIdWithPassword(id) {
+        try {
+            const user = await this.prisma.user.findUnique({ where: { id } });
+            if (!user) {
+                throw new common_1.NotFoundException(`User with ID ${id} not found`);
+            }
+            return user;
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Error finding user');
+        }
+    }
     async findByEmail(email) {
         try {
             return await this.prisma.user.findUnique({

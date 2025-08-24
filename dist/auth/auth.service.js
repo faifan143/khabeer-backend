@@ -72,7 +72,7 @@ let AuthService = class AuthService {
                 };
             }
             if (email && !phone) {
-                const provider = await this.providersService.findByEmail(email);
+                const provider = await this.providersService.findByEmailWithPassword(email);
                 if (provider && provider.password) {
                     const isPasswordValid = await bcrypt.compare(password, provider.password);
                     if (isPasswordValid) {
@@ -85,7 +85,7 @@ let AuthService = class AuthService {
                 }
             }
             if (phone && !email) {
-                const user = await this.usersService.findByPhone(phone);
+                const user = await this.usersService.findByPhoneWithPassword(phone);
                 if (user && await bcrypt.compare(password, user.password)) {
                     const { password: _, ...result } = user;
                     return { ...result, role: user.role };
@@ -216,9 +216,8 @@ let AuthService = class AuthService {
             }
             else {
                 const user = await this.usersService.create(userData);
-                const { password, ...result } = user;
                 return {
-                    ...result,
+                    ...user,
                     role: 'USER',
                     message: 'User registered successfully'
                 };
@@ -256,7 +255,7 @@ let AuthService = class AuthService {
     }
     async upgradeToProvider(userId, providerData) {
         try {
-            const user = await this.usersService.findById(userId);
+            const user = await this.usersService.findByIdWithPassword(userId);
             if (!user) {
                 throw new common_1.NotFoundException('User not found');
             }
@@ -738,9 +737,8 @@ let AuthService = class AuthService {
             }
             else {
                 const user = await this.usersService.create(userData);
-                const { password, ...result } = user;
                 return {
-                    ...result,
+                    ...user,
                     role: 'USER',
                     message: 'User registered successfully'
                 };
@@ -820,9 +818,8 @@ let AuthService = class AuthService {
             }
             else {
                 const user = await this.usersService.create(userData);
-                const { password, ...result } = user;
                 return {
-                    ...result,
+                    ...user,
                     role: 'USER',
                     message: 'User registered successfully'
                 };

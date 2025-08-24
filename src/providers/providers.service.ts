@@ -57,6 +57,39 @@ export class ProvidersService {
     }
   }
 
+  // Internal methods for authentication (return passwords)
+  async findByEmailWithPassword(email: string) {
+    try {
+      return await this.prisma.provider.findUnique({ where: { email } });
+    } catch (error) {
+      throw new InternalServerErrorException('Error finding provider by email');
+    }
+  }
+
+  async findByPhoneWithPassword(phone: string) {
+    try {
+      return await this.prisma.provider.findFirst({ where: { phone } });
+    } catch (error) {
+      throw new InternalServerErrorException('Error finding provider by phone');
+    }
+  }
+
+  async findByIdWithPassword(id: number) {
+    try {
+      const provider = await this.prisma.provider.findUnique({ where: { id } });
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${id} not found`);
+      }
+      return provider;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error finding provider');
+    }
+  }
+
+  // Public methods (no passwords)
   async findByEmail(email: string) {
     try {
       return await this.prisma.provider.findUnique({

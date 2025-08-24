@@ -94,7 +94,7 @@ export class AuthService {
 
       // Provider login - by email (required)
       if (email && !phone) {
-        const provider = await this.providersService.findByEmail(email);
+        const provider = await this.providersService.findByEmailWithPassword(email);
 
         if (provider && provider.password) {
           const isPasswordValid = await bcrypt.compare(password, provider.password);
@@ -112,7 +112,7 @@ export class AuthService {
 
       // User login - by phone (required)
       if (phone && !email) {
-        const user = await this.usersService.findByPhone(phone);
+        const user = await this.usersService.findByPhoneWithPassword(phone);
         if (user && await bcrypt.compare(password, user.password)) {
           const { password: _, ...result } = user;
           return { ...result, role: user.role };
@@ -271,10 +271,9 @@ export class AuthService {
         // Create regular user
         const user = await this.usersService.create(userData);
 
-        // Return user data without password
-        const { password, ...result } = user;
+        // User is already returned without password from the service
         return {
-          ...result,
+          ...user,
           role: 'USER',
           message: 'User registered successfully'
         };
@@ -316,8 +315,8 @@ export class AuthService {
 
   async upgradeToProvider(userId: number, providerData: any) {
     try {
-      // Get the existing user
-      const user = await this.usersService.findById(userId);
+      // Get the existing user with password
+      const user = await this.usersService.findByIdWithPassword(userId);
       if (!user) {
         throw new NotFoundException('User not found');
       }
@@ -940,10 +939,9 @@ export class AuthService {
         // Create regular user
         const user = await this.usersService.create(userData);
 
-        // Return user data without password
-        const { password, ...result } = user;
+        // User is already returned without password from the service
         return {
-          ...result,
+          ...user,
           role: 'USER',
           message: 'User registered successfully'
         };
@@ -1054,10 +1052,9 @@ export class AuthService {
         // Create regular user
         const user = await this.usersService.create(userData);
 
-        // Return user data without password
-        const { password, ...result } = user;
+        // User is already returned without password from the service
         return {
-          ...result,
+          ...user,
           role: 'USER',
           message: 'User registered successfully'
         };

@@ -56,7 +56,16 @@ let AdminService = class AdminService {
                     take: 10
                 }),
                 this.prisma.provider.findMany({
-                    include: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true,
+                        description: true,
+                        image: true,
+                        state: true,
+                        isActive: true,
+                        isVerified: true,
                         orders: {
                             where: { status: 'completed' },
                             select: { id: true }
@@ -428,7 +437,18 @@ let AdminService = class AdminService {
     async getAllProviders() {
         return this.prisma.provider.findMany({
             where: { isVerified: true },
-            include: {
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                description: true,
+                image: true,
+                state: true,
+                isActive: true,
+                isVerified: true,
+                createdAt: true,
+                updatedAt: true,
                 providerServices: {
                     include: {
                         service: {
@@ -469,7 +489,18 @@ let AdminService = class AdminService {
     async getUnverifiedProviders() {
         return this.prisma.provider.findMany({
             where: { isVerified: false },
-            include: {
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                description: true,
+                image: true,
+                state: true,
+                isActive: true,
+                isVerified: true,
+                createdAt: true,
+                updatedAt: true,
                 providerServices: {
                     include: {
                         service: {
@@ -890,11 +921,24 @@ let AdminService = class AdminService {
         }
         const users = await this.prisma.user.findMany({
             where,
-            include: {
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                role: true,
+                isActive: true,
+                createdAt: true,
+                address: true,
+                state: true,
+                image: true,
                 orders: {
-                    where: { status: 'completed' }
+                    where: { status: 'completed' },
+                    select: { totalAmount: true }
                 },
-                ratings: true
+                ratings: {
+                    select: { id: true }
+                }
             },
             orderBy: { createdAt: 'desc' }
         });

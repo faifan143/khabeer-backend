@@ -21,6 +21,57 @@ export declare class ProvidersService {
         location: import("generated/prisma/runtime/library").JsonValue;
         createdAt: Date;
     }[]>;
+    findByEmailWithPassword(email: string): Promise<{
+        description: string;
+        id: number;
+        name: string;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        officialDocuments: string | null;
+        isVerified: boolean;
+        location: import("generated/prisma/runtime/library").JsonValue | null;
+        createdAt: Date;
+        email: string | null;
+        updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
+    } | null>;
+    findByPhoneWithPassword(phone: string): Promise<{
+        description: string;
+        id: number;
+        name: string;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        officialDocuments: string | null;
+        isVerified: boolean;
+        location: import("generated/prisma/runtime/library").JsonValue | null;
+        createdAt: Date;
+        email: string | null;
+        updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
+    } | null>;
+    findByIdWithPassword(id: number): Promise<{
+        description: string;
+        id: number;
+        name: string;
+        image: string;
+        state: string;
+        phone: string;
+        isActive: boolean;
+        officialDocuments: string | null;
+        isVerified: boolean;
+        location: import("generated/prisma/runtime/library").JsonValue | null;
+        createdAt: Date;
+        email: string | null;
+        updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
+    }>;
     findByEmail(email: string): Promise<{
         description: string;
         id: number;

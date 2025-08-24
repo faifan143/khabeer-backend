@@ -55,6 +55,37 @@ let ProvidersService = class ProvidersService {
             throw new common_1.InternalServerErrorException('Error fetching providers');
         }
     }
+    async findByEmailWithPassword(email) {
+        try {
+            return await this.prisma.provider.findUnique({ where: { email } });
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error finding provider by email');
+        }
+    }
+    async findByPhoneWithPassword(phone) {
+        try {
+            return await this.prisma.provider.findFirst({ where: { phone } });
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error finding provider by phone');
+        }
+    }
+    async findByIdWithPassword(id) {
+        try {
+            const provider = await this.prisma.provider.findUnique({ where: { id } });
+            if (!provider) {
+                throw new common_1.NotFoundException(`Provider with ID ${id} not found`);
+            }
+            return provider;
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Error finding provider');
+        }
+    }
     async findByEmail(email) {
         try {
             return await this.prisma.provider.findUnique({
