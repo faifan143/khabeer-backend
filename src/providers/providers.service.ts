@@ -843,6 +843,44 @@ export class ProvidersService {
     }
   }
 
+  private async getActiveOffer(providerId: number, serviceId: number) {
+    const now = new Date();
+
+    // First, let's find any offers for this provider and service
+    const allOffers = await this.prisma.offer.findMany({
+      where: {
+        providerId,
+        serviceId,
+        isActive: true
+      },
+      select: {
+        id: true,
+        startDate: true,
+        endDate: true,
+        description: true,
+        offerPrice: true,
+        originalPrice: true
+      }
+    });
+
+    // Find the active offer based on date range
+    // Use date-only comparison to avoid timezone issues
+    const activeOffer = allOffers.find(offer => {
+      const startDate = new Date(offer.startDate);
+      const endDate = new Date(offer.endDate);
+
+      // Convert to date-only strings (YYYY-MM-DD) for comparison
+      const startDateOnly = startDate.toISOString().split('T')[0];
+      const endDateOnly = endDate.toISOString().split('T')[0];
+      const nowDateOnly = now.toISOString().split('T')[0];
+
+      // Compare dates only, ignoring time
+      return startDateOnly <= nowDateOnly && endDateOnly >= nowDateOnly;
+    });
+
+    return activeOffer || null;
+  }
+
   async getCategoryServicesByProviderId(providerId: number, categoryId: number) {
     try {
       // First, verify that both provider and category exist
@@ -880,27 +918,34 @@ export class ProvidersService {
       // Filter by category in JavaScript for better reliability
       const filteredServices = providerServices.filter(ps => ps.service.categoryId === categoryId);
 
-      // Transform the data to match the DTO structure
-      const services = filteredServices.map(ps => ({
-        id: ps.service.id,
-        title: ps.service.title,
-        description: ps.service.description,
-        image: ps.service.image,
-        commission: ps.service.commission,
-        categoryId: ps.service.categoryId || 0,
-        providerService: {
-          id: ps.id,
-          price: ps.price,
-          isActive: ps.isActive
-        }
-      }));
+      // Get active offers for each provider service
+      const servicesWithOffers = await Promise.all(
+        filteredServices.map(async (ps) => {
+          const activeOffer = await this.getActiveOffer(ps.providerId, ps.serviceId);
+
+          return {
+            id: ps.service.id,
+            title: ps.service.title,
+            description: ps.service.description,
+            image: ps.service.image,
+            commission: ps.service.commission,
+            categoryId: ps.service.categoryId || 0,
+            providerService: {
+              id: ps.id,
+              price: ps.price,
+              isActive: ps.isActive
+            },
+            activeOffer: activeOffer || null
+          };
+        })
+      );
 
       return {
         categoryId: category.id,
         categoryName: category.titleEn || category.titleAr, // Prefer English, fallback to Arabic
         providerId: provider.id,
         providerName: provider.name,
-        services,
+        services: servicesWithOffers,
         total: filteredServices.length
       };
     } catch (error) {
