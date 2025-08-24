@@ -617,9 +617,42 @@ export class ProvidersService {
         }
       });
 
+      // Enhance providers with offer information
+      const providersWithOffers = await Promise.all(
+        providers.map(async (provider) => {
+          const enhancedProviderServices = await Promise.all(
+            provider.providerServices.map(async (providerService) => {
+              // Get active offer for this provider service
+              const activeOffer = await this.prisma.offer.findFirst({
+                where: {
+                  providerId: provider.id,
+                  serviceId: serviceId,
+                  isActive: true,
+                  startDate: { lte: new Date() },
+                  endDate: { gt: new Date() }
+                },
+                orderBy: {
+                  offerPrice: 'asc' // Get the best (lowest) offer price
+                }
+              });
+
+              return {
+                ...providerService,
+                offerPrice: activeOffer ? activeOffer.offerPrice : null
+              };
+            })
+          );
+
+          return {
+            ...provider,
+            providerServices: enhancedProviderServices
+          };
+        })
+      );
+
       return {
-        providers,
-        total: providers.length,
+        providers: providersWithOffers,
+        total: providersWithOffers.length,
         serviceId: serviceId
       };
     } catch (error) {

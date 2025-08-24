@@ -1,6 +1,7 @@
 export declare class ProviderServiceInfoDto {
     price: number;
     isActive: boolean;
+    offerPrice: number | null;
 }
 export declare class ProviderByServiceDto {
     id: number;

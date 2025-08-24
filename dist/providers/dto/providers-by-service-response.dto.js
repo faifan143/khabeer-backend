@@ -4,6 +4,7 @@ exports.ProvidersByServiceResponseDto = exports.ProviderByServiceDto = exports.P
 class ProviderServiceInfoDto {
     price;
     isActive;
+    offerPrice;
 }
 exports.ProviderServiceInfoDto = ProviderServiceInfoDto;
 class ProviderByServiceDto {

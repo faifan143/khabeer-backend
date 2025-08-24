@@ -1,6 +1,7 @@
 export class ProviderServiceInfoDto {
   price: number;
   isActive: boolean;
+  offerPrice: number | null; // Add offer price field
 }
 
 export class ProviderByServiceDto {
