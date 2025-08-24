@@ -587,18 +587,37 @@ let ProvidersService = class ProvidersService {
             });
             const providersWithOffers = await Promise.all(providers.map(async (provider) => {
                 const enhancedProviderServices = await Promise.all(provider.providerServices.map(async (providerService) => {
+                    const now = new Date();
+                    console.log(`Checking offers for provider ${provider.id}, service ${serviceId} at ${now.toISOString()}`);
                     const activeOffer = await this.prisma.offer.findFirst({
                         where: {
                             providerId: provider.id,
                             serviceId: serviceId,
                             isActive: true,
-                            startDate: { lte: new Date() },
-                            endDate: { gt: new Date() }
+                            startDate: { lte: now },
+                            endDate: { gt: now }
                         },
                         orderBy: {
                             offerPrice: 'asc'
                         }
                     });
+                    if (activeOffer) {
+                        console.log(`Found active offer: ${activeOffer.id}, price: ${activeOffer.offerPrice}, start: ${activeOffer.startDate}, end: ${activeOffer.endDate}`);
+                    }
+                    else {
+                        console.log(`No active offer found for provider ${provider.id}, service ${serviceId}`);
+                        const allOffers = await this.prisma.offer.findMany({
+                            where: {
+                                providerId: provider.id,
+                                serviceId: serviceId,
+                                isActive: true
+                            }
+                        });
+                        console.log(`Total offers found: ${allOffers.length}`);
+                        allOffers.forEach(offer => {
+                            console.log(`Offer ${offer.id}: start=${offer.startDate}, end=${offer.endDate}, price=${offer.offerPrice}`);
+                        });
+                    }
                     return {
                         ...providerService,
                         offerPrice: activeOffer ? activeOffer.offerPrice : null

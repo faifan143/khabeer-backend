@@ -623,18 +623,43 @@ export class ProvidersService {
           const enhancedProviderServices = await Promise.all(
             provider.providerServices.map(async (providerService) => {
               // Get active offer for this provider service
+              const now = new Date();
+
+              // Debug: Log the current time and check for any offers
+              console.log(`Checking offers for provider ${provider.id}, service ${serviceId} at ${now.toISOString()}`);
+
               const activeOffer = await this.prisma.offer.findFirst({
                 where: {
                   providerId: provider.id,
                   serviceId: serviceId,
                   isActive: true,
-                  startDate: { lte: new Date() },
-                  endDate: { gt: new Date() }
+                  startDate: { lte: now },
+                  endDate: { gt: now }
                 },
                 orderBy: {
                   offerPrice: 'asc' // Get the best (lowest) offer price
                 }
               });
+
+              // Debug: Log what we found
+              if (activeOffer) {
+                console.log(`Found active offer: ${activeOffer.id}, price: ${activeOffer.offerPrice}, start: ${activeOffer.startDate}, end: ${activeOffer.endDate}`);
+              } else {
+                console.log(`No active offer found for provider ${provider.id}, service ${serviceId}`);
+
+                // Debug: Check if there are any offers at all for this provider/service
+                const allOffers = await this.prisma.offer.findMany({
+                  where: {
+                    providerId: provider.id,
+                    serviceId: serviceId,
+                    isActive: true
+                  }
+                });
+                console.log(`Total offers found: ${allOffers.length}`);
+                allOffers.forEach(offer => {
+                  console.log(`Offer ${offer.id}: start=${offer.startDate}, end=${offer.endDate}, price=${offer.offerPrice}`);
+                });
+              }
 
               return {
                 ...providerService,
