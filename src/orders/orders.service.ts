@@ -177,37 +177,30 @@ export class OrdersService {
       }
     });
 
-    // Transform orders to include calculated fields for providers
-    if (role === 'PROVIDER') {
-      return orders.map(order => {
-        // Check if this is a multiple services order
-        const isMultipleServices = this.isMultipleServicesOrder(order);
+    // Transform orders to always include services array
+    return orders.map(order => {
+      // Always create a services array - single service orders get one item
+      const services = this.buildServicesArray(order);
 
-        // Get the services breakdown for multiple services orders
-        const services = isMultipleServices ? this.getServicesBreakdown(order) : undefined;
-
-        return {
-          ...order,
-          duration: order.scheduledDate, // Use scheduled date as duration
-          isMultipleServices,
-          services,
-          user: {
-            ...order.user,
-            image: order.user.image || '',
-            state: order.user.state || '',
-            latitude: order.user.latitude ? Number(order.user.latitude) : null,
-            longitude: order.user.longitude ? Number(order.user.longitude) : null
-          },
-          service: {
-            ...order.service,
-            image: order.service.image || '',
-            category: order.service.category || undefined
-          }
-        };
-      });
-    }
-
-    return orders;
+      return {
+        ...order,
+        duration: order.scheduledDate, // Use scheduled date as duration
+        isMultipleServices: services.length > 1,
+        services,
+        user: {
+          ...order.user,
+          image: order.user.image || '',
+          state: order.user.state || '',
+          latitude: order.user.latitude ? Number(order.user.latitude) : null,
+          longitude: order.user.longitude ? Number(order.user.longitude) : null
+        },
+        service: {
+          ...order.service,
+          image: order.service.image || '',
+          category: order.service.category || undefined
+        }
+      };
+    });
   }
 
   async findOne(id: number, userId: number, role: string) {
@@ -255,20 +248,15 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    // Add multiple services information for providers
-    if (role === 'PROVIDER') {
-      const isMultipleServices = this.isMultipleServicesOrder(order);
-      const services = isMultipleServices ? this.getServicesBreakdown(order) : undefined;
+    // Always create a services array - single service orders get one item
+    const services = this.buildServicesArray(order);
 
-      return {
-        ...order,
-        isMultipleServices,
-        services,
-        duration: order.scheduledDate
-      };
-    }
-
-    return order;
+    return {
+      ...order,
+      isMultipleServices: services.length > 1,
+      services,
+      duration: order.scheduledDate
+    };
   }
 
   async updateStatus(id: number, updateStatusDto: UpdateOrderStatusDto, userId: number, role: string) {
@@ -887,19 +875,37 @@ export class OrdersService {
       const serviceCommission = (order.commissionAmount / order.quantity) * serviceQuantity;
 
       services.push({
-        serviceId: order.serviceId,
-        serviceTitle: order.service.title,
-        serviceDescription: order.service.description,
-        serviceImage: order.service.image,
         quantity: serviceQuantity,
         unitPrice: order.providerAmount / order.quantity,
         totalPrice: serviceAmount,
-        commission: order.service.commission || 0,
         commissionAmount: serviceCommission
       });
     }
 
     return services;
+  }
+
+  private buildServicesArray(order: any): any[] {
+    if (order.quantity === 1) {
+      // For single service orders, return a single-item array
+      const service = order.service;
+      return [
+        {
+          serviceId: service.id,
+          serviceTitle: service.title,
+          serviceDescription: service.description,
+          serviceImage: service.image,
+          quantity: 1,
+          unitPrice: order.providerAmount, // Assuming providerAmount is the total for one service
+          totalPrice: order.providerAmount,
+          commission: service.commission,
+          commissionAmount: order.commissionAmount
+        }
+      ];
+    } else {
+      // For multiple services orders, return the services breakdown
+      return this.getServicesBreakdown(order);
+    }
   }
 
   async createMultipleServices(createOrderDto: CreateOrderMultipleServicesDto, userId: number) {

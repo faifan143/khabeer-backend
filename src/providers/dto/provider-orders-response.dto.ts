@@ -10,8 +10,8 @@ export class ProviderOrderResponseDto {
     providerAmount: number;
     commissionAmount: number;
     bookingId: string;
-    isMultipleServices?: boolean;
-    services?: Array<{
+    isMultipleServices: boolean;
+    services: Array<{
         serviceId: number;
         serviceTitle: string;
         serviceDescription: string;

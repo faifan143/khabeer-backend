@@ -491,33 +491,51 @@ export class ProvidersService {
     // For multiple services orders, we need to reconstruct the services array
     // Since we don't store the individual services breakdown in the database,
     // we'll create a reasonable approximation based on the order data
-
+    
     // Calculate how many services this order represents
     const estimatedServiceCount = Math.ceil(order.quantity / 2); // Estimate based on quantity
-
+    
     const services: any[] = [];
     const baseQuantity = Math.floor(order.quantity / estimatedServiceCount);
     const remainingQuantity = order.quantity % estimatedServiceCount;
-
+    
     for (let i = 0; i < estimatedServiceCount; i++) {
       const serviceQuantity = i === 0 ? baseQuantity + remainingQuantity : baseQuantity;
       const serviceAmount = (order.providerAmount / order.quantity) * serviceQuantity;
       const serviceCommission = (order.commissionAmount / order.quantity) * serviceQuantity;
-
+      
       services.push({
-        serviceId: order.serviceId,
-        serviceTitle: order.service.title,
-        serviceDescription: order.service.description,
-        serviceImage: order.service.image,
         quantity: serviceQuantity,
         unitPrice: order.providerAmount / order.quantity,
         totalPrice: serviceAmount,
-        commission: order.service.commission || 0,
         commissionAmount: serviceCommission
       });
     }
-
+    
     return services;
+  }
+
+  private buildServicesArray(order: any): any[] {
+    if (order.quantity === 1) {
+      // For single service orders, return a single-item array
+      const service = order.service;
+      return [
+        {
+          serviceId: service.id,
+          serviceTitle: service.title,
+          serviceDescription: service.description,
+          serviceImage: service.image,
+          quantity: 1,
+          unitPrice: order.providerAmount, // Assuming providerAmount is the total for one service
+          totalPrice: order.providerAmount,
+          commission: service.commission,
+          commissionAmount: order.commissionAmount
+        }
+      ];
+    } else {
+      // For multiple services orders, return the services breakdown
+      return this.getServicesBreakdown(order);
+    }
   }
 
   async getProviderOrders(providerId: number): Promise<ProviderOrdersResponseDto> {
@@ -560,18 +578,15 @@ export class ProvidersService {
         }
       });
 
-      // Transform orders to include calculated fields
+      // Transform orders to always include services array
       const transformedOrders = orders.map(order => {
-        // Check if this is a multiple services order
-        const isMultipleServices = this.isMultipleServicesOrder(order);
-        
-        // Get the services breakdown for multiple services orders
-        const services = isMultipleServices ? this.getServicesBreakdown(order) : undefined;
+        // Always create a services array - single service orders get one item
+        const services = this.buildServicesArray(order);
         
         return {
           ...order,
           duration: order.scheduledDate, // Use scheduled date as duration
-          isMultipleServices,
+          isMultipleServices: services.length > 1,
           services,
           user: {
             ...order.user,
@@ -641,18 +656,15 @@ export class ProvidersService {
         }
       });
 
-      // Transform orders to include calculated fields
+      // Transform orders to always include services array
       const transformedOrders = orders.map(order => {
-        // Check if this is a multiple services order
-        const isMultipleServices = this.isMultipleServicesOrder(order);
-        
-        // Get the services breakdown for multiple services orders
-        const services = isMultipleServices ? this.getServicesBreakdown(order) : undefined;
+        // Always create a services array - single service orders get one item
+        const services = this.buildServicesArray(order);
         
         return {
           ...order,
           duration: order.scheduledDate, // Use scheduled date as duration
-          isMultipleServices,
+          isMultipleServices: services.length > 1,
           services,
           user: {
             ...order.user,
