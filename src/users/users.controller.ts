@@ -19,20 +19,20 @@ export class UsersController {
 
   @Get()
   async findAll() {
-
     return this.usersService.findAll();
   }
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   async getProfile(@Request() req) {
     return this.usersService.getProfile(req.user.userId);
   }
 
+  // Parameterized route - must come after all specific routes
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.usersService.findById(Number(id));
   }
-
 
   @Post()
   @UseInterceptors(FileInterceptor('image', {

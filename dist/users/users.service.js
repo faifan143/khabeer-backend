@@ -110,8 +110,8 @@ let UsersService = class UsersService {
     }
     async remove(id) {
         try {
-            await this.prisma.user.delete({ where: { id } });
-            return { message: 'User deleted successfully' };
+            const user = await this.prisma.user.delete({ where: { id } });
+            return user;
         }
         catch (error) {
             if (error instanceof library_1.PrismaClientKnownRequestError) {
@@ -123,6 +123,38 @@ let UsersService = class UsersService {
                 }
             }
             throw new common_1.InternalServerErrorException('Error deleting user');
+        }
+    }
+    async testDatabaseConnection() {
+        try {
+            console.log('Testing Prisma connection...');
+            await this.prisma.$queryRaw `SELECT 1`;
+            console.log('Database connection successful');
+            return true;
+        }
+        catch (error) {
+            console.error('Database connection failed:', error);
+            throw error;
+        }
+    }
+    async getDatabaseStats() {
+        try {
+            console.log('Getting database statistics...');
+            const userCount = await this.prisma.user.count();
+            const locationCount = await this.prisma.userLocation.count();
+            const providerCount = await this.prisma.provider.count();
+            console.log('User count:', userCount);
+            console.log('Location count:', locationCount);
+            console.log('Provider count:', providerCount);
+            return {
+                userCount,
+                locationCount,
+                providerCount
+            };
+        }
+        catch (error) {
+            console.error('Error getting database stats:', error);
+            throw error;
         }
     }
     async getProfile(userId) {
@@ -252,7 +284,23 @@ let UsersService = class UsersService {
         }
     }
     async getUserLocations(userId) {
+        console.log('=== getUserLocations Service Method DEBUG START ===');
+        console.log('Received userId parameter:', userId);
+        console.log('Type of userId:', typeof userId);
+        console.log('userId is valid number?', !isNaN(userId) && userId > 0);
         try {
+            console.log('Checking if user exists in database...');
+            const userExists = await this.prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, name: true, phone: true, role: true }
+            });
+            console.log('User lookup result:', userExists);
+            if (!userExists) {
+                console.error('ERROR: User not found in database with ID:', userId);
+                throw new common_1.NotFoundException(`User with ID ${userId} not found`);
+            }
+            console.log('User found, now querying locations...');
+            console.log('Executing Prisma query for user locations...');
             const locations = await this.prisma.userLocation.findMany({
                 where: { userId },
                 orderBy: [
@@ -260,7 +308,9 @@ let UsersService = class UsersService {
                     { createdAt: 'desc' }
                 ]
             });
-            return locations.map(location => ({
+            console.log('Raw locations from database:', locations);
+            console.log('Number of locations found:', locations.length);
+            const mappedLocations = locations.map(location => ({
                 id: location.id,
                 title: location.title,
                 description: location.description,
@@ -271,9 +321,21 @@ let UsersService = class UsersService {
                 createdAt: location.createdAt,
                 updatedAt: location.updatedAt
             }));
+            console.log('Mapped locations result:', mappedLocations);
+            console.log('=== getUserLocations Service Method DEBUG END ===');
+            return mappedLocations;
         }
         catch (error) {
-            throw new common_1.InternalServerErrorException('Error fetching user locations');
+            console.error('ERROR in getUserLocations service method:', error);
+            console.error('Error type:', error.constructor.name);
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+            if (error instanceof common_1.NotFoundException) {
+                console.error('This is a NotFoundException - rethrowing');
+                throw error;
+            }
+            console.error('=== getUserLocations Service Method DEBUG END WITH ERROR ===');
+            throw new common_1.InternalServerErrorException(`Error fetching user locations: ${error.message}`);
         }
     }
     async createUserLocation(userId, createLocationDto) {

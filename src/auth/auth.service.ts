@@ -92,7 +92,15 @@ export class AuthService {
     try {
       const username = user.email || user.phone;
       const payload = { username, sub: user.id, role: user.role };
-      return {
+
+      console.log('=== Regular Login JWT Generation DEBUG ===');
+      console.log('User data for token:', user);
+      console.log('JWT payload being created:', payload);
+      console.log('user.id type:', typeof user.id);
+      console.log('user.id value:', user.id);
+      console.log('user.id is valid number?', !isNaN(user.id) && user.id > 0);
+
+      const result = {
         access_token: this.jwtService.sign(payload),
         user: {
           id: user.id,
@@ -101,6 +109,12 @@ export class AuthService {
           role: user.role
         }
       };
+
+      console.log('JWT token generated successfully');
+      console.log('Token length:', result.access_token.length);
+      console.log('=== Regular Login JWT Generation DEBUG END ===');
+
+      return result;
     } catch (error) {
       throw new InternalServerErrorException('Error generating authentication token');
     }
@@ -565,7 +579,18 @@ export class AuthService {
         phone: phoneNumber
       };
 
+      console.log('=== JWT Token Generation DEBUG ===');
+      console.log('User data for token:', userData);
+      console.log('JWT payload being created:', payload);
+      console.log('userData.id type:', typeof userData.id);
+      console.log('userData.id value:', userData.id);
+      console.log('userData.id is valid number?', !isNaN(userData.id) && userData.id > 0);
+
       const access_token = this.jwtService.sign(payload);
+
+      console.log('JWT token generated successfully');
+      console.log('Token length:', access_token.length);
+      console.log('=== JWT Token Generation DEBUG END ===');
 
       return {
         success: true,
