@@ -281,9 +281,9 @@ export declare class ProvidersController {
     } & {
         id: number;
         providerId: number;
+        userId: number;
         orderId: number | null;
         rating: number;
-        userId: number;
         comment: string | null;
         ratingDate: Date;
     })[]>;
@@ -299,5 +299,80 @@ export declare class ProvidersController {
         }[];
         verificationStatus: string;
         adminNotes: string | null;
+    }>;
+    getTopProviders(limit?: string, minRating?: string, minOrders?: string, includeUnrated?: string): Promise<{
+        providers: {
+            rank: number;
+            averageRating: number;
+            totalRatings: number;
+            totalOrders: number;
+            completedOrders: number;
+            totalRevenue: number;
+            activeServices: number;
+            tier: "active" | "top-rated" | "verified" | "new";
+            score: number;
+            orders: {
+                id: number;
+                status: string;
+                orderDate: Date;
+                totalAmount: number;
+            }[];
+            ratings: {
+                rating: number;
+            }[];
+            providerServices: ({
+                service: {
+                    category: {
+                        id: number;
+                        image: string;
+                        state: string;
+                        titleAr: string;
+                        titleEn: string;
+                    } | null;
+                } & {
+                    description: string;
+                    id: number;
+                    image: string;
+                    title: string;
+                    commission: number;
+                    whatsapp: string;
+                    categoryId: number | null;
+                };
+            } & {
+                serviceId: number;
+                id: number;
+                isActive: boolean;
+                providerId: number;
+                price: number;
+            })[];
+            description: string;
+            id: number;
+            name: string;
+            image: string;
+            state: string;
+            phone: string;
+            isActive: boolean;
+            officialDocuments: string | null;
+            isVerified: boolean;
+            location: import("generated/prisma/runtime/library").JsonValue | null;
+            createdAt: Date;
+            email: string | null;
+            updatedAt: Date;
+            password: string | null;
+            fcm: string | null;
+        }[];
+        total: number;
+        summary: {
+            topRated: number;
+            active: number;
+            verified: number;
+            new: number;
+        };
+        filters: {
+            limit: number;
+            minRating: number;
+            minOrders: number;
+            includeUnrated: boolean;
+        };
     }>;
 }

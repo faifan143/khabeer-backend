@@ -5,6 +5,8 @@ import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserLocationDto } from './dto/create-user-location.dto';
+import { UpdateUserLocationDto } from './dto/update-user-location.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
@@ -104,5 +106,40 @@ export class UsersController {
       return { error: 'Unauthorized' };
     }
     return this.usersService.remove(Number(id));
+  }
+
+  // User Location Management Endpoints
+  @Get('locations')
+  @UseGuards(JwtAuthGuard)
+  async getUserLocations(@Request() req) {
+    return this.usersService.getUserLocations(req.user.userId);
+  }
+
+  @Post('locations')
+  @UseGuards(JwtAuthGuard)
+  async createUserLocation(@Body() createLocationDto: CreateUserLocationDto, @Request() req) {
+    return this.usersService.createUserLocation(req.user.userId, createLocationDto);
+  }
+
+  @Put('locations/:id')
+  @UseGuards(JwtAuthGuard)
+  async updateUserLocation(
+    @Param('id') id: string,
+    @Body() updateLocationDto: UpdateUserLocationDto,
+    @Request() req
+  ) {
+    return this.usersService.updateUserLocation(req.user.userId, Number(id), updateLocationDto);
+  }
+
+  @Delete('locations/:id')
+  @UseGuards(JwtAuthGuard)
+  async deleteUserLocation(@Param('id') id: string, @Request() req) {
+    return this.usersService.deleteUserLocation(req.user.userId, Number(id));
+  }
+
+  @Put('locations/:id/set-default')
+  @UseGuards(JwtAuthGuard)
+  async setDefaultLocation(@Param('id') id: string, @Request() req) {
+    return this.usersService.setDefaultLocation(req.user.userId, Number(id));
   }
 }

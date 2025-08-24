@@ -20,6 +20,8 @@ const users_service_1 = require("./users.service");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
+const create_user_location_dto_1 = require("./dto/create-user-location.dto");
+const update_user_location_dto_1 = require("./dto/update-user-location.dto");
 const multer_1 = require("multer");
 const path_1 = require("path");
 let UsersController = class UsersController {
@@ -75,6 +77,21 @@ let UsersController = class UsersController {
             return { error: 'Unauthorized' };
         }
         return this.usersService.remove(Number(id));
+    }
+    async getUserLocations(req) {
+        return this.usersService.getUserLocations(req.user.userId);
+    }
+    async createUserLocation(createLocationDto, req) {
+        return this.usersService.createUserLocation(req.user.userId, createLocationDto);
+    }
+    async updateUserLocation(id, updateLocationDto, req) {
+        return this.usersService.updateUserLocation(req.user.userId, Number(id), updateLocationDto);
+    }
+    async deleteUserLocation(id, req) {
+        return this.usersService.deleteUserLocation(req.user.userId, Number(id));
+    }
+    async setDefaultLocation(id, req) {
+        return this.usersService.setDefaultLocation(req.user.userId, Number(id));
     }
 };
 exports.UsersController = UsersController;
@@ -147,6 +164,51 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Get)('locations'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserLocations", null);
+__decorate([
+    (0, common_1.Post)('locations'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_user_location_dto_1.CreateUserLocationDto, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "createUserLocation", null);
+__decorate([
+    (0, common_1.Put)('locations/:id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_user_location_dto_1.UpdateUserLocationDto, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateUserLocation", null);
+__decorate([
+    (0, common_1.Delete)('locations/:id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "deleteUserLocation", null);
+__decorate([
+    (0, common_1.Put)('locations/:id/set-default'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "setDefaultLocation", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     __metadata("design:paramtypes", [users_service_1.UsersService,

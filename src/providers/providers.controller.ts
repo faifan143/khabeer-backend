@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, UploadedFile, UseInterceptors, BadRequestException, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, UploadedFile, UseInterceptors, BadRequestException, ParseIntPipe, Query } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { ProvidersService } from './providers.service';
@@ -287,6 +287,39 @@ export class ProvidersController {
       throw new BadRequestException('You can only access your own documents');
     }
     return this.providersService.getProviderDocuments(Number(id));
+  }
+
+  @Get('top/comprehensive')
+  async getTopProviders(
+    @Query('limit') limit?: string,
+    @Query('minRating') minRating?: string,
+    @Query('minOrders') minOrders?: string,
+    @Query('includeUnrated') includeUnrated?: string
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    const minRatingNum = minRating ? parseFloat(minRating) : 0;
+    const minOrdersNum = minOrders ? parseInt(minOrders, 10) : 0;
+    const includeUnratedBool = includeUnrated !== 'false'; // Default to true
+
+    // Validate parameters
+    if (limitNum < 1 || limitNum > 100) {
+      throw new BadRequestException('Limit must be between 1 and 100');
+    }
+
+    if (minRatingNum < 0 || minRatingNum > 5) {
+      throw new BadRequestException('Minimum rating must be between 0 and 5');
+    }
+
+    if (minOrdersNum < 0) {
+      throw new BadRequestException('Minimum orders must be non-negative');
+    }
+
+    return this.providersService.getTopProviders(
+      limitNum,
+      minRatingNum,
+      minOrdersNum,
+      includeUnratedBool
+    );
   }
 }
 

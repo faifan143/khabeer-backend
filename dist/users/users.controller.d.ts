@@ -2,6 +2,8 @@ import { FilesService } from '../files/files.service';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserLocationDto } from './dto/create-user-location.dto';
+import { UpdateUserLocationDto } from './dto/update-user-location.dto';
 export declare class UsersController {
     private readonly usersService;
     private readonly filesService;
@@ -118,5 +120,52 @@ export declare class UsersController {
         message: string;
     } | {
         error: string;
+    }>;
+    getUserLocations(req: any): Promise<{
+        id: number;
+        title: string;
+        description: string | null;
+        latitude: number;
+        longitude: number;
+        address: string | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
+    createUserLocation(createLocationDto: CreateUserLocationDto, req: any): Promise<{
+        id: number;
+        title: string;
+        description: string | null;
+        latitude: number;
+        longitude: number;
+        address: string | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    updateUserLocation(id: string, updateLocationDto: UpdateUserLocationDto, req: any): Promise<{
+        id: number;
+        title: string;
+        description: string | null;
+        latitude: number;
+        longitude: number;
+        address: string | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    deleteUserLocation(id: string, req: any): Promise<{
+        message: string;
+    }>;
+    setDefaultLocation(id: string, req: any): Promise<{
+        id: number;
+        title: string;
+        description: string | null;
+        latitude: number;
+        longitude: number;
+        address: string | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
 }

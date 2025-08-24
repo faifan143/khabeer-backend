@@ -29,17 +29,14 @@ export class CreateOrderMultipleServicesDto {
     @IsDateString()
     scheduledDate?: string;
 
+    // Location can be either a saved location ID or current coordinates
     @IsOptional()
-    @IsEnum(OrderLocation)
-    location?: OrderLocation;
-
-    @IsOptional()
-    @IsString()
-    locationDetails?: string;
+    @IsInt()
+    savedLocationId?: number;
 
     @IsOptional()
     @IsObject()
-    userLocation?: {
+    currentLocation?: {
         latitude: number;
         longitude: number;
         address?: string;

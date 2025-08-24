@@ -1,6 +1,8 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserLocationDto } from './dto/create-user-location.dto';
+import { UpdateUserLocationDto } from './dto/update-user-location.dto';
 export declare class UsersService {
     private readonly prisma;
     constructor(prisma: PrismaService);
@@ -151,4 +153,51 @@ export declare class UsersService {
     }>;
     updateFCMToken(userId: number, fcmToken: string): Promise<any>;
     removeFCMToken(userId: number): Promise<any>;
+    getUserLocations(userId: number): Promise<{
+        id: number;
+        title: string;
+        description: string | null;
+        latitude: number;
+        longitude: number;
+        address: string | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
+    createUserLocation(userId: number, createLocationDto: CreateUserLocationDto): Promise<{
+        id: number;
+        title: string;
+        description: string | null;
+        latitude: number;
+        longitude: number;
+        address: string | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    updateUserLocation(userId: number, locationId: number, updateLocationDto: UpdateUserLocationDto): Promise<{
+        id: number;
+        title: string;
+        description: string | null;
+        latitude: number;
+        longitude: number;
+        address: string | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    deleteUserLocation(userId: number, locationId: number): Promise<{
+        message: string;
+    }>;
+    setDefaultLocation(userId: number, locationId: number): Promise<{
+        id: number;
+        title: string;
+        description: string | null;
+        latitude: number;
+        longitude: number;
+        address: string | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
 }

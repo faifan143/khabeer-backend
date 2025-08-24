@@ -465,7 +465,7 @@
           }
         },
         {
-          "name": "Create Order with Multiple Services (User)",
+          "name": "Create Order with Multiple Services (User) - Saved Location",
           "request": {
             "method": "POST",
             "header": [
@@ -474,15 +474,36 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"providerId\": 1,\n  \"services\": [\n    {\n      \"serviceId\": 1,\n      \"quantity\": 1\n    },\n    {\n      \"serviceId\": 2,\n      \"quantity\": 3\n    }\n  ],\n  \"scheduledDate\": \"2024-12-25T10:00:00Z\",\n  \"location\": \"Home\",\n  \"locationDetails\": \"123 Main St, Apartment 4B\",\n  \"userLocation\": {\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"address\": \"123 Main St, Apartment 4B\"\n  },\n  \"notes\": \"Please arrive at 10 AM\"\n}"
+              "raw": "{\n  \"providerId\": 1,\n  \"services\": [\n    {\n      \"serviceId\": 1,\n      \"quantity\": 1\n    },\n    {\n      \"serviceId\": 2,\n      \"quantity\": 3\n    }\n  ],\n  \"scheduledDate\": \"2024-12-25T10:00:00Z\",\n  \"savedLocationId\": 1,\n  \"notes\": \"Please arrive at 10 AM\"\n}"
             },
-            "description": "Creates a new order with multiple services and quantities. Perfect for mobile app scenarios like the service request UI shown in the image.",
+            "description": "Creates a new order with multiple services and quantities. Perfect for mobile app scenarios like the service request UI shown in the image. This example uses a saved location (savedLocationId: 1). Alternatively, you can use currentLocation: {\"latitude\": 40.7128, \"longitude\": -74.0060, \"address\": \"Current address\"} for real-time location.",
             "url": {
               "raw": "{{baseUrl}}/orders/multiple-services",
               "host": ["{{baseUrl}}"],
               "path": ["orders", "multiple-services"]
             }
           }
+        },
+        {
+          "name": "Create Order with Multiple Services (User) - Current Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"providerId\": 1,\n  \"services\": [\n    {\n      \"serviceId\": 1,\n      \"quantity\": 1\n    },\n    {\n      \"serviceId\": 2,\n      \"quantity\": 3\n    }\n  ],\n  \"scheduledDate\": \"2024-12-25T10:00:00Z\",\n  \"currentLocation\": {\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"address\": \"123 Main St, Apartment 4B\"\n  },\n  \"notes\": \"Please arrive at 10 AM\"\n}"
+            },
+            "description": "Creates a new order with multiple services using real-time current location coordinates.",
+            "url": {
+              "raw": "{{baseUrl}}/orders/multiple-services",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "multiple-services"]
+            }
+          },
+          "response": []
         },
         {
           "name": "Get User Orders",
@@ -1270,6 +1291,40 @@
           }
         },
         {
+          "name": "Get Comprehensive Top Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/providers/top/comprehensive?limit=10&minRating=0&minOrders=0&includeUnrated=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["providers", "top", "comprehensive"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of providers to return (1-100)"
+                },
+                {
+                  "key": "minRating",
+                  "value": "0",
+                  "description": "Minimum average rating (0-5)"
+                },
+                {
+                  "key": "minOrders",
+                  "value": "0",
+                  "description": "Minimum completed orders"
+                },
+                {
+                  "key": "includeUnrated",
+                  "value": "true",
+                  "description": "Include providers with no ratings"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Get Service Statistics",
           "request": {
             "method": "GET",
@@ -1727,6 +1782,124 @@
             },
             "description": "This endpoint is for documentation/testing. Real tracking should be done via WebSocket connection to ws://localhost:3000/location-tracking"
           }
+        }
+      ]
+    },
+    {
+      "name": "User Location Management",
+      "item": [
+        {
+          "name": "Get User Locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/locations",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "locations"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Home\",\n  \"description\": \"My primary residence\",\n  \"latitude\": 24.7136,\n  \"longitude\": 46.6753,\n  \"address\": \"Riyadh, Saudi Arabia\",\n  \"isDefault\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/locations",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "locations"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Home Updated\",\n  \"description\": \"Updated description\",\n  \"latitude\": 24.7136,\n  \"longitude\": 46.6753,\n  \"address\": \"Riyadh, Saudi Arabia Updated\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/locations/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "locations", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Default Location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/locations/1/set-default",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "locations", "1", "set-default"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User Location",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/locations/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "locations", "1"]
+            }
+          },
+          "response": []
         }
       ]
     }

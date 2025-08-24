@@ -171,6 +171,22 @@ let ProvidersController = class ProvidersController {
         }
         return this.providersService.getProviderDocuments(Number(id));
     }
+    async getTopProviders(limit, minRating, minOrders, includeUnrated) {
+        const limitNum = limit ? parseInt(limit, 10) : 10;
+        const minRatingNum = minRating ? parseFloat(minRating) : 0;
+        const minOrdersNum = minOrders ? parseInt(minOrders, 10) : 0;
+        const includeUnratedBool = includeUnrated !== 'false';
+        if (limitNum < 1 || limitNum > 100) {
+            throw new common_1.BadRequestException('Limit must be between 1 and 100');
+        }
+        if (minRatingNum < 0 || minRatingNum > 5) {
+            throw new common_1.BadRequestException('Minimum rating must be between 0 and 5');
+        }
+        if (minOrdersNum < 0) {
+            throw new common_1.BadRequestException('Minimum orders must be non-negative');
+        }
+        return this.providersService.getTopProviders(limitNum, minRatingNum, minOrdersNum, includeUnratedBool);
+    }
 };
 exports.ProvidersController = ProvidersController;
 __decorate([
@@ -378,6 +394,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ProvidersController.prototype, "getProviderDocuments", null);
+__decorate([
+    (0, common_1.Get)('top/comprehensive'),
+    __param(0, (0, common_1.Query)('limit')),
+    __param(1, (0, common_1.Query)('minRating')),
+    __param(2, (0, common_1.Query)('minOrders')),
+    __param(3, (0, common_1.Query)('includeUnrated')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], ProvidersController.prototype, "getTopProviders", null);
 exports.ProvidersController = ProvidersController = __decorate([
     (0, common_1.Controller)('providers'),
     __metadata("design:paramtypes", [providers_service_1.ProvidersService,

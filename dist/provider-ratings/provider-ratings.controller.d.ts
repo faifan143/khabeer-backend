@@ -16,9 +16,9 @@ export declare class ProviderRatingsController {
     } & {
         id: number;
         providerId: number;
+        userId: number;
         orderId: number | null;
         rating: number;
-        userId: number;
         comment: string | null;
         ratingDate: Date;
     }>;
@@ -36,9 +36,9 @@ export declare class ProviderRatingsController {
     } & {
         id: number;
         providerId: number;
+        userId: number;
         orderId: number | null;
         rating: number;
-        userId: number;
         comment: string | null;
         ratingDate: Date;
     })[]>;
@@ -57,9 +57,9 @@ export declare class ProviderRatingsController {
         } & {
             id: number;
             providerId: number;
+            userId: number;
             orderId: number | null;
             rating: number;
-            userId: number;
             comment: string | null;
             ratingDate: Date;
         })[];
@@ -104,9 +104,9 @@ export declare class ProviderRatingsController {
     } & {
         id: number;
         providerId: number;
+        userId: number;
         orderId: number | null;
         rating: number;
-        userId: number;
         comment: string | null;
         ratingDate: Date;
     })[]>;
@@ -124,9 +124,9 @@ export declare class ProviderRatingsController {
     } & {
         id: number;
         providerId: number;
+        userId: number;
         orderId: number | null;
         rating: number;
-        userId: number;
         comment: string | null;
         ratingDate: Date;
     }>;
@@ -144,9 +144,9 @@ export declare class ProviderRatingsController {
     } & {
         id: number;
         providerId: number;
+        userId: number;
         orderId: number | null;
         rating: number;
-        userId: number;
         comment: string | null;
         ratingDate: Date;
     }>;

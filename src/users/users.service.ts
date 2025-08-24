@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, InternalServerError
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserLocationDto } from './dto/create-user-location.dto';
+import { UpdateUserLocationDto } from './dto/update-user-location.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -252,6 +254,195 @@ export class UsersService {
       return updatedUser;
     } catch (error) {
       throw new Error(`Failed to remove FCM token for user ${userId}: ${error.message}`);
+    }
+  }
+
+  // User Location Management Methods
+  async getUserLocations(userId: number) {
+    try {
+      const locations = await this.prisma.userLocation.findMany({
+        where: { userId },
+        orderBy: [
+          { isDefault: 'desc' },
+          { createdAt: 'desc' }
+        ]
+      });
+
+      return locations.map(location => ({
+        id: location.id,
+        title: location.title,
+        description: location.description,
+        latitude: Number(location.latitude),
+        longitude: Number(location.longitude),
+        address: location.address,
+        isDefault: location.isDefault,
+        createdAt: location.createdAt,
+        updatedAt: location.updatedAt
+      }));
+    } catch (error) {
+      throw new InternalServerErrorException('Error fetching user locations');
+    }
+  }
+
+  async createUserLocation(userId: number, createLocationDto: CreateUserLocationDto) {
+    try {
+      // If this is the first location or marked as default, set it as default
+      if (createLocationDto.isDefault) {
+        await this.prisma.userLocation.updateMany({
+          where: { userId },
+          data: { isDefault: false }
+        });
+      }
+
+      const location = await this.prisma.userLocation.create({
+        data: {
+          userId,
+          title: createLocationDto.title,
+          description: createLocationDto.description,
+          latitude: createLocationDto.latitude,
+          longitude: createLocationDto.longitude,
+          address: createLocationDto.address,
+          isDefault: createLocationDto.isDefault || false
+        }
+      });
+
+      return {
+        id: location.id,
+        title: location.title,
+        description: location.description,
+        latitude: Number(location.latitude),
+        longitude: Number(location.longitude),
+        address: location.address,
+        isDefault: location.isDefault,
+        createdAt: location.createdAt,
+        updatedAt: location.updatedAt
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Error creating user location');
+    }
+  }
+
+  async updateUserLocation(userId: number, locationId: number, updateLocationDto: UpdateUserLocationDto) {
+    try {
+      // Verify the location belongs to the user
+      const existingLocation = await this.prisma.userLocation.findFirst({
+        where: { id: locationId, userId }
+      });
+
+      if (!existingLocation) {
+        throw new NotFoundException('Location not found or access denied');
+      }
+
+      // If setting as default, unset other defaults
+      if (updateLocationDto.isDefault) {
+        await this.prisma.userLocation.updateMany({
+          where: { userId },
+          data: { isDefault: false }
+        });
+      }
+
+      const updatedLocation = await this.prisma.userLocation.update({
+        where: { id: locationId },
+        data: updateLocationDto
+      });
+
+      return {
+        id: updatedLocation.id,
+        title: updatedLocation.title,
+        description: updatedLocation.description,
+        latitude: Number(updatedLocation.latitude),
+        longitude: Number(updatedLocation.longitude),
+        address: updatedLocation.address,
+        isDefault: updatedLocation.isDefault,
+        createdAt: updatedLocation.createdAt,
+        updatedAt: updatedLocation.updatedAt
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error updating user location');
+    }
+  }
+
+  async deleteUserLocation(userId: number, locationId: number) {
+    try {
+      // Verify the location belongs to the user
+      const existingLocation = await this.prisma.userLocation.findFirst({
+        where: { id: locationId, userId }
+      });
+
+      if (!existingLocation) {
+        throw new NotFoundException('Location not found or access denied');
+      }
+
+      // If deleting the default location, set another as default
+      if (existingLocation.isDefault) {
+        const otherLocation = await this.prisma.userLocation.findFirst({
+          where: { userId, id: { not: locationId } },
+          orderBy: { createdAt: 'desc' }
+        });
+
+        if (otherLocation) {
+          await this.prisma.userLocation.update({
+            where: { id: otherLocation.id },
+            data: { isDefault: true }
+          });
+        }
+      }
+
+      await this.prisma.userLocation.delete({
+        where: { id: locationId }
+      });
+
+      return { message: 'Location deleted successfully' };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error deleting user location');
+    }
+  }
+
+  async setDefaultLocation(userId: number, locationId: number) {
+    try {
+      // Verify the location belongs to the user
+      const existingLocation = await this.prisma.userLocation.findFirst({
+        where: { id: locationId, userId }
+      });
+
+      if (!existingLocation) {
+        throw new NotFoundException('Location not found or access denied');
+      }
+
+      // Unset all other defaults
+      await this.prisma.userLocation.updateMany({
+        where: { userId },
+        data: { isDefault: false }
+      });
+
+      // Set this location as default
+      const updatedLocation = await this.prisma.userLocation.update({
+        where: { id: locationId },
+        data: { isDefault: true }
+      });
+
+      return {
+        id: updatedLocation.id,
+        title: updatedLocation.title,
+        description: updatedLocation.description,
+        latitude: Number(updatedLocation.latitude),
+        longitude: Number(updatedLocation.longitude),
+        address: updatedLocation.address,
+        isDefault: updatedLocation.isDefault,
+        createdAt: updatedLocation.createdAt,
+        updatedAt: updatedLocation.updatedAt
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error setting default location');
     }
   }
 }

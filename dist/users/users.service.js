@@ -251,6 +251,170 @@ let UsersService = class UsersService {
             throw new Error(`Failed to remove FCM token for user ${userId}: ${error.message}`);
         }
     }
+    async getUserLocations(userId) {
+        try {
+            const locations = await this.prisma.userLocation.findMany({
+                where: { userId },
+                orderBy: [
+                    { isDefault: 'desc' },
+                    { createdAt: 'desc' }
+                ]
+            });
+            return locations.map(location => ({
+                id: location.id,
+                title: location.title,
+                description: location.description,
+                latitude: Number(location.latitude),
+                longitude: Number(location.longitude),
+                address: location.address,
+                isDefault: location.isDefault,
+                createdAt: location.createdAt,
+                updatedAt: location.updatedAt
+            }));
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error fetching user locations');
+        }
+    }
+    async createUserLocation(userId, createLocationDto) {
+        try {
+            if (createLocationDto.isDefault) {
+                await this.prisma.userLocation.updateMany({
+                    where: { userId },
+                    data: { isDefault: false }
+                });
+            }
+            const location = await this.prisma.userLocation.create({
+                data: {
+                    userId,
+                    title: createLocationDto.title,
+                    description: createLocationDto.description,
+                    latitude: createLocationDto.latitude,
+                    longitude: createLocationDto.longitude,
+                    address: createLocationDto.address,
+                    isDefault: createLocationDto.isDefault || false
+                }
+            });
+            return {
+                id: location.id,
+                title: location.title,
+                description: location.description,
+                latitude: Number(location.latitude),
+                longitude: Number(location.longitude),
+                address: location.address,
+                isDefault: location.isDefault,
+                createdAt: location.createdAt,
+                updatedAt: location.updatedAt
+            };
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error creating user location');
+        }
+    }
+    async updateUserLocation(userId, locationId, updateLocationDto) {
+        try {
+            const existingLocation = await this.prisma.userLocation.findFirst({
+                where: { id: locationId, userId }
+            });
+            if (!existingLocation) {
+                throw new common_1.NotFoundException('Location not found or access denied');
+            }
+            if (updateLocationDto.isDefault) {
+                await this.prisma.userLocation.updateMany({
+                    where: { userId },
+                    data: { isDefault: false }
+                });
+            }
+            const updatedLocation = await this.prisma.userLocation.update({
+                where: { id: locationId },
+                data: updateLocationDto
+            });
+            return {
+                id: updatedLocation.id,
+                title: updatedLocation.title,
+                description: updatedLocation.description,
+                latitude: Number(updatedLocation.latitude),
+                longitude: Number(updatedLocation.longitude),
+                address: updatedLocation.address,
+                isDefault: updatedLocation.isDefault,
+                createdAt: updatedLocation.createdAt,
+                updatedAt: updatedLocation.updatedAt
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Error updating user location');
+        }
+    }
+    async deleteUserLocation(userId, locationId) {
+        try {
+            const existingLocation = await this.prisma.userLocation.findFirst({
+                where: { id: locationId, userId }
+            });
+            if (!existingLocation) {
+                throw new common_1.NotFoundException('Location not found or access denied');
+            }
+            if (existingLocation.isDefault) {
+                const otherLocation = await this.prisma.userLocation.findFirst({
+                    where: { userId, id: { not: locationId } },
+                    orderBy: { createdAt: 'desc' }
+                });
+                if (otherLocation) {
+                    await this.prisma.userLocation.update({
+                        where: { id: otherLocation.id },
+                        data: { isDefault: true }
+                    });
+                }
+            }
+            await this.prisma.userLocation.delete({
+                where: { id: locationId }
+            });
+            return { message: 'Location deleted successfully' };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Error deleting user location');
+        }
+    }
+    async setDefaultLocation(userId, locationId) {
+        try {
+            const existingLocation = await this.prisma.userLocation.findFirst({
+                where: { id: locationId, userId }
+            });
+            if (!existingLocation) {
+                throw new common_1.NotFoundException('Location not found or access denied');
+            }
+            await this.prisma.userLocation.updateMany({
+                where: { userId },
+                data: { isDefault: false }
+            });
+            const updatedLocation = await this.prisma.userLocation.update({
+                where: { id: locationId },
+                data: { isDefault: true }
+            });
+            return {
+                id: updatedLocation.id,
+                title: updatedLocation.title,
+                description: updatedLocation.description,
+                latitude: Number(updatedLocation.latitude),
+                longitude: Number(updatedLocation.longitude),
+                address: updatedLocation.address,
+                isDefault: updatedLocation.isDefault,
+                createdAt: updatedLocation.createdAt,
+                updatedAt: updatedLocation.updatedAt
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Error setting default location');
+        }
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

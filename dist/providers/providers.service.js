@@ -847,6 +847,165 @@ let ProvidersService = class ProvidersService {
             throw new common_1.InternalServerErrorException('Error fetching category services by provider');
         }
     }
+    async getTopProviders(limit = 10, minRating = 0, minOrders = 0, includeUnrated = true) {
+        try {
+            const providers = await this.prisma.provider.findMany({
+                where: {
+                    isActive: true
+                },
+                include: {
+                    ratings: {
+                        select: {
+                            rating: true
+                        }
+                    },
+                    orders: {
+                        select: {
+                            id: true,
+                            status: true,
+                            totalAmount: true,
+                            orderDate: true
+                        }
+                    },
+                    providerServices: {
+                        where: {
+                            isActive: true
+                        },
+                        include: {
+                            service: {
+                                include: {
+                                    category: true
+                                }
+                            }
+                        }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            });
+            if (providers.length === 0) {
+                return {
+                    providers: [],
+                    total: 0,
+                    summary: {
+                        topRated: 0,
+                        active: 0,
+                        verified: 0,
+                        new: 0
+                    },
+                    filters: {
+                        limit,
+                        minRating,
+                        minOrders,
+                        includeUnrated
+                    }
+                };
+            }
+            const processedProviders = providers.map(provider => {
+                const totalRatings = provider.ratings.length;
+                const averageRating = totalRatings > 0
+                    ? Math.round((provider.ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings) * 10) / 10
+                    : 0;
+                const totalOrders = provider.orders.length;
+                const completedOrders = provider.orders.filter(o => o.status === 'completed').length;
+                const totalRevenue = provider.orders
+                    .filter(o => o.status === 'completed')
+                    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+                const activeServices = provider.providerServices.length;
+                let score = 0;
+                let tier = 'new';
+                if (averageRating > 0) {
+                    score += (averageRating / 5) * 40;
+                    if (averageRating >= 4.5 && totalRatings >= 5) {
+                        tier = 'top-rated';
+                    }
+                    else if (averageRating >= 3.5 && totalRatings >= 3) {
+                        tier = 'active';
+                    }
+                }
+                if (completedOrders > 0) {
+                    score += Math.min((completedOrders / 50) * 30, 30);
+                    if (tier === 'new' && completedOrders >= 10) {
+                        tier = 'active';
+                    }
+                }
+                if (provider.isVerified) {
+                    score += 20;
+                    if (tier === 'new') {
+                        tier = 'verified';
+                    }
+                }
+                const daysSinceJoin = Math.floor((Date.now() - provider.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+                if (daysSinceJoin <= 30) {
+                    score += 10;
+                }
+                else if (daysSinceJoin <= 90) {
+                    score += 5;
+                }
+                return {
+                    ...provider,
+                    averageRating,
+                    totalRatings,
+                    totalOrders,
+                    completedOrders,
+                    totalRevenue: Math.round(totalRevenue * 100) / 100,
+                    activeServices,
+                    tier,
+                    score: Math.round(score * 100) / 100
+                };
+            });
+            let filteredProviders = processedProviders;
+            if (minRating > 0) {
+                filteredProviders = filteredProviders.filter(p => p.averageRating >= minRating);
+            }
+            if (minOrders > 0) {
+                filteredProviders = filteredProviders.filter(p => p.completedOrders >= minOrders);
+            }
+            if (!includeUnrated) {
+                filteredProviders = filteredProviders.filter(p => p.totalRatings > 0);
+            }
+            filteredProviders.sort((a, b) => {
+                const tierPriority = { 'top-rated': 4, 'active': 3, 'verified': 2, 'new': 1 };
+                const tierDiff = tierPriority[b.tier] - tierPriority[a.tier];
+                if (tierDiff !== 0)
+                    return tierDiff;
+                if (b.score !== a.score)
+                    return b.score - a.score;
+                if (b.averageRating !== a.averageRating)
+                    return b.averageRating - a.averageRating;
+                if (b.completedOrders !== a.completedOrders)
+                    return b.completedOrders - a.completedOrders;
+                if (b.isVerified !== a.isVerified)
+                    return b.isVerified ? 1 : -1;
+                return b.createdAt.getTime() - a.createdAt.getTime();
+            });
+            const limitedProviders = filteredProviders.slice(0, limit).map((provider, index) => ({
+                ...provider,
+                rank: index + 1
+            }));
+            const summary = {
+                topRated: limitedProviders.filter(p => p.tier === 'top-rated').length,
+                active: limitedProviders.filter(p => p.tier === 'active').length,
+                verified: limitedProviders.filter(p => p.tier === 'verified').length,
+                new: limitedProviders.filter(p => p.tier === 'new').length
+            };
+            return {
+                providers: limitedProviders,
+                total: limitedProviders.length,
+                summary,
+                filters: {
+                    limit,
+                    minRating,
+                    minOrders,
+                    includeUnrated
+                }
+            };
+        }
+        catch (error) {
+            throw new common_1.InternalServerErrorException('Error fetching top providers');
+        }
+    }
 };
 exports.ProvidersService = ProvidersService;
 exports.ProvidersService = ProvidersService = __decorate([

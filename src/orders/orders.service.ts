@@ -869,6 +869,33 @@ export class OrdersService {
 
     // Create the order using a transaction
     const result = await this.prisma.$transaction(async (tx) => {
+      // Handle location logic
+      let orderLocation: string | undefined;
+      let orderLocationDetails: string | undefined;
+      let orderProviderLocation: any = null;
+
+      if (createOrderDto.savedLocationId) {
+        // Use saved location
+        const savedLocation = await tx.userLocation.findFirst({
+          where: { id: createOrderDto.savedLocationId, userId }
+        });
+
+        if (savedLocation) {
+          orderLocation = savedLocation.title;
+          orderLocationDetails = savedLocation.description || savedLocation.address || undefined;
+          orderProviderLocation = {
+            latitude: Number(savedLocation.latitude),
+            longitude: Number(savedLocation.longitude),
+            address: savedLocation.address
+          };
+        }
+      } else if (createOrderDto.currentLocation) {
+        // Use current location
+        orderLocation = 'Current Location';
+        orderLocationDetails = createOrderDto.currentLocation.address;
+        orderProviderLocation = createOrderDto.currentLocation;
+      }
+
       // Create the main order
       const order = await tx.order.create({
         data: {
@@ -876,20 +903,26 @@ export class OrdersService {
           providerId: createOrderDto.providerId,
           serviceId: serviceBreakdown[0]?.serviceId || serviceIds[0], // Use first service as primary
           scheduledDate: createOrderDto.scheduledDate ? new Date(createOrderDto.scheduledDate) : null,
-          location: createOrderDto.location,
-          locationDetails: createOrderDto.locationDetails,
-          providerLocation: createOrderDto.userLocation,
+          location: orderLocation,
+          locationDetails: orderLocationDetails,
+          providerLocation: orderProviderLocation,
           quantity: serviceBreakdown.reduce((sum: number, s: any) => sum + s.quantity, 0),
           totalAmount,
           providerAmount: subtotal,
           commissionAmount: totalCommission,
           status: OrderStatus.PENDING
-        },
-        include: {
-          user: true,
-          provider: true,
-          service: true
         }
+      });
+
+      // Fetch user and provider details separately
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, phone: true, email: true }
+      });
+
+      const provider = await tx.provider.findUnique({
+        where: { id: createOrderDto.providerId },
+        select: { id: true, name: true, phone: true, image: true }
       });
 
       // Create invoice
@@ -906,52 +939,54 @@ export class OrdersService {
       // This would require adding an OrderItem model to your schema
       // For now, we'll store the service breakdown in the order metadata
 
-      return order;
+      return { order, user, provider, orderProviderLocation };
     });
 
     // Send notification to provider about new order
     try {
       const serviceNames = serviceBreakdown.map((s: any) => `${s.serviceTitle} (${s.quantity})`).join(', ');
-      await this.notificationsService.notifyNewOrder(
-        result.id,
-        result.providerId,
-        serviceNames,
-        result.user.name
-      );
+      if (result.user) {
+        await this.notificationsService.notifyNewOrder(
+          result.order.id,
+          result.order.providerId,
+          serviceNames,
+          result.user.name
+        );
+      }
     } catch (error) {
       console.error('Failed to send new order notification:', error);
     }
 
     // Return enhanced response
     return {
-      id: result.id,
-      bookingId: result.bookingId,
-      userId: result.userId,
-      providerId: result.providerId,
-      status: result.status,
-      orderDate: result.orderDate,
-      scheduledDate: result.scheduledDate,
-      location: result.location,
-      locationDetails: result.locationDetails,
-      userLocation: createOrderDto.userLocation,
+      id: result.order.id,
+      bookingId: result.order.bookingId,
+      userId: result.order.userId,
+      providerId: result.order.providerId,
+      status: result.order.status,
+      orderDate: result.order.orderDate,
+      scheduledDate: result.order.scheduledDate,
+      location: result.order.location,
+      locationDetails: result.order.locationDetails,
+      userLocation: result.orderProviderLocation || undefined,
       notes: createOrderDto.notes,
       services: serviceBreakdown,
       subtotal,
       totalCommission,
       totalAmount,
       appliedOffers: appliedOffers.length > 0 ? appliedOffers : undefined,
-      provider: {
+      provider: result.provider ? {
         id: result.provider.id,
         name: result.provider.name,
         phone: result.provider.phone,
         image: result.provider.image
-      },
-      user: {
+      } : undefined,
+      user: result.user ? {
         id: result.user.id,
         name: result.user.name,
         phone: result.user.phone,
         email: result.user.email
-      }
+      } : undefined
     };
   }
 }
