@@ -1,0 +1,344 @@
+{
+  "info": {
+    "name": "Khabeer WebSocket Location Tracking",
+    "description": "Complete WebSocket collection for testing real-time location tracking between providers and users",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "WebSocket Connection",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "ws://31.97.71.187:3000/location-tracking",
+          "protocol": "ws",
+          "host": ["31.97.71.187"],
+          "port": "3000",
+          "path": ["location-tracking"]
+        },
+        "description": "Connect to the WebSocket namespace for location tracking"
+      },
+      "response": []
+    },
+    {
+      "name": "Provider - Start Location Tracking",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "description": "JWT token for authentication"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"updateInterval\": 30\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "ws://31.97.71.187:3000/location-tracking",
+          "protocol": "ws",
+          "host": ["31.97.71.187"],
+          "port": "3000",
+          "path": ["location-tracking"]
+        },
+        "description": "Provider starts location tracking for a specific order"
+      },
+      "response": []
+    },
+    {
+      "name": "Provider - Update Location",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 25.2048,\n  \"longitude\": 55.2708,\n  \"accuracy\": 5.0,\n  \"orderId\": \"{{orderId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "ws://31.97.71.187:3000/location-tracking",
+          "protocol": "ws",
+          "host": ["31.97.71.187"],
+          "port": "3000",
+          "path": ["location-tracking"]
+        },
+        "description": "Provider sends current GPS coordinates"
+      },
+      "response": []
+    },
+    {
+      "name": "Provider - Stop Location Tracking",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "ws://31.97.71.187:3000/location-tracking",
+          "protocol": "ws",
+          "host": ["31.97.71.187"],
+          "port": "3000",
+          "path": ["location-tracking"]
+        },
+        "description": "Provider stops location tracking for a specific order"
+      },
+      "response": []
+    },
+    {
+      "name": "User - Start Order Tracking",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "ws://31.97.71.187:3000/location-tracking",
+          "protocol": "ws",
+          "host": ["31.97.71.187"],
+          "port": "3000",
+          "path": ["location-tracking"]
+        },
+        "description": "User starts listening to provider location for a specific order"
+      },
+      "response": []
+    },
+    {
+      "name": "User - Stop Order Tracking",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "ws://31.97.71.187:3000/location-tracking",
+          "protocol": "ws",
+          "host": ["31.97.71.187"],
+          "port": "3000",
+          "path": ["location-tracking"]
+        },
+        "description": "User stops listening to provider location"
+      },
+      "response": []
+    },
+    {
+      "name": "REST - Get Tracking Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://31.97.71.187:3000/location-tracking/order/{{orderId}}/tracking-status",
+          "protocol": "http",
+          "host": ["31.97.71.187"],
+          "port": "3000",
+          "path": [
+            "location-tracking",
+            "order",
+            "{{orderId}}",
+            "tracking-status"
+          ]
+        },
+        "description": "Get tracking status for an order"
+      },
+      "response": []
+    },
+    {
+      "name": "REST - Get Current Location",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://31.97.71.187:3000/location-tracking/order/{{orderId}}/current-location",
+          "protocol": "http",
+          "host": ["31.97.71.187"],
+          "port": "3000",
+          "path": [
+            "location-tracking",
+            "order",
+            "{{orderId}}",
+            "current-location"
+          ]
+        },
+        "description": "Get current provider location for an order"
+      },
+      "response": []
+    },
+    {
+      "name": "REST - Get Location History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://31.97.71.187:3000/location-tracking/order/{{orderId}}/location-history?limit=50",
+          "protocol": "http",
+          "host": ["31.97.71.187"],
+          "port": "3000",
+          "path": [
+            "location-tracking",
+            "order",
+            "{{orderId}}",
+            "location-history"
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "50"
+            }
+          ]
+        },
+        "description": "Get location history for an order"
+      },
+      "response": []
+    },
+    {
+      "name": "REST - Get Estimated Arrival",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://31.97.71.187:3000/location-tracking/order/{{orderId}}/estimated-arrival",
+          "protocol": "http",
+          "host": ["31.97.71.187"],
+          "port": "3000",
+          "path": [
+            "location-tracking",
+            "order",
+            "{{orderId}}",
+            "estimated-arrival"
+          ]
+        },
+        "description": "Get estimated arrival time for an order"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "31.97.71.187:3000",
+      "type": "string",
+      "description": "Your backend server URL"
+    },
+    {
+      "key": "jwt_token",
+      "value": "your_jwt_token_here",
+      "type": "string",
+      "description": "JWT token for authentication (get this from login endpoint)"
+    },
+    {
+      "key": "orderId",
+      "value": "your_order_booking_id_here",
+      "type": "string",
+      "description": "Order booking ID to track (get this from create order endpoint)"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script to validate variables",
+          "if (!pm.variables.get('jwt_token') || pm.variables.get('jwt_token') === 'your_jwt_token_here') {",
+          "    console.warn('⚠️  Please set your JWT token in the collection variables');",
+          "}",
+          "",
+          "if (!pm.variables.get('orderId') || pm.variables.get('orderId') === 'your_order_booking_id_here') {",
+          "    console.warn('⚠️  Please set your order ID in the collection variables');",
+          "}"
+        ]
+      }
+    }
+  ]
+}

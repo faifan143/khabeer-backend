@@ -8,7 +8,7 @@ export class LocationTrackingService {
   private activeConnections = new Map<string, any>(); // socketId -> connection data
   private activeTracking = new Map<string, any>(); // orderId -> tracking data
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async startTracking(providerId: number, startTrackingDto: StartTrackingDto, socketId: string) {
     const { orderId, updateInterval = 30 } = startTrackingDto;
@@ -29,7 +29,29 @@ export class LocationTrackingService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found or not accessible');
+      // Log the search criteria for debugging
+      this.logger.error(`Order not found. Search criteria: bookingId=${orderId}, providerId=${providerId}`);
+
+      // Check if order exists at all
+      const orderExists = await this.prisma.order.findFirst({
+        where: { bookingId: orderId }
+      });
+
+      if (!orderExists) {
+        throw new NotFoundException(`Order with booking ID '${orderId}' not found`);
+      }
+
+      // Check if provider is assigned
+      if (orderExists.providerId !== providerId) {
+        throw new NotFoundException(`Order '${orderId}' is not assigned to provider ${providerId}`);
+      }
+
+      // Check order status
+      if (!['accepted', 'in_progress'].includes(orderExists.status)) {
+        throw new NotFoundException(`Order '${orderId}' has status '${orderExists.status}' but must be 'accepted' or 'in_progress'`);
+      }
+
+      throw new NotFoundException('Order validation failed');
     }
 
     // Store connection data
@@ -113,9 +135,19 @@ export class LocationTrackingService {
     if (!orderId) {
       throw new BadRequestException('Order ID is required');
     }
+
+    // Get the order ID from the database using bookingId
+    const order = await this.prisma.order.findFirst({
+      where: { bookingId: orderId }
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with booking ID '${orderId}' not found`);
+    }
+
     const locationRecord = await this.prisma.locationTracking.create({
       data: {
-        orderId: parseInt(orderId),
+        orderId: order.id, // Use the actual order ID from database
         providerId,
         latitude,
         longitude,
@@ -127,7 +159,7 @@ export class LocationTrackingService {
 
     // Update order with latest provider location
     await this.prisma.order.update({
-      where: { bookingId: orderId },
+      where: { id: order.id },
       data: {
         providerLocation: { lat: latitude, lng: longitude }
       }
@@ -238,14 +270,14 @@ export class LocationTrackingService {
     const R = 6371; // Earth's radius in kilometers
     const dLat = this.toRadians(lat2 - lat1);
     const dLng = this.toRadians(lng2 - lng1);
-    
+
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
-              Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    
+      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
-    
+
     return distance;
   }
 
@@ -279,13 +311,22 @@ export class LocationTrackingService {
       return null;
     }
 
-    // Get user's location (you might want to store this in the order or get it from user profile)
-    // For now, we'll use a placeholder - you should implement this based on your user location storage
-    const userLat = 0; // Replace with actual user location
-    const userLng = 0; // Replace with actual user location
+    // Use order location if available, otherwise use a default location
+    let userLat = 25.2048; // Default Dubai coordinates
+    let userLng = 55.2708;
 
-    if (userLat === 0 && userLng === 0) {
-      return null; // No user location available
+    // If order has location, use it
+    if (order.location) {
+      try {
+        const orderLocation = JSON.parse(order.location);
+        if (orderLocation.lat && orderLocation.lng) {
+          userLat = orderLocation.lat;
+          userLng = orderLocation.lng;
+        }
+      } catch (e) {
+        // Use default if parsing fails
+        this.logger.warn(`Failed to parse order location for order ${orderId}`);
+      }
     }
 
     // Calculate distance
@@ -323,6 +364,25 @@ export class LocationTrackingService {
     }));
   }
 
+  // Simple method to get order details
+  async getOrderDetails(orderId: string, userId: number) {
+    const order = await this.prisma.order.findFirst({
+      where: {
+        bookingId: orderId,
+        userId: userId
+      },
+      select: {
+        id: true,
+        status: true,
+        orderDate: true,
+        scheduledDate: true,
+        providerId: true
+      }
+    });
+
+    return order;
+  }
+
   private toRadians(degrees: number): number {
     return degrees * (Math.PI / 180);
   }
@@ -334,7 +394,7 @@ export class LocationTrackingService {
 
     for (const [socketId, connection] of this.activeConnections.entries()) {
       const timeSinceLastActivity = now.getTime() - connection.lastActivity.getTime();
-      
+
       if (timeSinceLastActivity > inactiveThreshold) {
         this.activeConnections.delete(socketId);
         this.activeTracking.delete(connection.orderId);
