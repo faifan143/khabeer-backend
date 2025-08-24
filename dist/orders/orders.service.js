@@ -666,6 +666,148 @@ let OrdersService = class OrdersService {
         };
         return transitions[currentStatus] || [];
     }
+    async createMultipleServices(createOrderDto, userId) {
+        const provider = await this.prisma.provider.findUnique({
+            where: { id: createOrderDto.providerId },
+            include: { providerServices: true }
+        });
+        if (!provider) {
+            throw new common_1.NotFoundException('Provider not found');
+        }
+        if (!provider.isActive) {
+            throw new common_1.BadRequestException('Provider is not active');
+        }
+        const serviceIds = createOrderDto.services.map(s => s.serviceId);
+        const services = await this.prisma.service.findMany({
+            where: { id: { in: serviceIds } }
+        });
+        if (services.length !== serviceIds.length) {
+            throw new common_1.BadRequestException('One or more services not found');
+        }
+        const providerServices = provider.providerServices.filter(ps => serviceIds.includes(ps.serviceId) && ps.isActive);
+        if (providerServices.length !== serviceIds.length) {
+            throw new common_1.BadRequestException('Provider does not offer one or more of the requested services');
+        }
+        const now = new Date();
+        const offers = await this.prisma.offer.findMany({
+            where: {
+                providerId: createOrderDto.providerId,
+                serviceId: { in: serviceIds },
+                isActive: true,
+                startDate: { lte: now },
+                endDate: { gt: now }
+            }
+        });
+        let subtotal = 0;
+        let totalCommission = 0;
+        const serviceBreakdown = [];
+        const appliedOffers = [];
+        for (const serviceItem of createOrderDto.services) {
+            const service = services.find(s => s.id === serviceItem.serviceId);
+            const providerService = providerServices.find(ps => ps.serviceId === serviceItem.serviceId);
+            const offer = offers.find(o => o.serviceId === serviceItem.serviceId);
+            if (!service || !providerService) {
+                throw new common_1.BadRequestException(`Service or provider service not found for service ID ${serviceItem.serviceId}`);
+            }
+            const unitPrice = providerService.price;
+            const finalUnitPrice = offer ? offer.offerPrice : unitPrice;
+            const quantity = serviceItem.quantity;
+            const serviceTotal = finalUnitPrice * quantity;
+            const commission = service.commission * quantity;
+            subtotal += serviceTotal;
+            totalCommission += commission;
+            serviceBreakdown.push({
+                serviceId: service.id,
+                serviceTitle: service.title,
+                serviceDescription: service.description,
+                serviceImage: service.image,
+                quantity,
+                unitPrice: finalUnitPrice,
+                totalPrice: serviceTotal,
+                commission: service.commission,
+                commissionAmount: commission
+            });
+            if (offer) {
+                appliedOffers.push({
+                    serviceId: service.id,
+                    originalPrice: unitPrice,
+                    offerPrice: finalUnitPrice,
+                    discount: (unitPrice - finalUnitPrice) * quantity,
+                    savings: (unitPrice - finalUnitPrice) * quantity
+                });
+            }
+        }
+        const totalAmount = subtotal + totalCommission;
+        const result = await this.prisma.$transaction(async (tx) => {
+            const order = await tx.order.create({
+                data: {
+                    userId,
+                    providerId: createOrderDto.providerId,
+                    serviceId: serviceBreakdown[0]?.serviceId || serviceIds[0],
+                    scheduledDate: createOrderDto.scheduledDate ? new Date(createOrderDto.scheduledDate) : null,
+                    location: createOrderDto.location,
+                    locationDetails: createOrderDto.locationDetails,
+                    providerLocation: createOrderDto.userLocation,
+                    quantity: serviceBreakdown.reduce((sum, s) => sum + s.quantity, 0),
+                    totalAmount,
+                    providerAmount: subtotal,
+                    commissionAmount: totalCommission,
+                    status: order_status_dto_1.OrderStatus.PENDING
+                },
+                include: {
+                    user: true,
+                    provider: true,
+                    service: true
+                }
+            });
+            await tx.invoice.create({
+                data: {
+                    orderId: order.id,
+                    totalAmount: order.totalAmount,
+                    discount: appliedOffers.reduce((sum, o) => sum + o.discount, 0),
+                    paymentStatus: 'pending'
+                }
+            });
+            return order;
+        });
+        try {
+            const serviceNames = serviceBreakdown.map((s) => `${s.serviceTitle} (${s.quantity})`).join(', ');
+            await this.notificationsService.notifyNewOrder(result.id, result.providerId, serviceNames, result.user.name);
+        }
+        catch (error) {
+            console.error('Failed to send new order notification:', error);
+        }
+        return {
+            id: result.id,
+            bookingId: result.bookingId,
+            userId: result.userId,
+            providerId: result.providerId,
+            status: result.status,
+            orderDate: result.orderDate,
+            scheduledDate: result.scheduledDate,
+            location: result.location,
+            locationDetails: result.locationDetails,
+            userLocation: createOrderDto.userLocation,
+            notes: createOrderDto.notes,
+            services: serviceBreakdown,
+            subtotal,
+            totalCommission,
+            totalAmount,
+            appliedOffers: appliedOffers.length > 0 ? appliedOffers : undefined,
+            provider: {
+                id: result.provider.id,
+                name: result.provider.name,
+                phone: result.provider.phone,
+                image: result.provider.image
+            },
+            user: {
+                id: result.user.id,
+                name: result.user.name,
+                phone: result.user.phone,
+                email: result.user.email
+            }
+        };
+    }
 };
 exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = __decorate([

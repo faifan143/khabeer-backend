@@ -1,6 +1,7 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { BusinessFlowNotificationsService } from '../notifications/business-flow-notifications.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateOrderMultipleServicesDto } from './dto/create-order-multiple-services.dto';
 import { UpdateOrderStatusDto, OrderStatus } from './dto/order-status.dto';
 export declare class OrdersService {
     private readonly prisma;
@@ -610,4 +611,38 @@ export declare class OrdersService {
     private calculateServiceAnalytics;
     private calculateStatusAnalytics;
     private getValidStatusTransitions;
+    createMultipleServices(createOrderDto: CreateOrderMultipleServicesDto, userId: number): Promise<{
+        id: number;
+        bookingId: string;
+        userId: number;
+        providerId: number;
+        status: string;
+        orderDate: Date;
+        scheduledDate: Date | null;
+        location: string | null;
+        locationDetails: string | null;
+        userLocation: {
+            latitude: number;
+            longitude: number;
+            address?: string;
+        } | undefined;
+        notes: string | undefined;
+        services: any[];
+        subtotal: number;
+        totalCommission: number;
+        totalAmount: number;
+        appliedOffers: any[] | undefined;
+        provider: {
+            id: number;
+            name: string;
+            phone: string;
+            image: string;
+        };
+        user: {
+            id: number;
+            name: string;
+            phone: string;
+            email: string | null;
+        };
+    }>;
 }

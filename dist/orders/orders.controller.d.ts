@@ -1,5 +1,6 @@
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateOrderMultipleServicesDto } from './dto/create-order-multiple-services.dto';
 import { UpdateOrderStatusDto } from './dto/order-status.dto';
 export declare class OrdersController {
     private readonly ordersService;
@@ -86,6 +87,40 @@ export declare class OrdersController {
         commissionAmount: number;
         providerAmount: number;
         totalAmount: number;
+    }>;
+    createMultipleServices(createOrderDto: CreateOrderMultipleServicesDto, req: any): Promise<{
+        id: number;
+        bookingId: string;
+        userId: number;
+        providerId: number;
+        status: string;
+        orderDate: Date;
+        scheduledDate: Date | null;
+        location: string | null;
+        locationDetails: string | null;
+        userLocation: {
+            latitude: number;
+            longitude: number;
+            address?: string;
+        } | undefined;
+        notes: string | undefined;
+        services: any[];
+        subtotal: number;
+        totalCommission: number;
+        totalAmount: number;
+        appliedOffers: any[] | undefined;
+        provider: {
+            id: number;
+            name: string;
+            phone: string;
+            image: string;
+        };
+        user: {
+            id: number;
+            name: string;
+            phone: string;
+            email: string | null;
+        };
     }>;
     findAll(req: any, status?: string): Promise<({
         service: {

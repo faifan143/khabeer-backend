@@ -465,6 +465,26 @@
           }
         },
         {
+          "name": "Create Order with Multiple Services (User)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"providerId\": 1,\n  \"services\": [\n    {\n      \"serviceId\": 1,\n      \"quantity\": 1\n    },\n    {\n      \"serviceId\": 2,\n      \"quantity\": 3\n    }\n  ],\n  \"scheduledDate\": \"2024-12-25T10:00:00Z\",\n  \"location\": \"Home\",\n  \"locationDetails\": \"123 Main St, Apartment 4B\",\n  \"userLocation\": {\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"address\": \"123 Main St, Apartment 4B\"\n  },\n  \"notes\": \"Please arrive at 10 AM\"\n}"
+            },
+            "description": "Creates a new order with multiple services and quantities. Perfect for mobile app scenarios like the service request UI shown in the image.",
+            "url": {
+              "raw": "{{baseUrl}}/orders/multiple-services",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "multiple-services"]
+            }
+          }
+        },
+        {
           "name": "Get User Orders",
           "request": {
             "method": "GET",

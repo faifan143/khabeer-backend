@@ -16,6 +16,7 @@ exports.OrdersController = void 0;
 const common_1 = require("@nestjs/common");
 const orders_service_1 = require("./orders.service");
 const create_order_dto_1 = require("./dto/create-order.dto");
+const create_order_multiple_services_dto_1 = require("./dto/create-order-multiple-services.dto");
 const order_status_dto_1 = require("./dto/order-status.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_guard_1 = require("../auth/roles.guard");
@@ -27,6 +28,9 @@ let OrdersController = class OrdersController {
     }
     async create(createOrderDto, req) {
         return this.ordersService.create(createOrderDto, req.user.userId);
+    }
+    async createMultipleServices(createOrderDto, req) {
+        return this.ordersService.createMultipleServices(createOrderDto, req.user.userId);
     }
     async findAll(req, status) {
         const orders = await this.ordersService.findAll(req.user.userId, req.user.role);
@@ -97,6 +101,15 @@ __decorate([
     __metadata("design:paramtypes", [create_order_dto_1.CreateOrderDto, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('multiple-services'),
+    (0, roles_decorator_1.Roles)('USER'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_order_multiple_services_dto_1.CreateOrderMultipleServicesDto, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "createMultipleServices", null);
 __decorate([
     (0, common_1.Get)(),
     __param(0, (0, common_1.Request)()),

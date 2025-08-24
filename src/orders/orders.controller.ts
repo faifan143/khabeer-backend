@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateOrderMultipleServicesDto } from './dto/create-order-multiple-services.dto';
 import { UpdateOrderStatusDto, OrderStatus } from './dto/order-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -27,6 +28,12 @@ export class OrdersController {
     @Roles('USER')
     async create(@Body() createOrderDto: CreateOrderDto, @Request() req) {
         return this.ordersService.create(createOrderDto, req.user.userId);
+    }
+
+    @Post('multiple-services')
+    @Roles('USER')
+    async createMultipleServices(@Body() createOrderDto: CreateOrderMultipleServicesDto, @Request() req) {
+        return this.ordersService.createMultipleServices(createOrderDto, req.user.userId);
     }
 
     @Get()
