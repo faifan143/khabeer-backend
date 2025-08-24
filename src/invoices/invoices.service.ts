@@ -93,9 +93,6 @@ export class InvoicesService {
           select: {
             scheduledDate: true,
             orderDate: true,
-          },
-          include: {
-
             user: {
               select: {
                 id: true,
@@ -107,8 +104,6 @@ export class InvoicesService {
                 latitude: true,
                 longitude: true,
                 address: true,
-
-
               }
             },
             provider: {
@@ -128,8 +123,6 @@ export class InvoicesService {
             }
           }
         }
-        ,
-
       },
 
       orderBy: {
