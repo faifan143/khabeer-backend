@@ -21,7 +21,7 @@ WHERE "userId" = 1;
 -- Check if these specific orders exist
 SELECT id, "bookingId", "userId", status, "providerId"
 FROM "Order"
-WHERE "bookingId" IN ('5', '6');
+WHERE id IN (5, 6);
 ```
 
 ### **Step 3: Check Order Status**
@@ -38,7 +38,7 @@ LIMIT 10;
 
 ### **Issue 1: Wrong Order ID Format**
 
-- You might be using **order ID** instead of **booking ID**
+- You might be using **booking ID** instead of **order ID**
 - Order ID = database auto-increment number (1, 2, 3...)
 - Booking ID = custom string (like "clx123abc...")
 
@@ -61,14 +61,14 @@ GET {{baseUrl}}/api/orders
 Authorization: Bearer {{jwt_token}}
 ```
 
-This will show you the **correct booking IDs** that user 1 actually owns.
+This will show you the **correct order IDs** that user 1 actually owns.
 
-### **Test 2: Use Correct Booking ID**
+### **Test 2: Use Correct Order ID**
 
-From the `/orders` response, copy a **booking ID** (not order ID) and test:
+From the `/orders` response, copy an **order ID** (the numeric ID) and test:
 
 ```
-GET {{baseUrl}}/api/location-tracking/order/CORRECT_BOOKING_ID/tracking-status
+GET {{baseUrl}}/api/location-tracking/order/CORRECT_ORDER_ID/tracking-status
 Authorization: Bearer {{jwt_token}}
 ```
 
@@ -91,9 +91,9 @@ id | bookingId           | userId | status    | providerId
 
 1. **Check your database** with the SQL queries above
 2. **Get user's orders** from `/api/orders` endpoint
-3. **Use the correct booking ID** in your location tracking request
+3. **Use the correct order ID** (numeric) in your location tracking request
 4. **Check the new detailed logs** I added
 
 ---
 
-**The issue is likely that you're using the wrong ID format!** 🎯
+**Now using Order IDs (numeric) instead of Booking IDs!** 🎯
