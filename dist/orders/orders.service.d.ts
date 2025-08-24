@@ -370,6 +370,9 @@ export declare class OrdersService {
         providerAmount: number;
         totalAmount: number;
     }>;
+    deleteOrder(id: number, userId: number, role: string): Promise<{
+        message: string;
+    }>;
     getOrderStats(userId: number, role: string): Promise<{
         total: number;
         pending: number;

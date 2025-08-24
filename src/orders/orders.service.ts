@@ -264,7 +264,7 @@ export class OrdersService {
   async updateStatus(id: number, updateStatusDto: UpdateOrderStatusDto, userId: number, role: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { provider: true }
+      include: { provider: true, invoice: true }
     });
 
     if (!order) {
@@ -295,8 +295,21 @@ export class OrdersService {
       updateData.providerLocation = updateStatusDto.providerLocation;
     }
 
-    // Note: Payment status is managed separately by users/admins
-    // Order completion does not automatically mark invoice as paid
+    // If order is being completed, ensure invoice exists with unpaid status
+    if (updateStatusDto.status === OrderStatus.COMPLETED) {
+      // Check if invoice already exists
+      if (!order.invoice) {
+        // Create invoice with unpaid status when order is completed
+        await this.prisma.invoice.create({
+          data: {
+            orderId: order.id,
+            totalAmount: order.totalAmount,
+            discount: 0, // No discount applied
+            paymentStatus: 'unpaid'
+          }
+        });
+      }
+    }
 
     const updatedOrder = await this.prisma.order.update({
       where: { id },
@@ -403,6 +416,38 @@ export class OrdersService {
         invoice: true
       }
     });
+  }
+
+  async deleteOrder(id: number, userId: number, role: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { invoice: true }
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Only users can delete their own cancelled orders
+    if (role !== 'USER') {
+      throw new ForbiddenException('Only users can delete orders');
+    }
+
+    if (order.userId !== userId) {
+      throw new ForbiddenException('You can only delete your own orders');
+    }
+
+    // Only allow deletion of cancelled orders
+    if (order.status !== OrderStatus.CANCELLED) {
+      throw new BadRequestException('Only cancelled orders can be deleted');
+    }
+
+    // Delete the order (this will cascade delete related records like invoice)
+    await this.prisma.order.delete({
+      where: { id }
+    });
+
+    return { message: 'Order deleted successfully' };
   }
 
   async getOrderStats(userId: number, role: string) {

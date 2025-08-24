@@ -232,7 +232,7 @@ let OrdersService = class OrdersService {
     async updateStatus(id, updateStatusDto, userId, role) {
         const order = await this.prisma.order.findUnique({
             where: { id },
-            include: { provider: true }
+            include: { provider: true, invoice: true }
         });
         if (!order) {
             throw new common_1.NotFoundException('Order not found');
@@ -252,6 +252,18 @@ let OrdersService = class OrdersService {
         };
         if (updateStatusDto.providerLocation && role === 'PROVIDER') {
             updateData.providerLocation = updateStatusDto.providerLocation;
+        }
+        if (updateStatusDto.status === order_status_dto_1.OrderStatus.COMPLETED) {
+            if (!order.invoice) {
+                await this.prisma.invoice.create({
+                    data: {
+                        orderId: order.id,
+                        totalAmount: order.totalAmount,
+                        discount: 0,
+                        paymentStatus: 'unpaid'
+                    }
+                });
+            }
         }
         const updatedOrder = await this.prisma.order.update({
             where: { id },
@@ -343,6 +355,28 @@ let OrdersService = class OrdersService {
                 invoice: true
             }
         });
+    }
+    async deleteOrder(id, userId, role) {
+        const order = await this.prisma.order.findUnique({
+            where: { id },
+            include: { invoice: true }
+        });
+        if (!order) {
+            throw new common_1.NotFoundException('Order not found');
+        }
+        if (role !== 'USER') {
+            throw new common_1.ForbiddenException('Only users can delete orders');
+        }
+        if (order.userId !== userId) {
+            throw new common_1.ForbiddenException('You can only delete your own orders');
+        }
+        if (order.status !== order_status_dto_1.OrderStatus.CANCELLED) {
+            throw new common_1.BadRequestException('Only cancelled orders can be deleted');
+        }
+        await this.prisma.order.delete({
+            where: { id }
+        });
+        return { message: 'Order deleted successfully' };
     }
     async getOrderStats(userId, role) {
         const where = role === 'PROVIDER'

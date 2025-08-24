@@ -1516,4 +1516,202 @@ export class AdminService {
             throw error;
         }
     }
+
+    // Invoice management methods
+    async getAllInvoices(status?: string, startDate?: Date, endDate?: Date) {
+        try {
+            const where: any = {};
+
+            if (status) {
+                where.paymentStatus = status;
+            }
+
+            if (startDate || endDate) {
+                where.order = {
+                    orderDate: {}
+                };
+                if (startDate) where.order.orderDate.gte = startDate;
+                if (endDate) where.order.orderDate.lte = endDate;
+            }
+
+            const invoices = await this.prisma.invoice.findMany({
+                where,
+                include: {
+                    order: {
+                        include: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    phone: true,
+                                    email: true
+                                }
+                            },
+                            provider: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    phone: true,
+                                    email: true
+                                }
+                            },
+                            service: {
+                                select: {
+                                    id: true,
+                                    title: true,
+                                    description: true
+                                }
+                            }
+                        }
+                    }
+                },
+                orderBy: { orderId: 'desc' }
+            });
+
+            return invoices.map(invoice => ({
+                id: invoice.id,
+                orderId: invoice.orderId,
+                totalAmount: invoice.totalAmount,
+                discount: invoice.discount,
+                netAmount: invoice.totalAmount - invoice.discount,
+                paymentStatus: invoice.paymentStatus,
+                paymentMethod: invoice.paymentMethod,
+                paymentDate: invoice.paymentDate,
+                order: invoice.order
+            }));
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getInvoice(id: number) {
+        try {
+            const invoice = await this.prisma.invoice.findUnique({
+                where: { id },
+                include: {
+                    order: {
+                        include: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    phone: true,
+                                    email: true
+                                }
+                            },
+                            provider: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    phone: true,
+                                    email: true
+                                }
+                            },
+                            service: {
+                                select: {
+                                    id: true,
+                                    title: true,
+                                    description: true
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (!invoice) {
+                throw new NotFoundException('Invoice not found');
+            }
+
+            return {
+                id: invoice.id,
+                orderId: invoice.orderId,
+                totalAmount: invoice.totalAmount,
+                discount: invoice.discount,
+                netAmount: invoice.totalAmount - invoice.discount,
+                paymentStatus: invoice.paymentStatus,
+                paymentMethod: invoice.paymentMethod,
+                paymentDate: invoice.paymentDate,
+                order: invoice.order
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateInvoicePaymentStatus(id: number, data: { paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded'; paymentMethod?: string }) {
+        try {
+            const invoice = await this.prisma.invoice.findUnique({
+                where: { id }
+            });
+
+            if (!invoice) {
+                throw new NotFoundException('Invoice not found');
+            }
+
+            const updateData: any = {
+                paymentStatus: data.paymentStatus
+            };
+
+            if (data.paymentMethod) {
+                updateData.paymentMethod = data.paymentMethod;
+            }
+
+            if (data.paymentStatus === 'paid') {
+                updateData.paymentDate = new Date();
+            }
+
+            const updatedInvoice = await this.prisma.invoice.update({
+                where: { id },
+                data: updateData,
+                include: {
+                    order: {
+                        include: {
+                            user: true,
+                            provider: true,
+                            service: true
+                        }
+                    }
+                }
+            });
+
+            return updatedInvoice;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async markInvoiceAsPaid(id: number, paymentMethod?: string) {
+        try {
+            const invoice = await this.prisma.invoice.findUnique({
+                where: { id }
+            });
+
+            if (!invoice) {
+                throw new NotFoundException('Invoice not found');
+            }
+
+            const updatedInvoice = await this.prisma.invoice.update({
+                where: { id },
+                data: {
+                    paymentStatus: 'paid',
+                    paymentMethod: paymentMethod || 'admin_manual',
+                    paymentDate: new Date()
+                },
+                include: {
+                    order: {
+                        include: {
+                            user: true,
+                            provider: true,
+                            service: true
+                        }
+                    }
+                }
+            });
+
+            return updatedInvoice;
+        } catch (error) {
+            throw error;
+        }
+    }
 } 

@@ -90,6 +90,9 @@ let OrdersController = class OrdersController {
     async bulkUpdateStatus(req, body) {
         return this.ordersService.bulkUpdateStatus(body.orderIds, body.status, req.user.userId, req.user.role);
     }
+    async deleteOrder(id, req) {
+        return this.ordersService.deleteOrder(id, req.user.userId, req.user.role);
+    }
 };
 exports.OrdersController = OrdersController;
 __decorate([
@@ -255,6 +258,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "bulkUpdateStatus", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)('USER'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "deleteOrder", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.Controller)('orders'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

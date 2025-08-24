@@ -190,4 +190,13 @@ export class OrdersController {
             req.user.role
         );
     }
+
+    @Delete(':id')
+    @Roles('USER')
+    async deleteOrder(
+        @Param('id', ParseIntPipe) id: number,
+        @Request() req
+    ) {
+        return this.ordersService.deleteOrder(id, req.user.userId, req.user.role);
+    }
 }

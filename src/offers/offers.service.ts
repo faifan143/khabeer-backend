@@ -423,8 +423,14 @@ export class OffersService {
       throw new NotFoundException('Provider not found');
     }
 
+    const now = new Date();
     const offers = await this.prisma.offer.findMany({
-      where: { providerId },
+      where: {
+        providerId,
+        isActive: true,
+        startDate: { lte: now },
+        endDate: { gt: now }
+      },
       include: {
         service: {
           select: {
@@ -586,13 +592,15 @@ export class OffersService {
 
   async getFlexibleActiveOffers(limit: number = 20) {
     console.log('🔍 Getting flexible active offers with limit:', limit);
-    console.log('📅 Current date:', new Date().toISOString());
+    const now = new Date();
+    console.log('📅 Current date:', now.toISOString());
 
-    // Less strict filtering - only check if offer is active and not expired
+    // Use the same date validation logic as all other offer endpoints
     const offers = await this.prisma.offer.findMany({
       where: {
         isActive: true,
-        endDate: { gt: new Date() } // Only check if not expired
+        startDate: { lte: now },
+        endDate: { gt: now }
       },
       include: {
         provider: {
@@ -635,13 +643,15 @@ export class OffersService {
 
   async getAvailableOffers(limit: number = 20) {
     console.log('🔍 Getting available offers with limit:', limit);
-    console.log('📅 Current date:', new Date().toISOString());
+    const now = new Date();
+    console.log('📅 Current date:', now.toISOString());
 
-    // Less strict filtering for users - show more offers
+    // Use the same date validation logic as all other offer endpoints
     const offers = await this.prisma.offer.findMany({
       where: {
         isActive: true,
-        endDate: { gt: new Date() }, // Only check if not expired
+        startDate: { lte: now },
+        endDate: { gt: now },
         provider: {
           isVerified: true // Still require verified provider for safety
         }

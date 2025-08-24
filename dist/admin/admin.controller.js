@@ -71,6 +71,20 @@ let AdminController = class AdminController {
         }
         return this.adminService.rejectJoinRequest(id, body.notes);
     }
+    async getAllInvoices(status, startDate, endDate) {
+        const start = startDate ? new Date(startDate) : undefined;
+        const end = endDate ? new Date(endDate) : undefined;
+        return this.adminService.getAllInvoices(status, start, end);
+    }
+    async getInvoice(id) {
+        return this.adminService.getInvoice(id);
+    }
+    async updateInvoicePaymentStatus(id, body) {
+        return this.adminService.updateInvoicePaymentStatus(id, body);
+    }
+    async markInvoiceAsPaid(id, body) {
+        return this.adminService.markInvoiceAsPaid(id, body.paymentMethod);
+    }
     async getPendingJoinRequests() {
         return this.adminService.getPendingJoinRequests();
     }
@@ -335,6 +349,38 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "rejectJoinRequest", null);
+__decorate([
+    (0, common_1.Get)('invoices'),
+    __param(0, (0, common_1.Query)('status')),
+    __param(1, (0, common_1.Query)('startDate')),
+    __param(2, (0, common_1.Query)('endDate')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAllInvoices", null);
+__decorate([
+    (0, common_1.Get)('invoices/:id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getInvoice", null);
+__decorate([
+    (0, common_1.Put)('invoices/:id/payment-status'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "updateInvoicePaymentStatus", null);
+__decorate([
+    (0, common_1.Put)('invoices/:id/mark-paid'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "markInvoiceAsPaid", null);
 __decorate([
     (0, common_1.Get)('join-requests/pending'),
     __metadata("design:type", Function),

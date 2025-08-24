@@ -1315,18 +1315,183 @@ let AdminService = class AdminService {
             throw error;
         }
     }
-    async deleteNotification(id) {
+    async getAllInvoices(status, startDate, endDate) {
         try {
-            const notification = await this.prisma.notification.findUnique({
-                where: { id }
-            });
-            if (!notification) {
-                throw new common_1.NotFoundException('Notification not found');
+            const where = {};
+            if (status) {
+                where.paymentStatus = status;
             }
-            await this.prisma.notification.delete({
+            if (startDate || endDate) {
+                where.createdAt = {};
+                if (startDate)
+                    where.createdAt.gte = startDate;
+                if (endDate)
+                    where.createdAt.lte = endDate;
+            }
+            const invoices = await this.prisma.invoice.findMany({
+                where,
+                include: {
+                    order: {
+                        include: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    phone: true,
+                                    email: true
+                                }
+                            },
+                            provider: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    phone: true,
+                                    email: true
+                                }
+                            },
+                            service: {
+                                select: {
+                                    id: true,
+                                    title: true,
+                                    description: true
+                                }
+                            }
+                        }
+                    }
+                },
+                orderBy: { orderId: 'desc' }
+            });
+            return invoices.map(invoice => ({
+                id: invoice.id,
+                orderId: invoice.orderId,
+                totalAmount: invoice.totalAmount,
+                discount: invoice.discount,
+                netAmount: invoice.totalAmount - invoice.discount,
+                paymentStatus: invoice.paymentStatus,
+                paymentMethod: invoice.paymentMethod,
+                paymentDate: invoice.paymentDate,
+                order: invoice.order
+            }));
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async getInvoice(id) {
+        try {
+            const invoice = await this.prisma.invoice.findUnique({
+                where: { id },
+                include: {
+                    order: {
+                        include: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    phone: true,
+                                    email: true
+                                }
+                            },
+                            provider: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    phone: true,
+                                    email: true
+                                }
+                            },
+                            service: {
+                                select: {
+                                    id: true,
+                                    title: true,
+                                    description: true
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            if (!invoice) {
+                throw new common_1.NotFoundException('Invoice not found');
+            }
+            return {
+                id: invoice.id,
+                orderId: invoice.orderId,
+                totalAmount: invoice.totalAmount,
+                discount: invoice.discount,
+                netAmount: invoice.totalAmount - invoice.discount,
+                paymentStatus: invoice.paymentStatus,
+                paymentMethod: invoice.paymentMethod,
+                paymentDate: invoice.paymentDate,
+                order: invoice.order
+            };
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async updateInvoicePaymentStatus(id, data) {
+        try {
+            const invoice = await this.prisma.invoice.findUnique({
                 where: { id }
             });
-            return { message: 'Notification deleted successfully' };
+            if (!invoice) {
+                throw new common_1.NotFoundException('Invoice not found');
+            }
+            const updateData = {
+                paymentStatus: data.paymentStatus
+            };
+            if (data.paymentMethod) {
+                updateData.paymentMethod = data.paymentMethod;
+            }
+            if (data.paymentStatus === 'paid') {
+                updateData.paymentDate = new Date();
+            }
+            const updatedInvoice = await this.prisma.invoice.update({
+                where: { id },
+                data: updateData,
+                include: {
+                    order: {
+                        include: {
+                            user: true,
+                            provider: true,
+                            service: true
+                        }
+                    }
+                }
+            });
+            return updatedInvoice;
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async markInvoiceAsPaid(id, paymentMethod) {
+        try {
+            const invoice = await this.prisma.invoice.findUnique({
+                where: { id }
+            });
+            if (!invoice) {
+                throw new common_1.NotFoundException('Invoice not found');
+            }
+            const updatedInvoice = await this.prisma.invoice.update({
+                where: { id },
+                data: {
+                    paymentStatus: 'paid',
+                    paymentMethod: paymentMethod || 'admin_manual',
+                    paymentDate: new Date()
+                },
+                include: {
+                    order: {
+                        include: {
+                            user: true,
+                            provider: true,
+                            service: true
+                        }
+                    }
+                }
+            });
+            return updatedInvoice;
         }
         catch (error) {
             throw error;

@@ -915,4 +915,7 @@ export declare class OrdersController {
     }): Promise<{
         message: string;
     }>;
+    deleteOrder(id: number, req: any): Promise<{
+        message: string;
+    }>;
 }

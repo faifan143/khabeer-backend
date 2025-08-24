@@ -718,19 +718,7 @@ let ProvidersService = class ProvidersService {
             const providersWithOffers = await Promise.all(providers.map(async (provider) => {
                 const enhancedProviderServices = await Promise.all(provider.providerServices.map(async (providerService) => {
                     const now = new Date();
-                    console.log(`Checking offers for provider ${provider.id}, service ${serviceId} at ${now.toISOString()}`);
-                    const allOffers = await this.prisma.offer.findMany({
-                        where: {
-                            providerId: provider.id,
-                            serviceId: serviceId,
-                            isActive: true
-                        }
-                    });
-                    console.log(`Total offers found for provider ${provider.id}, service ${serviceId}: ${allOffers.length}`);
-                    allOffers.forEach(offer => {
-                        console.log(`Offer ${offer.id}: start=${offer.startDate}, end=${offer.endDate}, price=${offer.offerPrice}, isActive=${offer.isActive}`);
-                    });
-                    const activeOffer = await this.prisma.offer.findFirst({
+                    const offer = await this.prisma.offer.findFirst({
                         where: {
                             providerId: provider.id,
                             serviceId: serviceId,
@@ -739,23 +727,12 @@ let ProvidersService = class ProvidersService {
                             endDate: { gt: now }
                         },
                         orderBy: {
-                            offerPrice: 'asc'
+                            startDate: 'desc'
                         }
                     });
-                    if (activeOffer) {
-                        console.log(`Found ACTIVE offer: ${activeOffer.id}, price: ${activeOffer.offerPrice}, start: ${activeOffer.startDate}, end: ${activeOffer.endDate}`);
-                    }
-                    else {
-                        console.log(`No ACTIVE offer found - date check failed`);
-                        allOffers.forEach(offer => {
-                            const startCheck = offer.startDate <= now;
-                            const endCheck = offer.endDate > now;
-                            console.log(`Offer ${offer.id}: startDate <= now (${startCheck}), endDate > now (${endCheck})`);
-                        });
-                    }
                     return {
                         ...providerService,
-                        offerPrice: activeOffer ? activeOffer.offerPrice : null
+                        offerPrice: offer ? offer.offerPrice : null
                     };
                 }));
                 const ratings = await this.prisma.providerRating.findMany({

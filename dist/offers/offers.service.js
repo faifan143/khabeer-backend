@@ -355,8 +355,14 @@ let OffersService = class OffersService {
         if (!provider) {
             throw new common_1.NotFoundException('Provider not found');
         }
+        const now = new Date();
         const offers = await this.prisma.offer.findMany({
-            where: { providerId },
+            where: {
+                providerId,
+                isActive: true,
+                startDate: { lte: now },
+                endDate: { gt: now }
+            },
             include: {
                 service: {
                     select: {
@@ -545,11 +551,13 @@ let OffersService = class OffersService {
     }
     async getAvailableOffers(limit = 20) {
         console.log('🔍 Getting available offers with limit:', limit);
-        console.log('📅 Current date:', new Date().toISOString());
+        const now = new Date();
+        console.log('📅 Current date:', now.toISOString());
         const offers = await this.prisma.offer.findMany({
             where: {
                 isActive: true,
-                endDate: { gt: new Date() },
+                startDate: { lte: now },
+                endDate: { gt: now },
                 provider: {
                     isVerified: true
                 }

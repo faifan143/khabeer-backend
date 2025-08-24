@@ -100,6 +100,39 @@ export class AdminController {
         return this.adminService.rejectJoinRequest(id, body.notes);
     }
 
+    // Invoice management endpoints
+    @Get('invoices')
+    async getAllInvoices(
+        @Query('status') status?: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        const start = startDate ? new Date(startDate) : undefined;
+        const end = endDate ? new Date(endDate) : undefined;
+        return this.adminService.getAllInvoices(status, start, end);
+    }
+
+    @Get('invoices/:id')
+    async getInvoice(@Param('id', ParseIntPipe) id: number) {
+        return this.adminService.getInvoice(id);
+    }
+
+    @Put('invoices/:id/payment-status')
+    async updateInvoicePaymentStatus(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: { paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded'; paymentMethod?: string }
+    ) {
+        return this.adminService.updateInvoicePaymentStatus(id, body);
+    }
+
+    @Put('invoices/:id/mark-paid')
+    async markInvoiceAsPaid(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: { paymentMethod?: string }
+    ) {
+        return this.adminService.markInvoiceAsPaid(id, body.paymentMethod);
+    }
+
     // Specific static routes come AFTER dynamic routes
     @Get('join-requests/pending')
     async getPendingJoinRequests() {

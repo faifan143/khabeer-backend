@@ -876,7 +876,251 @@ export declare class AdminService {
         failureCount: number;
         successCount: number;
     }>;
-    deleteNotification(id: number): Promise<{
-        message: string;
+    getAllInvoices(status?: string, startDate?: Date, endDate?: Date): Promise<{
+        id: number;
+        orderId: number;
+        totalAmount: number;
+        discount: number;
+        netAmount: number;
+        paymentStatus: string;
+        paymentMethod: string | null;
+        paymentDate: Date | null;
+        order: {
+            service: {
+                description: string;
+                id: number;
+                title: string;
+            };
+            provider: {
+                id: number;
+                name: string;
+                phone: string;
+                email: string | null;
+            };
+            user: {
+                id: number;
+                name: string;
+                phone: string;
+                email: string | null;
+            };
+        } & {
+            serviceId: number;
+            id: number;
+            location: string | null;
+            providerId: number;
+            userId: number;
+            status: string;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            orderDate: Date;
+            bookingId: string;
+            commissionAmount: number;
+            providerAmount: number;
+            totalAmount: number;
+        };
+    }[]>;
+    getInvoice(id: number): Promise<{
+        id: number;
+        orderId: number;
+        totalAmount: number;
+        discount: number;
+        netAmount: number;
+        paymentStatus: string;
+        paymentMethod: string | null;
+        paymentDate: Date | null;
+        order: {
+            service: {
+                description: string;
+                id: number;
+                title: string;
+            };
+            provider: {
+                id: number;
+                name: string;
+                phone: string;
+                email: string | null;
+            };
+            user: {
+                id: number;
+                name: string;
+                phone: string;
+                email: string | null;
+            };
+        } & {
+            serviceId: number;
+            id: number;
+            location: string | null;
+            providerId: number;
+            userId: number;
+            status: string;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            orderDate: Date;
+            bookingId: string;
+            commissionAmount: number;
+            providerAmount: number;
+            totalAmount: number;
+        };
+    }>;
+    updateInvoicePaymentStatus(id: number, data: {
+        paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+        paymentMethod?: string;
+    }): Promise<{
+        order: {
+            service: {
+                description: string;
+                id: number;
+                image: string;
+                title: string;
+                commission: number;
+                whatsapp: string;
+                categoryId: number | null;
+            };
+            provider: {
+                description: string;
+                id: number;
+                name: string;
+                image: string;
+                state: string;
+                phone: string;
+                isActive: boolean;
+                officialDocuments: string | null;
+                isVerified: boolean;
+                location: import("generated/prisma/runtime/library").JsonValue | null;
+                createdAt: Date;
+                email: string | null;
+                updatedAt: Date;
+                password: string | null;
+                fcm: string | null;
+            };
+            user: {
+                id: number;
+                name: string;
+                image: string;
+                state: string;
+                phone: string;
+                isActive: boolean;
+                officialDocuments: string | null;
+                createdAt: Date;
+                email: string | null;
+                updatedAt: Date;
+                password: string;
+                fcm: string | null;
+                address: string;
+                role: string;
+                latitude: import("generated/prisma/runtime/library").Decimal | null;
+                longitude: import("generated/prisma/runtime/library").Decimal | null;
+            };
+        } & {
+            serviceId: number;
+            id: number;
+            location: string | null;
+            providerId: number;
+            userId: number;
+            status: string;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            orderDate: Date;
+            bookingId: string;
+            commissionAmount: number;
+            providerAmount: number;
+            totalAmount: number;
+        };
+    } & {
+        id: number;
+        isVerified: boolean;
+        orderId: number;
+        discount: number;
+        totalAmount: number;
+        paymentDate: Date | null;
+        paymentMethod: string | null;
+        paymentStatus: string;
+        payoutDate: Date | null;
+        payoutStatus: string;
+        verifiedAt: Date | null;
+        verifiedBy: number | null;
+    }>;
+    markInvoiceAsPaid(id: number, paymentMethod?: string): Promise<{
+        order: {
+            service: {
+                description: string;
+                id: number;
+                image: string;
+                title: string;
+                commission: number;
+                whatsapp: string;
+                categoryId: number | null;
+            };
+            provider: {
+                description: string;
+                id: number;
+                name: string;
+                image: string;
+                state: string;
+                phone: string;
+                isActive: boolean;
+                officialDocuments: string | null;
+                isVerified: boolean;
+                location: import("generated/prisma/runtime/library").JsonValue | null;
+                createdAt: Date;
+                email: string | null;
+                updatedAt: Date;
+                password: string | null;
+                fcm: string | null;
+            };
+            user: {
+                id: number;
+                name: string;
+                image: string;
+                state: string;
+                phone: string;
+                isActive: boolean;
+                officialDocuments: string | null;
+                createdAt: Date;
+                email: string | null;
+                updatedAt: Date;
+                password: string;
+                fcm: string | null;
+                address: string;
+                role: string;
+                latitude: import("generated/prisma/runtime/library").Decimal | null;
+                longitude: import("generated/prisma/runtime/library").Decimal | null;
+            };
+        } & {
+            serviceId: number;
+            id: number;
+            location: string | null;
+            providerId: number;
+            userId: number;
+            status: string;
+            scheduledDate: Date | null;
+            locationDetails: string | null;
+            quantity: number;
+            providerLocation: import("generated/prisma/runtime/library").JsonValue | null;
+            orderDate: Date;
+            bookingId: string;
+            commissionAmount: number;
+            providerAmount: number;
+            totalAmount: number;
+        };
+    } & {
+        id: number;
+        isVerified: boolean;
+        orderId: number;
+        discount: number;
+        totalAmount: number;
+        paymentDate: Date | null;
+        paymentMethod: string | null;
+        paymentStatus: string;
+        payoutDate: Date | null;
+        payoutStatus: string;
+        verifiedAt: Date | null;
+        verifiedBy: number | null;
     }>;
 }
