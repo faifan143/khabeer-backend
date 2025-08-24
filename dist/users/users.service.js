@@ -20,7 +20,26 @@ let UsersService = class UsersService {
     }
     async findByEmail(email) {
         try {
-            return await this.prisma.user.findUnique({ where: { email } });
+            return await this.prisma.user.findUnique({
+                where: { email },
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    state: true,
+                    phone: true,
+                    isActive: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    email: true,
+                    updatedAt: true,
+                    address: true,
+                    role: true,
+                    latitude: true,
+                    longitude: true,
+                    fcm: true
+                }
+            });
         }
         catch (error) {
             throw new common_1.InternalServerErrorException('Error finding user by email');
@@ -28,7 +47,26 @@ let UsersService = class UsersService {
     }
     async findByPhone(phone) {
         try {
-            return await this.prisma.user.findFirst({ where: { phone } });
+            return await this.prisma.user.findFirst({
+                where: { phone },
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    state: true,
+                    phone: true,
+                    isActive: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    email: true,
+                    updatedAt: true,
+                    address: true,
+                    role: true,
+                    latitude: true,
+                    longitude: true,
+                    fcm: true
+                }
+            });
         }
         catch (error) {
             throw new common_1.InternalServerErrorException('Error finding user by phone');
@@ -44,7 +82,9 @@ let UsersService = class UsersService {
                 state: data.state || '',
                 isActive: data.isActive ?? true
             };
-            return await this.prisma.user.create({ data: userData });
+            const user = await this.prisma.user.create({ data: userData });
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword;
         }
         catch (error) {
             if (error instanceof library_1.PrismaClientKnownRequestError) {
@@ -65,7 +105,26 @@ let UsersService = class UsersService {
     }
     async findAll() {
         try {
-            return await this.prisma.user.findMany();
+            const users = await this.prisma.user.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    state: true,
+                    phone: true,
+                    isActive: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    email: true,
+                    updatedAt: true,
+                    address: true,
+                    role: true,
+                    latitude: true,
+                    longitude: true,
+                    fcm: true
+                }
+            });
+            return users;
         }
         catch (error) {
             throw new common_1.InternalServerErrorException('Error fetching users');
@@ -73,7 +132,26 @@ let UsersService = class UsersService {
     }
     async findById(id) {
         try {
-            const user = await this.prisma.user.findUnique({ where: { id } });
+            const user = await this.prisma.user.findUnique({
+                where: { id },
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    state: true,
+                    phone: true,
+                    isActive: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    email: true,
+                    updatedAt: true,
+                    address: true,
+                    role: true,
+                    latitude: true,
+                    longitude: true,
+                    fcm: true
+                }
+            });
             if (!user) {
                 throw new common_1.NotFoundException(`User with ID ${id} not found`);
             }
@@ -88,7 +166,27 @@ let UsersService = class UsersService {
     }
     async update(id, data) {
         try {
-            const user = await this.prisma.user.update({ where: { id }, data });
+            const user = await this.prisma.user.update({
+                where: { id },
+                data,
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    state: true,
+                    phone: true,
+                    isActive: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    email: true,
+                    updatedAt: true,
+                    address: true,
+                    role: true,
+                    latitude: true,
+                    longitude: true,
+                    fcm: true
+                }
+            });
             return user;
         }
         catch (error) {
@@ -110,7 +208,26 @@ let UsersService = class UsersService {
     }
     async remove(id) {
         try {
-            const user = await this.prisma.user.delete({ where: { id } });
+            const user = await this.prisma.user.delete({
+                where: { id },
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    state: true,
+                    phone: true,
+                    isActive: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    email: true,
+                    updatedAt: true,
+                    address: true,
+                    role: true,
+                    latitude: true,
+                    longitude: true,
+                    fcm: true
+                }
+            });
             return user;
         }
         catch (error) {

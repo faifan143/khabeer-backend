@@ -44,6 +44,11 @@
       "key": "serviceId",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "bannerId",
+      "value": "1",
+      "type": "string"
     }
   ],
   "item": [
@@ -436,6 +441,112 @@
               "raw": "{{baseUrl}}/providers/1/status",
               "host": ["{{baseUrl}}"],
               "path": ["providers", "1", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get All Ad Banners",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ad-banners",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ad-banners"]
+            }
+          }
+        },
+        {
+          "name": "Create Ad Banner",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Summer Sale Banner",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Get 20% off on all services this summer!",
+                  "type": "text"
+                },
+                {
+                  "key": "linkType",
+                  "value": "external",
+                  "type": "text"
+                },
+                {
+                  "key": "externalLink",
+                  "value": "https://example.com/summer-sale",
+                  "type": "text"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/ad-banners",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ad-banners"]
+            }
+          }
+        },
+        {
+          "name": "Update Ad Banner",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Updated Summer Sale Banner",
+                  "type": "text"
+                },
+                {
+                  "key": "isActive",
+                  "value": "false",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/ad-banners/{{bannerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ad-banners", "{{bannerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Ad Banner",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ad-banners/{{bannerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ad-banners", "{{bannerId}}"]
             }
           }
         }
@@ -1900,6 +2011,38 @@
             }
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "📢 Public Ad Banners",
+      "item": [
+        {
+          "name": "Get Active Ad Banners",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ad-banners?limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["ad-banners"],
+              "query": [{ "key": "limit", "value": "5" }]
+            },
+            "description": "Public endpoint to get active ad banners for display in mobile apps or websites"
+          }
+        },
+        {
+          "name": "Get Featured Banners",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ad-banners/featured",
+              "host": ["{{baseUrl}}"],
+              "path": ["ad-banners", "featured"]
+            },
+            "description": "Get featured banners (limited to 5 most recent active banners)"
+          }
         }
       ]
     }

@@ -22,6 +22,7 @@ const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_guard_1 = require("../auth/roles.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
 const files_service_1 = require("../files/files.service");
+const ad_banner_dto_1 = require("./dto/ad-banner.dto");
 let AdminController = class AdminController {
     adminService;
     filesService;
@@ -578,7 +579,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [ad_banner_dto_1.CreateAdBannerDto, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "createAdBanner", null);
 __decorate([
@@ -597,7 +598,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:paramtypes", [Number, ad_banner_dto_1.UpdateAdBannerDto, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "updateAdBanner", null);
 __decorate([

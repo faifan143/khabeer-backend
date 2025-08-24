@@ -12,7 +12,26 @@ export class UsersService {
 
   async findByEmail(email: string) {
     try {
-      return await this.prisma.user.findUnique({ where: { email } });
+      return await this.prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          state: true,
+          phone: true,
+          isActive: true,
+          officialDocuments: true,
+          createdAt: true,
+          email: true,
+          updatedAt: true,
+          address: true,
+          role: true,
+          latitude: true,
+          longitude: true,
+          fcm: true
+        }
+      });
     } catch (error) {
       throw new InternalServerErrorException('Error finding user by email');
     }
@@ -20,7 +39,26 @@ export class UsersService {
 
   async findByPhone(phone: string) {
     try {
-      return await this.prisma.user.findFirst({ where: { phone } });
+      return await this.prisma.user.findFirst({
+        where: { phone },
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          state: true,
+          phone: true,
+          isActive: true,
+          officialDocuments: true,
+          createdAt: true,
+          email: true,
+          updatedAt: true,
+          address: true,
+          role: true,
+          latitude: true,
+          longitude: true,
+          fcm: true
+        }
+      });
     } catch (error) {
       throw new InternalServerErrorException('Error finding user by phone');
     }
@@ -37,7 +75,11 @@ export class UsersService {
         state: data.state || '',
         isActive: data.isActive ?? true
       };
-      return await this.prisma.user.create({ data: userData });
+      const user = await this.prisma.user.create({ data: userData });
+
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         switch (error.code) {
@@ -58,7 +100,26 @@ export class UsersService {
 
   async findAll() {
     try {
-      return await this.prisma.user.findMany();
+      const users = await this.prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          state: true,
+          phone: true,
+          isActive: true,
+          officialDocuments: true,
+          createdAt: true,
+          email: true,
+          updatedAt: true,
+          address: true,
+          role: true,
+          latitude: true,
+          longitude: true,
+          fcm: true
+        }
+      });
+      return users;
     } catch (error) {
       throw new InternalServerErrorException('Error fetching users');
     }
@@ -66,7 +127,26 @@ export class UsersService {
 
   async findById(id: number) {
     try {
-      const user = await this.prisma.user.findUnique({ where: { id } });
+      const user = await this.prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          state: true,
+          phone: true,
+          isActive: true,
+          officialDocuments: true,
+          createdAt: true,
+          email: true,
+          updatedAt: true,
+          address: true,
+          role: true,
+          latitude: true,
+          longitude: true,
+          fcm: true
+        }
+      });
       if (!user) {
         throw new NotFoundException(`User with ID ${id} not found`);
       }
@@ -81,7 +161,27 @@ export class UsersService {
 
   async update(id: number, data: UpdateUserDto) {
     try {
-      const user = await this.prisma.user.update({ where: { id }, data });
+      const user = await this.prisma.user.update({
+        where: { id },
+        data,
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          state: true,
+          phone: true,
+          isActive: true,
+          officialDocuments: true,
+          createdAt: true,
+          email: true,
+          updatedAt: true,
+          address: true,
+          role: true,
+          latitude: true,
+          longitude: true,
+          fcm: true
+        }
+      });
       return user;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
@@ -103,7 +203,26 @@ export class UsersService {
 
   async remove(id: number) {
     try {
-      const user = await this.prisma.user.delete({ where: { id } });
+      const user = await this.prisma.user.delete({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          state: true,
+          phone: true,
+          isActive: true,
+          officialDocuments: true,
+          createdAt: true,
+          email: true,
+          updatedAt: true,
+          address: true,
+          role: true,
+          latitude: true,
+          longitude: true,
+          fcm: true
+        }
+      });
       return user;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {

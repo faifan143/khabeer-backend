@@ -59,7 +59,25 @@ export class ProvidersService {
 
   async findByEmail(email: string) {
     try {
-      return await this.prisma.provider.findUnique({ where: { email } });
+      return await this.prisma.provider.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          description: true,
+          state: true,
+          phone: true,
+          isActive: true,
+          isVerified: true,
+          location: true,
+          officialDocuments: true,
+          createdAt: true,
+          updatedAt: true,
+          fcm: true
+        }
+      });
     } catch (error) {
       throw new InternalServerErrorException('Error finding provider by email');
     }
@@ -67,7 +85,25 @@ export class ProvidersService {
 
   async findByPhone(phone: string) {
     try {
-      return await this.prisma.provider.findFirst({ where: { phone } });
+      return await this.prisma.provider.findFirst({
+        where: { phone },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          description: true,
+          state: true,
+          phone: true,
+          isActive: true,
+          isVerified: true,
+          location: true,
+          officialDocuments: true,
+          createdAt: true,
+          updatedAt: true,
+          fcm: true
+        }
+      });
     } catch (error) {
       throw new InternalServerErrorException('Error finding provider by phone');
     }
@@ -75,7 +111,25 @@ export class ProvidersService {
 
   async findById(id: number) {
     try {
-      const provider = await this.prisma.provider.findUnique({ where: { id } });
+      const provider = await this.prisma.provider.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          description: true,
+          state: true,
+          phone: true,
+          isActive: true,
+          isVerified: true,
+          location: true,
+          officialDocuments: true,
+          createdAt: true,
+          updatedAt: true,
+          fcm: true
+        }
+      });
       if (!provider) {
         throw new NotFoundException(`Provider with ID ${id} not found`);
       }
@@ -187,7 +241,11 @@ export class ProvidersService {
 
   async create(data: CreateProviderDto) {
     try {
-      return await this.prisma.provider.create({ data });
+      const provider = await this.prisma.provider.create({ data });
+
+      // Return provider without password
+      const { password, ...providerWithoutPassword } = provider;
+      return providerWithoutPassword;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         switch (error.code) {
@@ -209,7 +267,7 @@ export class ProvidersService {
   async registerProviderWithServices(data: CreateProviderDto) {
     try {
       const { serviceIds, ...providerData } = data;
-      return await this.prisma.provider.create({
+      const provider = await this.prisma.provider.create({
         data: {
           ...providerData,
           providerServices: {
@@ -218,6 +276,10 @@ export class ProvidersService {
         },
         include: { providerServices: true }
       });
+
+      // Return provider without password
+      const { password, ...providerWithoutPassword } = provider;
+      return providerWithoutPassword;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         switch (error.code) {
@@ -263,7 +325,10 @@ export class ProvidersService {
         data: providerData,
         include: { providerServices: true }
       });
-      return provider;
+
+      // Return provider without password
+      const { password, ...providerWithoutPassword } = provider;
+      return providerWithoutPassword;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         switch (error.code) {
@@ -291,7 +356,10 @@ export class ProvidersService {
         data: { isActive },
         include: { providerServices: true }
       });
-      return provider;
+
+      // Return provider without password
+      const { password, ...providerWithoutPassword } = provider;
+      return providerWithoutPassword;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         switch (error.code) {
@@ -323,10 +391,18 @@ export class ProvidersService {
         });
       }
 
-      return this.prisma.provider.findUnique({
+      const provider = await this.prisma.provider.findUnique({
         where: { id: providerId },
         include: { providerServices: true }
       });
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${providerId} not found`);
+      }
+
+      // Return provider without password
+      const { password, ...providerWithoutPassword } = provider;
+      return providerWithoutPassword;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         switch (error.code) {
@@ -349,10 +425,18 @@ export class ProvidersService {
         }
       });
 
-      return this.prisma.provider.findUnique({
+      const provider = await this.prisma.provider.findUnique({
         where: { id: providerId },
         include: { providerServices: true }
       });
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${providerId} not found`);
+      }
+
+      // Return provider without password
+      const { password, ...providerWithoutPassword } = provider;
+      return providerWithoutPassword;
     } catch (error) {
       throw new InternalServerErrorException('Error removing services from provider');
     }

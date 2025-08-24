@@ -1,5 +1,6 @@
 import { AdminService } from './admin.service';
 import { FilesService } from '../files/files.service';
+import { CreateAdBannerDto, UpdateAdBannerDto, AdBannerResponseDto } from './dto/ad-banner.dto';
 export declare class AdminController {
     private readonly adminService;
     private readonly filesService;
@@ -795,56 +796,9 @@ export declare class AdminController {
     deleteSubAdmin(id: number): Promise<{
         message: string;
     }>;
-    getAdBanners(): Promise<{
-        description: string;
-        id: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
-        providerId: number | null;
-        imageUrl: string | null;
-        linkType: string;
-        externalLink: string | null;
-    }[]>;
-    createAdBanner(body: {
-        title: string;
-        description: string;
-        linkType: string;
-        externalLink?: string;
-        providerId?: number;
-        isActive: boolean;
-    }, file: Express.Multer.File): Promise<{
-        description: string;
-        id: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
-        providerId: number | null;
-        imageUrl: string | null;
-        linkType: string;
-        externalLink: string | null;
-    }>;
-    updateAdBanner(id: number, body: {
-        title?: string;
-        description?: string;
-        linkType?: string;
-        externalLink?: string;
-        providerId?: number;
-        isActive?: boolean;
-    }, file: Express.Multer.File): Promise<{
-        description: string;
-        id: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
-        providerId: number | null;
-        imageUrl: string | null;
-        linkType: string;
-        externalLink: string | null;
-    }>;
+    getAdBanners(): Promise<AdBannerResponseDto[]>;
+    createAdBanner(body: CreateAdBannerDto, file: Express.Multer.File): Promise<AdBannerResponseDto>;
+    updateAdBanner(id: number, body: UpdateAdBannerDto, file: Express.Multer.File): Promise<AdBannerResponseDto>;
     deleteAdBanner(id: number): Promise<{
         message: string;
     }>;

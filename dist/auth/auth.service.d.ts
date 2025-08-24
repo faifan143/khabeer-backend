@@ -65,7 +65,6 @@ export declare class AuthService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     checkAccountStatus(identifier: string, type?: 'email' | 'phone'): Promise<{
@@ -103,7 +102,6 @@ export declare class AuthService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     deactivateProviderAccount(providerId: number): Promise<{
@@ -128,7 +126,6 @@ export declare class AuthService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     sendPhoneLoginOtp(phoneLoginDto: PhoneLoginDto): Promise<{

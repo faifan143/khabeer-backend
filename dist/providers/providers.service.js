@@ -57,7 +57,25 @@ let ProvidersService = class ProvidersService {
     }
     async findByEmail(email) {
         try {
-            return await this.prisma.provider.findUnique({ where: { email } });
+            return await this.prisma.provider.findUnique({
+                where: { email },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    image: true,
+                    description: true,
+                    state: true,
+                    phone: true,
+                    isActive: true,
+                    isVerified: true,
+                    location: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    fcm: true
+                }
+            });
         }
         catch (error) {
             throw new common_1.InternalServerErrorException('Error finding provider by email');
@@ -65,7 +83,25 @@ let ProvidersService = class ProvidersService {
     }
     async findByPhone(phone) {
         try {
-            return await this.prisma.provider.findFirst({ where: { phone } });
+            return await this.prisma.provider.findFirst({
+                where: { phone },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    image: true,
+                    description: true,
+                    state: true,
+                    phone: true,
+                    isActive: true,
+                    isVerified: true,
+                    location: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    fcm: true
+                }
+            });
         }
         catch (error) {
             throw new common_1.InternalServerErrorException('Error finding provider by phone');
@@ -73,7 +109,25 @@ let ProvidersService = class ProvidersService {
     }
     async findById(id) {
         try {
-            const provider = await this.prisma.provider.findUnique({ where: { id } });
+            const provider = await this.prisma.provider.findUnique({
+                where: { id },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    image: true,
+                    description: true,
+                    state: true,
+                    phone: true,
+                    isActive: true,
+                    isVerified: true,
+                    location: true,
+                    officialDocuments: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    fcm: true
+                }
+            });
             if (!provider) {
                 throw new common_1.NotFoundException(`Provider with ID ${id} not found`);
             }
@@ -173,7 +227,9 @@ let ProvidersService = class ProvidersService {
     }
     async create(data) {
         try {
-            return await this.prisma.provider.create({ data });
+            const provider = await this.prisma.provider.create({ data });
+            const { password, ...providerWithoutPassword } = provider;
+            return providerWithoutPassword;
         }
         catch (error) {
             if (error instanceof library_1.PrismaClientKnownRequestError) {
@@ -195,7 +251,7 @@ let ProvidersService = class ProvidersService {
     async registerProviderWithServices(data) {
         try {
             const { serviceIds, ...providerData } = data;
-            return await this.prisma.provider.create({
+            const provider = await this.prisma.provider.create({
                 data: {
                     ...providerData,
                     providerServices: {
@@ -204,6 +260,8 @@ let ProvidersService = class ProvidersService {
                 },
                 include: { providerServices: true }
             });
+            const { password, ...providerWithoutPassword } = provider;
+            return providerWithoutPassword;
         }
         catch (error) {
             if (error instanceof library_1.PrismaClientKnownRequestError) {
@@ -243,7 +301,8 @@ let ProvidersService = class ProvidersService {
                 data: providerData,
                 include: { providerServices: true }
             });
-            return provider;
+            const { password, ...providerWithoutPassword } = provider;
+            return providerWithoutPassword;
         }
         catch (error) {
             if (error instanceof library_1.PrismaClientKnownRequestError) {
@@ -271,7 +330,8 @@ let ProvidersService = class ProvidersService {
                 data: { isActive },
                 include: { providerServices: true }
             });
-            return provider;
+            const { password, ...providerWithoutPassword } = provider;
+            return providerWithoutPassword;
         }
         catch (error) {
             if (error instanceof library_1.PrismaClientKnownRequestError) {
@@ -300,10 +360,15 @@ let ProvidersService = class ProvidersService {
                     }))
                 });
             }
-            return this.prisma.provider.findUnique({
+            const provider = await this.prisma.provider.findUnique({
                 where: { id: providerId },
                 include: { providerServices: true }
             });
+            if (!provider) {
+                throw new common_1.NotFoundException(`Provider with ID ${providerId} not found`);
+            }
+            const { password, ...providerWithoutPassword } = provider;
+            return providerWithoutPassword;
         }
         catch (error) {
             if (error instanceof library_1.PrismaClientKnownRequestError) {
@@ -325,10 +390,15 @@ let ProvidersService = class ProvidersService {
                     serviceId: { in: serviceIds }
                 }
             });
-            return this.prisma.provider.findUnique({
+            const provider = await this.prisma.provider.findUnique({
                 where: { id: providerId },
                 include: { providerServices: true }
             });
+            if (!provider) {
+                throw new common_1.NotFoundException(`Provider with ID ${providerId} not found`);
+            }
+            const { password, ...providerWithoutPassword } = provider;
+            return providerWithoutPassword;
         }
         catch (error) {
             throw new common_1.InternalServerErrorException('Error removing services from provider');

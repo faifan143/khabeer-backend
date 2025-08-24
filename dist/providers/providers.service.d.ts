@@ -31,11 +31,10 @@ export declare class ProvidersService {
         isActive: boolean;
         officialDocuments: string | null;
         isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
+        location: import("generated/prisma/runtime/library").JsonValue;
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     } | null>;
     findByPhone(phone: string): Promise<{
@@ -48,11 +47,10 @@ export declare class ProvidersService {
         isActive: boolean;
         officialDocuments: string | null;
         isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
+        location: import("generated/prisma/runtime/library").JsonValue;
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     } | null>;
     findById(id: number): Promise<{
@@ -65,11 +63,10 @@ export declare class ProvidersService {
         isActive: boolean;
         officialDocuments: string | null;
         isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
+        location: import("generated/prisma/runtime/library").JsonValue;
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     getProfile(providerId: number): Promise<{
@@ -121,7 +118,6 @@ export declare class ProvidersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     registerProviderWithServices(data: CreateProviderDto): Promise<{
@@ -132,7 +128,6 @@ export declare class ProvidersService {
             providerId: number;
             price: number;
         }[];
-    } & {
         description: string;
         id: number;
         name: string;
@@ -146,7 +141,6 @@ export declare class ProvidersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     update(id: number, data: UpdateProviderDto): Promise<{
@@ -157,7 +151,6 @@ export declare class ProvidersService {
             providerId: number;
             price: number;
         }[];
-    } & {
         description: string;
         id: number;
         name: string;
@@ -171,7 +164,6 @@ export declare class ProvidersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     updateStatus(id: number, isActive: boolean): Promise<{
@@ -182,7 +174,6 @@ export declare class ProvidersService {
             providerId: number;
             price: number;
         }[];
-    } & {
         description: string;
         id: number;
         name: string;
@@ -196,10 +187,9 @@ export declare class ProvidersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
-    addServices(providerId: number, serviceIds: number[]): Promise<({
+    addServices(providerId: number, serviceIds: number[]): Promise<{
         providerServices: {
             serviceId: number;
             id: number;
@@ -207,7 +197,6 @@ export declare class ProvidersService {
             providerId: number;
             price: number;
         }[];
-    } & {
         description: string;
         id: number;
         name: string;
@@ -221,10 +210,9 @@ export declare class ProvidersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
-    }) | null>;
-    removeServices(providerId: number, serviceIds: number[]): Promise<({
+    }>;
+    removeServices(providerId: number, serviceIds: number[]): Promise<{
         providerServices: {
             serviceId: number;
             id: number;
@@ -232,7 +220,6 @@ export declare class ProvidersService {
             providerId: number;
             price: number;
         }[];
-    } & {
         description: string;
         id: number;
         name: string;
@@ -246,9 +233,8 @@ export declare class ProvidersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
-    }) | null>;
+    }>;
     getProviderServices(providerId: number): Promise<({
         service: {
             description: string;

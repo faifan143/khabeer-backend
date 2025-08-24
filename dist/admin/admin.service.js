@@ -575,7 +575,16 @@ let AdminService = class AdminService {
         return { message: 'Join request rejected successfully' };
     }
     async activateUser(id) {
-        const user = await this.prisma.user.findUnique({ where: { id } });
+        const user = await this.prisma.user.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                isActive: true
+            }
+        });
         if (!user) {
             throw new common_1.NotFoundException('User not found');
         }
@@ -586,7 +595,16 @@ let AdminService = class AdminService {
         return { message: 'User activated successfully' };
     }
     async deactivateUser(id) {
-        const user = await this.prisma.user.findUnique({ where: { id } });
+        const user = await this.prisma.user.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                isActive: true
+            }
+        });
         if (!user) {
             throw new common_1.NotFoundException('User not found');
         }
@@ -650,7 +668,16 @@ let AdminService = class AdminService {
         return ratingsWithOrders;
     }
     async activateProvider(id) {
-        const provider = await this.prisma.provider.findUnique({ where: { id } });
+        const provider = await this.prisma.provider.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                isActive: true
+            }
+        });
         if (!provider) {
             throw new common_1.NotFoundException('Provider not found');
         }
@@ -661,7 +688,16 @@ let AdminService = class AdminService {
         return { message: 'Provider activated successfully' };
     }
     async deactivateProvider(id) {
-        const provider = await this.prisma.provider.findUnique({ where: { id } });
+        const provider = await this.prisma.provider.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                isActive: true
+            }
+        });
         if (!provider) {
             throw new common_1.NotFoundException('Provider not found');
         }
@@ -672,7 +708,15 @@ let AdminService = class AdminService {
         return { message: 'Provider deactivated successfully' };
     }
     async verifyProvider(id) {
-        const provider = await this.prisma.provider.findUnique({ where: { id } });
+        const provider = await this.prisma.provider.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                isVerified: true
+            }
+        });
         if (!provider) {
             throw new common_1.NotFoundException('Provider not found');
         }
@@ -693,7 +737,15 @@ let AdminService = class AdminService {
         };
     }
     async unverifyProvider(id) {
-        const provider = await this.prisma.provider.findUnique({ where: { id } });
+        const provider = await this.prisma.provider.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                isVerified: true
+            }
+        });
         if (!provider) {
             throw new common_1.NotFoundException('Provider not found');
         }
@@ -787,17 +839,28 @@ let AdminService = class AdminService {
         }
         const providers = await this.prisma.provider.findMany({
             where,
-            include: {
+            select: {
+                id: true,
+                name: true,
+                phone: true,
+                isActive: true,
+                isVerified: true,
+                createdAt: true,
                 providerServices: {
                     include: {
                         service: { select: { title: true } }
                     }
                 },
                 orders: {
-                    where: { status: 'completed' }
+                    where: { status: 'completed' },
+                    select: { id: true }
                 },
-                ratings: true,
-                verification: true
+                ratings: {
+                    select: { rating: true }
+                },
+                verification: {
+                    select: { status: true }
+                }
             },
             orderBy: { createdAt: 'desc' }
         });
@@ -1051,6 +1114,36 @@ let AdminService = class AdminService {
         try {
             const banners = await this.prisma.adBanner.findMany({
                 orderBy: { createdAt: 'desc' }
+            });
+            return banners;
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async getActiveAdBanners(limit = 10) {
+        try {
+            const banners = await this.prisma.adBanner.findMany({
+                where: {
+                    isActive: true
+                },
+                orderBy: { createdAt: 'desc' },
+                take: limit
+            });
+            return banners;
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async getFeaturedBanners() {
+        try {
+            const banners = await this.prisma.adBanner.findMany({
+                where: {
+                    isActive: true
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 5
             });
             return banners;
         }

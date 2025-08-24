@@ -68,11 +68,10 @@ export declare class ProvidersController {
         isActive: boolean;
         officialDocuments: string | null;
         isVerified: boolean;
-        location: import("generated/prisma/runtime/library").JsonValue | null;
+        location: import("generated/prisma/runtime/library").JsonValue;
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     getProviderFullDetails(id: number): Promise<import("./dto/provider-full-details.dto").ProviderFullDetailsDto>;
@@ -87,7 +86,6 @@ export declare class ProvidersController {
             providerId: number;
             price: number;
         }[];
-    } & {
         description: string;
         id: number;
         name: string;
@@ -101,7 +99,6 @@ export declare class ProvidersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     create(createProviderDto: CreateProviderDto, file: Express.Multer.File): Promise<{
@@ -118,7 +115,6 @@ export declare class ProvidersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     update(id: string, data: UpdateProviderDto, file: Express.Multer.File, req: any): Promise<{
@@ -129,7 +125,6 @@ export declare class ProvidersController {
             providerId: number;
             price: number;
         }[];
-    } & {
         description: string;
         id: number;
         name: string;
@@ -143,7 +138,6 @@ export declare class ProvidersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     updateStatus(id: string, data: UpdateStatusDto, req: any): Promise<{
@@ -154,7 +148,6 @@ export declare class ProvidersController {
             providerId: number;
             price: number;
         }[];
-    } & {
         description: string;
         id: number;
         name: string;
@@ -168,7 +161,6 @@ export declare class ProvidersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     remove(id: string): Promise<{
@@ -221,7 +213,7 @@ export declare class ProvidersController {
     }>;
     addServices(id: string, body: {
         serviceIds: number[];
-    }, req: any): Promise<({
+    }, req: any): Promise<{
         providerServices: {
             serviceId: number;
             id: number;
@@ -229,7 +221,6 @@ export declare class ProvidersController {
             providerId: number;
             price: number;
         }[];
-    } & {
         description: string;
         id: number;
         name: string;
@@ -243,12 +234,11 @@ export declare class ProvidersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
-    }) | null>;
+    }>;
     removeServices(id: string, body: {
         serviceIds: number[];
-    }, req: any): Promise<({
+    }, req: any): Promise<{
         providerServices: {
             serviceId: number;
             id: number;
@@ -256,7 +246,6 @@ export declare class ProvidersController {
             providerId: number;
             price: number;
         }[];
-    } & {
         description: string;
         id: number;
         name: string;
@@ -270,9 +259,8 @@ export declare class ProvidersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
-    }) | null>;
+    }>;
     getProviderOrders(id: string, req: any): Promise<import("./dto/provider-orders-response.dto").ProviderOrdersResponseDto>;
     getProviderOrdersByStatus(id: string, status: string, req: any): Promise<import("./dto/provider-orders-response.dto").ProviderOrdersResponseDto>;
     getProviderRatings(id: string, req: any): Promise<({

@@ -17,7 +17,6 @@ export declare class UsersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
@@ -35,7 +34,6 @@ export declare class UsersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
@@ -53,7 +51,6 @@ export declare class UsersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
@@ -71,7 +68,6 @@ export declare class UsersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
@@ -89,7 +85,6 @@ export declare class UsersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
@@ -107,7 +102,6 @@ export declare class UsersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
@@ -125,7 +119,6 @@ export declare class UsersService {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;

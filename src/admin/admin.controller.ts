@@ -23,6 +23,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { FilesService } from '../files/files.service';
+import { CreateAdBannerDto, UpdateAdBannerDto, AdBannerResponseDto } from './dto/ad-banner.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -311,7 +312,7 @@ export class AdminController {
     }
 
     @Get('ad-banners')
-    async getAdBanners() {
+    async getAdBanners(): Promise<AdBannerResponseDto[]> {
         return this.adminService.getAdBanners();
     }
 
@@ -327,16 +328,9 @@ export class AdminController {
         }),
     }))
     async createAdBanner(
-        @Body() body: {
-            title: string;
-            description: string;
-            linkType: string;
-            externalLink?: string;
-            providerId?: number;
-            isActive: boolean;
-        },
+        @Body() body: CreateAdBannerDto,
         @UploadedFile() file: Express.Multer.File
-    ) {
+    ): Promise<AdBannerResponseDto> {
         const data: any = { ...body };
         if (file) {
             const options = {
@@ -365,16 +359,9 @@ export class AdminController {
     }))
     async updateAdBanner(
         @Param('id', ParseIntPipe) id: number,
-        @Body() body: {
-            title?: string;
-            description?: string;
-            linkType?: string;
-            externalLink?: string;
-            providerId?: number;
-            isActive?: boolean;
-        },
+        @Body() body: UpdateAdBannerDto,
         @UploadedFile() file: Express.Multer.File
-    ) {
+    ): Promise<AdBannerResponseDto> {
         const data: any = { ...body };
         if (file) {
             const options = {

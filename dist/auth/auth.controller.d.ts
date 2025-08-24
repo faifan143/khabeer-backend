@@ -51,7 +51,6 @@ export declare class AuthController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     checkAccountStatus(body: {
@@ -91,7 +90,6 @@ export declare class AuthController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     deactivateAccount(req: any): Promise<{
@@ -116,7 +114,6 @@ export declare class AuthController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string | null;
         fcm: string | null;
     }>;
     checkRegistrationStatus(body: {

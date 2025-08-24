@@ -767,6 +767,30 @@ export declare class AdminService {
         linkType: string;
         externalLink: string | null;
     }[]>;
+    getActiveAdBanners(limit?: number): Promise<{
+        description: string;
+        id: number;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        providerId: number | null;
+        imageUrl: string | null;
+        linkType: string;
+        externalLink: string | null;
+    }[]>;
+    getFeaturedBanners(): Promise<{
+        description: string;
+        id: number;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        providerId: number | null;
+        imageUrl: string | null;
+        linkType: string;
+        externalLink: string | null;
+    }[]>;
     createAdBanner(data: {
         title: string;
         description: string;

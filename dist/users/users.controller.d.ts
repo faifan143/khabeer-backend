@@ -19,7 +19,6 @@ export declare class UsersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
@@ -71,7 +70,6 @@ export declare class UsersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
@@ -89,7 +87,6 @@ export declare class UsersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
@@ -109,7 +106,6 @@ export declare class UsersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
@@ -176,7 +172,6 @@ export declare class UsersController {
         createdAt: Date;
         email: string | null;
         updatedAt: Date;
-        password: string;
         fcm: string | null;
         address: string;
         role: string;
