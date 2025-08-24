@@ -19,74 +19,11 @@ export declare class ProviderServiceController {
     }>;
     addMultipleServices(addServicesDto: AddServicesDto, req: any): Promise<{
         message: string;
-        services: ({
-            service: {
-                description: string;
-                id: number;
-                image: string;
-                title: string;
-                commission: number;
-            };
-        } & {
-            serviceId: number;
-            id: number;
-            isActive: boolean;
-            providerId: number;
-            price: number;
-        })[];
+        services: import("./provider-service.service").ProviderServiceWithOfferResponse[];
     }>;
-    findAll(providerId?: string, activeOnly?: string): Promise<({
-        service: {
-            description: string;
-            id: number;
-            image: string;
-            title: string;
-            commission: number;
-        };
-        provider: {
-            id: number;
-            name: string;
-            image: string;
-            isActive: boolean;
-            isVerified: boolean;
-        };
-    } & {
-        serviceId: number;
-        id: number;
-        isActive: boolean;
-        providerId: number;
-        price: number;
-    })[]>;
-    findByProvider(providerId: number, activeOnly?: string): Promise<({
-        service: {
-            description: string;
-            id: number;
-            image: string;
-            title: string;
-            commission: number;
-        };
-    } & {
-        serviceId: number;
-        id: number;
-        isActive: boolean;
-        providerId: number;
-        price: number;
-    })[]>;
-    getMyServices(req: any, activeOnly?: string): Promise<({
-        service: {
-            description: string;
-            id: number;
-            image: string;
-            title: string;
-            commission: number;
-        };
-    } & {
-        serviceId: number;
-        id: number;
-        isActive: boolean;
-        providerId: number;
-        price: number;
-    })[]>;
+    findAll(providerId?: string, activeOnly?: string): Promise<import("./provider-service.service").ProviderServiceWithOfferResponse[]>;
+    findByProvider(providerId: number, activeOnly?: string): Promise<import("./provider-service.service").ProviderServiceWithOfferResponse[]>;
+    getMyServices(req: any, activeOnly?: string): Promise<import("./provider-service.service").ProviderServiceWithOfferResponse[]>;
     getServiceStats(req: any): Promise<{
         totalServices: number;
         activeServices: number;
@@ -100,56 +37,9 @@ export declare class ProviderServiceController {
             isActive: boolean;
         }[];
     }>;
-    findOne(id: number): Promise<{
-        service: {
-            description: string;
-            id: number;
-            image: string;
-            title: string;
-            commission: number;
-        };
-        provider: {
-            id: number;
-            name: string;
-            image: string;
-        };
-    } & {
-        serviceId: number;
-        id: number;
-        isActive: boolean;
-        providerId: number;
-        price: number;
-    }>;
-    update(id: number, updateProviderServiceDto: UpdateProviderServiceDto, req: any): Promise<{
-        service: {
-            description: string;
-            id: number;
-            image: string;
-            title: string;
-            commission: number;
-        };
-    } & {
-        serviceId: number;
-        id: number;
-        isActive: boolean;
-        providerId: number;
-        price: number;
-    }>;
-    toggleServiceStatus(id: number, req: any): Promise<{
-        service: {
-            description: string;
-            id: number;
-            image: string;
-            title: string;
-            commission: number;
-        };
-    } & {
-        serviceId: number;
-        id: number;
-        isActive: boolean;
-        providerId: number;
-        price: number;
-    }>;
+    findOne(id: number): Promise<import("./provider-service.service").ProviderServiceWithOfferResponse>;
+    update(id: number, updateProviderServiceDto: UpdateProviderServiceDto, req: any): Promise<import("./provider-service.service").ProviderServiceWithOfferResponse>;
+    toggleServiceStatus(id: number, req: any): Promise<import("./provider-service.service").ProviderServiceWithOfferResponse>;
     remove(id: number, req: any): Promise<{
         message: string;
     }>;

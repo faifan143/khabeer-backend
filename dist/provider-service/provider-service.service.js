@@ -17,6 +17,25 @@ let ProviderServiceService = class ProviderServiceService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    async getActiveOffer(providerId, serviceId) {
+        return await this.prisma.offer.findFirst({
+            where: {
+                providerId,
+                serviceId,
+                isActive: true,
+                startDate: { lte: new Date() },
+                endDate: { gt: new Date() }
+            },
+            select: {
+                id: true,
+                startDate: true,
+                endDate: true,
+                description: true,
+                offerPrice: true,
+                originalPrice: true
+            }
+        });
+    }
     async create(providerId, createProviderServiceDto) {
         const { serviceId, price, isActive = true } = createProviderServiceDto;
         if (price <= 0) {
@@ -100,7 +119,14 @@ let ProviderServiceService = class ProviderServiceService {
                 }
             }
         });
-        return providerServices;
+        const providerServicesWithOffers = await Promise.all(providerServices.map(async (providerService) => {
+            const activeOffer = await this.getActiveOffer(providerService.providerId, providerService.serviceId);
+            return {
+                ...providerService,
+                activeOffer: activeOffer || null
+            };
+        }));
+        return providerServicesWithOffers;
     }
     async findByProvider(providerId, activeOnly = false) {
         const provider = await this.prisma.provider.findUnique({
@@ -132,7 +158,14 @@ let ProviderServiceService = class ProviderServiceService {
                 }
             }
         });
-        return providerServices;
+        const providerServicesWithOffers = await Promise.all(providerServices.map(async (providerService) => {
+            const activeOffer = await this.getActiveOffer(providerService.providerId, providerService.serviceId);
+            return {
+                ...providerService,
+                activeOffer: activeOffer || null
+            };
+        }));
+        return providerServicesWithOffers;
     }
     async findOne(id) {
         const providerService = await this.prisma.providerService.findUnique({
@@ -159,7 +192,11 @@ let ProviderServiceService = class ProviderServiceService {
         if (!providerService) {
             throw new common_1.NotFoundException('Provider service not found');
         }
-        return providerService;
+        const activeOffer = await this.getActiveOffer(providerService.providerId, providerService.serviceId);
+        return {
+            ...providerService,
+            activeOffer: activeOffer || null
+        };
     }
     async update(id, providerId, updateProviderServiceDto) {
         const providerService = await this.prisma.providerService.findUnique({
@@ -193,7 +230,11 @@ let ProviderServiceService = class ProviderServiceService {
                 }
             }
         });
-        return updatedProviderService;
+        const activeOffer = await this.getActiveOffer(updatedProviderService.providerId, updatedProviderService.serviceId);
+        return {
+            ...updatedProviderService,
+            activeOffer: activeOffer || null
+        };
     }
     async remove(id, providerId) {
         const providerService = await this.prisma.providerService.findUnique({
@@ -278,9 +319,16 @@ let ProviderServiceService = class ProviderServiceService {
                 }
             }
         });
+        const newProviderServicesWithOffers = await Promise.all(newProviderServices.map(async (providerService) => {
+            const activeOffer = await this.getActiveOffer(providerService.providerId, providerService.serviceId);
+            return {
+                ...providerService,
+                activeOffer: activeOffer || null
+            };
+        }));
         return {
             message: `Added ${createdServices.count} new services`,
-            services: newProviderServices
+            services: newProviderServicesWithOffers
         };
     }
     async removeMultipleServices(providerId, serviceIds) {
@@ -343,7 +391,11 @@ let ProviderServiceService = class ProviderServiceService {
                 }
             }
         });
-        return updatedProviderService;
+        const activeOffer = await this.getActiveOffer(updatedProviderService.providerId, updatedProviderService.serviceId);
+        return {
+            ...updatedProviderService,
+            activeOffer: activeOffer || null
+        };
     }
     async getServiceStats(providerId) {
         const provider = await this.prisma.provider.findUnique({

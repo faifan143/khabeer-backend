@@ -47,21 +47,21 @@ export declare class AuthService {
     upgradeToProvider(userId: number, providerData: any): Promise<{
         role: string;
         message: string;
+        description: string;
         id: number;
         name: string;
         image: string;
-        phone: string;
         state: string;
+        phone: string;
         isActive: boolean;
         officialDocuments: string | null;
-        email: string | null;
-        password: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        fcm: string | null;
-        description: string;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
+        createdAt: Date;
+        email: string | null;
+        updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     checkAccountStatus(identifier: string, type?: 'email' | 'phone'): Promise<{
         exists: boolean;
@@ -79,52 +79,52 @@ export declare class AuthService {
     activateProviderAccount(providerId: number): Promise<{
         message: string;
         providerServices: {
+            serviceId: number;
             id: number;
             isActive: boolean;
             providerId: number;
-            serviceId: number;
             price: number;
         }[];
+        description: string;
         id: number;
         name: string;
         image: string;
-        phone: string;
         state: string;
+        phone: string;
         isActive: boolean;
         officialDocuments: string | null;
-        email: string | null;
-        password: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        fcm: string | null;
-        description: string;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
+        createdAt: Date;
+        email: string | null;
+        updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     deactivateProviderAccount(providerId: number): Promise<{
         message: string;
         providerServices: {
+            serviceId: number;
             id: number;
             isActive: boolean;
             providerId: number;
-            serviceId: number;
             price: number;
         }[];
+        description: string;
         id: number;
         name: string;
         image: string;
-        phone: string;
         state: string;
+        phone: string;
         isActive: boolean;
         officialDocuments: string | null;
-        email: string | null;
-        password: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        fcm: string | null;
-        description: string;
         isVerified: boolean;
         location: import("generated/prisma/runtime/library").JsonValue | null;
+        createdAt: Date;
+        email: string | null;
+        updatedAt: Date;
+        password: string | null;
+        fcm: string | null;
     }>;
     sendPhoneLoginOtp(phoneLoginDto: PhoneLoginDto): Promise<{
         success: boolean;

@@ -20,9 +20,59 @@ export interface AddServicesDto {
   }>;
 }
 
+export interface ProviderServiceWithOfferResponse {
+  id: number;
+  providerId: number;
+  serviceId: number;
+  isActive: boolean;
+  price: number;
+  provider?: {
+    id: number;
+    name: string;
+    image: string;
+    isVerified?: boolean;
+    isActive?: boolean;
+  };
+  service?: {
+    id: number;
+    title: string;
+    description: string;
+    image: string;
+    commission: number;
+  };
+  activeOffer?: {
+    id: number;
+    startDate: Date;
+    endDate: Date;
+    description: string;
+    offerPrice: number;
+    originalPrice: number;
+  } | null;
+}
+
 @Injectable()
 export class ProviderServiceService {
   constructor(private readonly prisma: PrismaService) { }
+
+  private async getActiveOffer(providerId: number, serviceId: number) {
+    return await this.prisma.offer.findFirst({
+      where: {
+        providerId,
+        serviceId,
+        isActive: true,
+        startDate: { lte: new Date() },
+        endDate: { gt: new Date() }
+      },
+      select: {
+        id: true,
+        startDate: true,
+        endDate: true,
+        description: true,
+        offerPrice: true,
+        originalPrice: true
+      }
+    });
+  }
 
   async create(providerId: number, createProviderServiceDto: CreateProviderServiceDto) {
     const { serviceId, price, isActive = true } = createProviderServiceDto;
@@ -86,7 +136,13 @@ export class ProviderServiceService {
     return providerService;
   }
 
-  async findAll(providerId?: number, activeOnly: boolean = false) {
+  /**
+   * Find all provider services with optional filtering and active offer information
+   * @param providerId - Optional provider ID to filter by
+   * @param activeOnly - Whether to return only active services
+   * @returns Array of provider services with active offer details if available
+   */
+  async findAll(providerId?: number, activeOnly: boolean = false): Promise<ProviderServiceWithOfferResponse[]> {
     const where: any = {};
 
     if (providerId) {
@@ -126,10 +182,28 @@ export class ProviderServiceService {
       }
     });
 
-    return providerServices;
+    // Get active offers for each provider service
+    const providerServicesWithOffers = await Promise.all(
+      providerServices.map(async (providerService) => {
+        const activeOffer = await this.getActiveOffer(providerService.providerId, providerService.serviceId);
+
+        return {
+          ...providerService,
+          activeOffer: activeOffer || null
+        };
+      })
+    );
+
+    return providerServicesWithOffers;
   }
 
-  async findByProvider(providerId: number, activeOnly: boolean = false) {
+  /**
+   * Find all services offered by a specific provider with active offer information
+   * @param providerId - Provider ID to filter by
+   * @param activeOnly - Whether to return only active services
+   * @returns Array of provider services with active offer details if available
+   */
+  async findByProvider(providerId: number, activeOnly: boolean = false): Promise<ProviderServiceWithOfferResponse[]> {
     const provider = await this.prisma.provider.findUnique({
       where: { id: providerId }
     });
@@ -163,10 +237,27 @@ export class ProviderServiceService {
       }
     });
 
-    return providerServices;
+    // Get active offers for each provider service
+    const providerServicesWithOffers = await Promise.all(
+      providerServices.map(async (providerService) => {
+        const activeOffer = await this.getActiveOffer(providerService.providerId, providerService.serviceId);
+
+        return {
+          ...providerService,
+          activeOffer: activeOffer || null
+        };
+      })
+    );
+
+    return providerServicesWithOffers;
   }
 
-  async findOne(id: number) {
+  /**
+   * Find a specific provider service by ID with active offer information
+   * @param id - Provider service ID
+   * @returns Provider service with active offer details if available
+   */
+  async findOne(id: number): Promise<ProviderServiceWithOfferResponse> {
     const providerService = await this.prisma.providerService.findUnique({
       where: { id },
       include: {
@@ -193,10 +284,16 @@ export class ProviderServiceService {
       throw new NotFoundException('Provider service not found');
     }
 
-    return providerService;
+    // Get active offer for this provider service
+    const activeOffer = await this.getActiveOffer(providerService.providerId, providerService.serviceId);
+
+    return {
+      ...providerService,
+      activeOffer: activeOffer || null
+    };
   }
 
-  async update(id: number, providerId: number, updateProviderServiceDto: UpdateProviderServiceDto) {
+  async update(id: number, providerId: number, updateProviderServiceDto: UpdateProviderServiceDto): Promise<ProviderServiceWithOfferResponse> {
     const providerService = await this.prisma.providerService.findUnique({
       where: { id }
     });
@@ -235,7 +332,13 @@ export class ProviderServiceService {
       }
     });
 
-    return updatedProviderService;
+    // Get active offer for this provider service
+    const activeOffer = await this.getActiveOffer(updatedProviderService.providerId, updatedProviderService.serviceId);
+
+    return {
+      ...updatedProviderService,
+      activeOffer: activeOffer || null
+    };
   }
 
   async remove(id: number, providerId: number) {
@@ -273,7 +376,7 @@ export class ProviderServiceService {
     return { message: 'Provider service removed successfully' };
   }
 
-  async addMultipleServices(providerId: number, addServicesDto: AddServicesDto) {
+  async addMultipleServices(providerId: number, addServicesDto: AddServicesDto): Promise<{ message: string; services: ProviderServiceWithOfferResponse[] }> {
     const { services } = addServicesDto;
 
     if (!services || services.length === 0) {
@@ -345,9 +448,21 @@ export class ProviderServiceService {
       }
     });
 
+    // Get active offers for each provider service
+    const newProviderServicesWithOffers = await Promise.all(
+      newProviderServices.map(async (providerService) => {
+        const activeOffer = await this.getActiveOffer(providerService.providerId, providerService.serviceId);
+
+        return {
+          ...providerService,
+          activeOffer: activeOffer || null
+        };
+      })
+    );
+
     return {
       message: `Added ${createdServices.count} new services`,
-      services: newProviderServices
+      services: newProviderServicesWithOffers
     };
   }
 
@@ -394,7 +509,7 @@ export class ProviderServiceService {
     };
   }
 
-  async toggleServiceStatus(id: number, providerId: number) {
+  async toggleServiceStatus(id: number, providerId: number): Promise<ProviderServiceWithOfferResponse> {
     const providerService = await this.prisma.providerService.findUnique({
       where: { id }
     });
@@ -425,7 +540,13 @@ export class ProviderServiceService {
       }
     });
 
-    return updatedProviderService;
+    // Get active offer for this provider service
+    const activeOffer = await this.getActiveOffer(updatedProviderService.providerId, updatedProviderService.serviceId);
+
+    return {
+      ...updatedProviderService,
+      activeOffer: activeOffer || null
+    };
   }
 
   async getServiceStats(providerId: number) {
