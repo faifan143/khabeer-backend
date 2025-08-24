@@ -87,7 +87,8 @@ export class OrdersService {
         totalAmount,
         providerAmount,
         commissionAmount,
-        status: OrderStatus.PENDING
+        status: OrderStatus.PENDING,
+        isMultipleServices: false
       },
       include: {
         user: true,
@@ -159,6 +160,7 @@ export class OrdersService {
             title: true,
             description: true,
             image: true,
+            commission: true,
             category: {
               select: {
                 id: true,
@@ -178,29 +180,39 @@ export class OrdersService {
     });
 
     // Transform orders to always include services array
-    return orders.map(order => {
-      // Always create a services array - single service orders get one item
-      const services = this.buildServicesArray(order);
+    const transformedOrders = orders.map(order => {
+      let services: any[] = [];
+      
+      if (order.isMultipleServices && order.servicesBreakdown) {
+        // Use the stored services breakdown from the database
+        services = order.servicesBreakdown as any[];
+      } else {
+        // For single service orders, create a single-item array
+        const service = order.service;
+        services = [
+          {
+            serviceId: service.id,
+            serviceTitle: service.title,
+            serviceDescription: service.description,
+            serviceImage: service.image,
+            quantity: order.quantity,
+            unitPrice: order.providerAmount / order.quantity,
+            totalPrice: order.providerAmount,
+            commission: service.commission || 0,
+            commissionAmount: order.commissionAmount
+          }
+        ];
+      }
 
       return {
         ...order,
-        duration: order.scheduledDate, // Use scheduled date as duration
-        isMultipleServices: services.length > 1,
+        isMultipleServices: order.isMultipleServices || false,
         services,
-        user: {
-          ...order.user,
-          image: order.user.image || '',
-          state: order.user.state || '',
-          latitude: order.user.latitude ? Number(order.user.latitude) : null,
-          longitude: order.user.longitude ? Number(order.user.longitude) : null
-        },
-        service: {
-          ...order.service,
-          image: order.service.image || '',
-          category: order.service.category || undefined
-        }
+        duration: order.scheduledDate
       };
     });
+
+    return transformedOrders;
   }
 
   async findOne(id: number, userId: number, role: string) {
@@ -249,11 +261,32 @@ export class OrdersService {
     }
 
     // Always create a services array - single service orders get one item
-    const services = this.buildServicesArray(order);
+    let services: any[] = [];
+    
+    if (order.isMultipleServices && order.servicesBreakdown) {
+      // Use the stored services breakdown from the database
+      services = order.servicesBreakdown as any[];
+    } else {
+      // For single service orders, create a single-item array
+      const service = order.service;
+      services = [
+        {
+          serviceId: service.id,
+          serviceTitle: service.title,
+          serviceDescription: service.description,
+          serviceImage: service.image,
+          quantity: order.quantity,
+          unitPrice: order.providerAmount / order.quantity,
+          totalPrice: order.providerAmount,
+          commission: service.commission || 0,
+          commissionAmount: order.commissionAmount
+        }
+      ];
+    }
 
     return {
       ...order,
-      isMultipleServices: services.length > 1,
+      isMultipleServices: order.isMultipleServices || false,
       services,
       duration: order.scheduledDate
     };
@@ -896,15 +929,33 @@ export class OrdersService {
           serviceDescription: service.description,
           serviceImage: service.image,
           quantity: 1,
-          unitPrice: order.providerAmount, // Assuming providerAmount is the total for one service
+          unitPrice: order.providerAmount,
           totalPrice: order.providerAmount,
-          commission: service.commission,
+          commission: service.commission || 0,
           commissionAmount: order.commissionAmount
         }
       ];
     } else {
-      // For multiple services orders, return the services breakdown
-      return this.getServicesBreakdown(order);
+      // For multiple services orders, create a logical breakdown
+      // Instead of repeating the same service, we'll create a breakdown based on quantity
+      const service = order.service;
+      const unitPrice = order.providerAmount / order.quantity;
+      const unitCommission = order.commissionAmount / order.quantity;
+
+      // Create a single service entry with the total quantity
+      return [
+        {
+          serviceId: service.id,
+          serviceTitle: service.title,
+          serviceDescription: service.description,
+          serviceImage: service.image,
+          quantity: order.quantity,
+          unitPrice: unitPrice,
+          totalPrice: order.providerAmount,
+          commission: service.commission || 0,
+          commissionAmount: order.commissionAmount
+        }
+      ];
     }
   }
 
@@ -1046,7 +1097,9 @@ export class OrdersService {
           totalAmount,
           providerAmount: subtotal,
           commissionAmount: totalCommission,
-          status: OrderStatus.PENDING
+          status: OrderStatus.PENDING,
+          isMultipleServices: true,
+          servicesBreakdown: serviceBreakdown
         }
       });
 

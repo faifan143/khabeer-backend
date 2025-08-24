@@ -115,6 +115,8 @@ model Order {
   quantity          Int                @default(1)
   scheduledDate     DateTime?
   totalAmount       Float
+  isMultipleServices Boolean           @default(false)
+  servicesBreakdown Json?
   activeConnections ActiveConnection[]
   invoice           Invoice?
   locationTracking  LocationTracking[]

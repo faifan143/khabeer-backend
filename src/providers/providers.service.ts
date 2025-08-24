@@ -491,19 +491,19 @@ export class ProvidersService {
     // For multiple services orders, we need to reconstruct the services array
     // Since we don't store the individual services breakdown in the database,
     // we'll create a reasonable approximation based on the order data
-    
+
     // Calculate how many services this order represents
     const estimatedServiceCount = Math.ceil(order.quantity / 2); // Estimate based on quantity
-    
+
     const services: any[] = [];
     const baseQuantity = Math.floor(order.quantity / estimatedServiceCount);
     const remainingQuantity = order.quantity % estimatedServiceCount;
-    
+
     for (let i = 0; i < estimatedServiceCount; i++) {
       const serviceQuantity = i === 0 ? baseQuantity + remainingQuantity : baseQuantity;
       const serviceAmount = (order.providerAmount / order.quantity) * serviceQuantity;
       const serviceCommission = (order.commissionAmount / order.quantity) * serviceQuantity;
-      
+
       services.push({
         quantity: serviceQuantity,
         unitPrice: order.providerAmount / order.quantity,
@@ -511,7 +511,7 @@ export class ProvidersService {
         commissionAmount: serviceCommission
       });
     }
-    
+
     return services;
   }
 
@@ -526,15 +526,33 @@ export class ProvidersService {
           serviceDescription: service.description,
           serviceImage: service.image,
           quantity: 1,
-          unitPrice: order.providerAmount, // Assuming providerAmount is the total for one service
+          unitPrice: order.providerAmount,
           totalPrice: order.providerAmount,
-          commission: service.commission,
+          commission: service.commission || 0,
           commissionAmount: order.commissionAmount
         }
       ];
     } else {
-      // For multiple services orders, return the services breakdown
-      return this.getServicesBreakdown(order);
+      // For multiple services orders, create a logical breakdown
+      // Instead of repeating the same service, we'll create a breakdown based on quantity
+      const service = order.service;
+      const unitPrice = order.providerAmount / order.quantity;
+      const unitCommission = order.commissionAmount / order.quantity;
+
+      // Create a single service entry with the total quantity
+      return [
+        {
+          serviceId: service.id,
+          serviceTitle: service.title,
+          serviceDescription: service.description,
+          serviceImage: service.image,
+          quantity: order.quantity,
+          unitPrice: unitPrice,
+          totalPrice: order.providerAmount,
+          commission: service.commission || 0,
+          commissionAmount: order.commissionAmount
+        }
+      ];
     }
   }
 
@@ -561,6 +579,7 @@ export class ProvidersService {
               title: true,
               description: true,
               image: true,
+              commission: true,
               category: {
                 select: {
                   id: true,
@@ -580,13 +599,33 @@ export class ProvidersService {
 
       // Transform orders to always include services array
       const transformedOrders = orders.map(order => {
-        // Always create a services array - single service orders get one item
-        const services = this.buildServicesArray(order);
+        let services: any[] = [];
+        
+        if (order.isMultipleServices && order.servicesBreakdown) {
+          // Use the stored services breakdown from the database
+          services = order.servicesBreakdown as any[];
+        } else {
+          // For single service orders, create a single-item array
+          const service = order.service;
+          services = [
+            {
+              serviceId: service.id,
+              serviceTitle: service.title,
+              serviceDescription: service.description,
+              serviceImage: service.image,
+              quantity: order.quantity,
+              unitPrice: order.providerAmount / order.quantity,
+              totalPrice: order.providerAmount,
+              commission: service.commission || 0,
+              commissionAmount: order.commissionAmount
+            }
+          ];
+        }
         
         return {
           ...order,
           duration: order.scheduledDate, // Use scheduled date as duration
-          isMultipleServices: services.length > 1,
+          isMultipleServices: order.isMultipleServices || false,
           services,
           user: {
             ...order.user,
@@ -639,6 +678,7 @@ export class ProvidersService {
               title: true,
               description: true,
               image: true,
+              commission: true,
               category: {
                 select: {
                   id: true,
@@ -658,13 +698,33 @@ export class ProvidersService {
 
       // Transform orders to always include services array
       const transformedOrders = orders.map(order => {
-        // Always create a services array - single service orders get one item
-        const services = this.buildServicesArray(order);
+        let services: any[] = [];
+        
+        if (order.isMultipleServices && order.servicesBreakdown) {
+          // Use the stored services breakdown from the database
+          services = order.servicesBreakdown as any[];
+        } else {
+          // For single service orders, create a single-item array
+          const service = order.service;
+          services = [
+            {
+              serviceId: service.id,
+              serviceTitle: service.title,
+              serviceDescription: service.description,
+              serviceImage: service.image,
+              quantity: order.quantity,
+              unitPrice: order.providerAmount / order.quantity,
+              totalPrice: order.providerAmount,
+              commission: service.commission || 0,
+              commissionAmount: order.commissionAmount
+            }
+          ];
+        }
         
         return {
           ...order,
           duration: order.scheduledDate, // Use scheduled date as duration
-          isMultipleServices: services.length > 1,
+          isMultipleServices: order.isMultipleServices || false,
           services,
           user: {
             ...order.user,
