@@ -121,9 +121,7 @@ export class UsersService {
   // Debug methods
   async testDatabaseConnection() {
     try {
-      console.log('Testing Prisma connection...');
       await this.prisma.$queryRaw`SELECT 1`;
-      console.log('Database connection successful');
       return true;
     } catch (error) {
       console.error('Database connection failed:', error);
@@ -133,15 +131,9 @@ export class UsersService {
 
   async getDatabaseStats() {
     try {
-      console.log('Getting database statistics...');
-
       const userCount = await this.prisma.user.count();
       const locationCount = await this.prisma.userLocation.count();
       const providerCount = await this.prisma.provider.count();
-
-      console.log('User count:', userCount);
-      console.log('Location count:', locationCount);
-      console.log('Provider count:', providerCount);
 
       return {
         userCount,
@@ -210,7 +202,6 @@ export class UsersService {
       if (groupedSettings.social?.social_links) {
         try {
           const parsedSocialLinks = JSON.parse(groupedSettings.social.social_links);
-          console.log('Parsed social media links:', parsedSocialLinks);
           socialMedia = {
             whatsapp: parsedSocialLinks.whatsapp || null,
             instagram: parsedSocialLinks.instagram || null,
@@ -222,8 +213,6 @@ export class UsersService {
           console.error('Failed to parse social media links:', parseError);
           console.error('Raw social_links value:', groupedSettings.social.social_links);
         }
-      } else {
-        console.log('No social_links found in social settings:', groupedSettings.social);
       }
 
       const legalDocuments = {
@@ -295,27 +284,19 @@ export class UsersService {
 
   // User Location Management Methods
   async getUserLocations(userId: number) {
-    console.log('=== getUserLocations Service Method DEBUG START ===');
-    console.log('Received userId parameter:', userId);
-    console.log('Type of userId:', typeof userId);
-    console.log('userId is valid number?', !isNaN(userId) && userId > 0);
+
 
     try {
       // First, verify the user exists
-      console.log('Checking if user exists in database...');
       const userExists = await this.prisma.user.findUnique({
         where: { id: userId },
         select: { id: true, name: true, phone: true, role: true }
       });
-      console.log('User lookup result:', userExists);
 
       if (!userExists) {
         console.error('ERROR: User not found in database with ID:', userId);
         throw new NotFoundException(`User with ID ${userId} not found`);
       }
-
-      console.log('User found, now querying locations...');
-      console.log('Executing Prisma query for user locations...');
 
       const locations = await this.prisma.userLocation.findMany({
         where: { userId },
@@ -324,9 +305,6 @@ export class UsersService {
           { createdAt: 'desc' }
         ]
       });
-
-      console.log('Raw locations from database:', locations);
-      console.log('Number of locations found:', locations.length);
 
       const mappedLocations = locations.map(location => ({
         id: location.id,
@@ -340,9 +318,6 @@ export class UsersService {
         updatedAt: location.updatedAt
       }));
 
-      console.log('Mapped locations result:', mappedLocations);
-      console.log('=== getUserLocations Service Method DEBUG END ===');
-
       return mappedLocations;
     } catch (error) {
       console.error('ERROR in getUserLocations service method:', error);
@@ -351,11 +326,9 @@ export class UsersService {
       console.error('Error stack:', error.stack);
 
       if (error instanceof NotFoundException) {
-        console.error('This is a NotFoundException - rethrowing');
         throw error;
       }
 
-      console.error('=== getUserLocations Service Method DEBUG END WITH ERROR ===');
       throw new InternalServerErrorException(`Error fetching user locations: ${error.message}`);
     }
   }

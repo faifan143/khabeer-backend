@@ -6,6 +6,8 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto, RegisterType } from './dto/register.dto';
 import { PhoneLoginDto, PhoneRegistrationDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
 import { FileInterceptor } from '@nestjs/platform-express/multer';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { FilesService } from 'src/files/files.service';
 
 @ApiTags('Authentication')
@@ -32,14 +34,7 @@ export class AuthController {
         throw new BadRequestException('Please provide either email OR phone, not both');
       }
 
-      // Debug logging
-      console.log('Login request received:', {
-        email: body.email,
-        phone: body.phone,
-        hasPassword: !!body.password,
-        hasFCM: !!body.fcm,
-        fcmLength: body.fcm?.length || 0
-      });
+
 
       const user = await this.authService.validateUser(body);
       if (!user) {
@@ -48,11 +43,9 @@ export class AuthController {
 
       // Use FCM-enabled login if FCM token is provided
       if (body.fcm) {
-        console.log('Using FCM-enabled login for user:', user.id);
         return this.authService.loginWithFCM(user, body.fcm);
       }
 
-      console.log('Using regular login for user:', user.id);
       return this.authService.login(user);
     } catch (error) {
       console.error('Login error:', error);
@@ -69,140 +62,150 @@ export class AuthController {
     }
   }
 
-  @Post('phone/login')
-  @ApiOperation({ summary: 'Phone login without OTP (optional password)' })
-  @ApiResponse({ status: 200, description: 'Login successful', type: PhoneLoginResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid credentials' })
-  async phoneLogin(@Body() directPhoneLoginDto: DirectPhoneLoginDto) {
-    return this.authService.phoneLogin(directPhoneLoginDto);
-  }
+  // @Post('phone/login')
+  // @ApiOperation({ summary: 'Phone login without OTP (optional password)' })
+  // @ApiResponse({ status: 200, description: 'Login successful', type: PhoneLoginResponseDto })
+  // @ApiResponse({ status: 400, description: 'Invalid credentials' })
+  // async phoneLogin(@Body() directPhoneLoginDto: DirectPhoneLoginDto) {
+  //   return this.authService.phoneLogin(directPhoneLoginDto);
+  // }
 
-  @Post('phone/register/send-otp')
-  @ApiOperation({ summary: 'Send OTP for phone-based registration' })
-  @ApiResponse({ status: 200, description: 'OTP sent successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid phone number' })
-  async sendPhoneRegistrationOtp(@Body() phoneLoginDto: PhoneLoginDto) {
-    return this.authService.sendPhoneLoginOtp({ ...phoneLoginDto, purpose: 'registration' });
-  }
+  // @Post('phone/register/send-otp')
+  // @ApiOperation({ summary: 'Send OTP for phone-based registration' })
+  // @ApiResponse({ status: 200, description: 'OTP sent successfully' })
+  // @ApiResponse({ status: 400, description: 'Invalid phone number' })
+  // async sendPhoneRegistrationOtp(@Body() phoneLoginDto: PhoneLoginDto) {
+  //   return this.authService.sendPhoneLoginOtp({ ...phoneLoginDto, purpose: 'registration' });
+  // }
 
-  @Post('phone/register')
-  @UseInterceptors(FileInterceptor('image'))
-  @ApiOperation({ summary: 'Register with phone verification (OTP optional)' })
-  @ApiResponse({ status: 200, description: 'Registration successful' })
-  @ApiResponse({ status: 400, description: 'Invalid data or OTP' })
-  async registerWithPhone(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
-    console.log('Phone register body:', body);
+  // @Post('phone/register')
+  // @UseInterceptors(FileInterceptor('image'))
+  // @ApiOperation({ summary: 'Register with phone verification (OTP optional)' })
+  // @ApiResponse({ status: 200, description: 'Registration successful' })
+  // @ApiResponse({ status: 400, description: 'Invalid data or OTP' })
+  // async registerWithPhone(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
+  //   console.log('Phone register body:', body);
 
-    // Validate required fields (OTP is now optional)
-    if (!body.phoneNumber || !body.name || !body.password) {
-      throw new BadRequestException('Phone number, name, and password are required');
-    }
+  //   // Validate required fields (OTP is now optional)
+  //   if (!body.phoneNumber || !body.name || !body.password) {
+  //     throw new BadRequestException('Phone number, name, and password are required');
+  //   }
 
-    // Normalize multipart data
-    const registerData: RegisterDto & { phoneNumber: string; otp?: string } = {
-      registerType: RegisterType.USER, // Phone registration is always for users
-      name: Array.isArray(body.name) ? body.name[0] : body.name,
-      email: Array.isArray(body.email) ? body.email[0] : body.email || '',
-      password: Array.isArray(body.password) ? body.password[0] : body.password,
-      phoneNumber: Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber,
-      otp: Array.isArray(body.otp) ? body.otp[0] : body.otp, // Optional now
-      role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
-      address: Array.isArray(body.address) ? body.address[0] : body.address || '',
-      phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
-      state: Array.isArray(body.state) ? body.state[0] : body.state || '',
-      isActive: body.isActive === 'true' || body.isActive === true,
-      officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
-      description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-      serviceIds: this.parseServiceIds(body.serviceIds)
-    };
+  //   // Normalize multipart data
+  //   const registerData: RegisterDto & { phoneNumber: string; otp?: string } = {
+  //     registerType: body.registerType || RegisterType.USER, // Allow both user and provider registration
+  //     name: Array.isArray(body.name) ? body.name[0] : body.name,
+  //     email: Array.isArray(body.email) ? body.email[0] : body.email || '',
+  //     password: Array.isArray(body.password) ? body.password[0] : body.password,
+  //     phoneNumber: Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber,
+  //     otp: Array.isArray(body.otp) ? body.otp[0] : body.otp, // Optional now
+  //     role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
+  //     address: Array.isArray(body.address) ? body.address[0] : body.address || '',
+  //     phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
+  //     state: Array.isArray(body.state) ? body.state[0] : body.state || '',
+  //     isActive: body.isActive === 'true' || body.isActive === true,
+  //     officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
+  //     description: Array.isArray(body.description) ? body.description[0] : body.description || '',
+  //     serviceIds: this.parseServiceIds(body.serviceIds)
+  //   };
 
-    // Handle file upload
-    if (file) {
-      const uploadResult = await this.filesService.handleUploadedFile(file);
-      registerData.image = uploadResult.url;
-    }
+  //   // Handle file upload
+  //   if (file) {
+  //     const uploadResult = await this.filesService.handleUploadedFile(file);
+  //     registerData.image = uploadResult.url;
+  //   }
 
-    return this.authService.registerWithPhone(registerData);
-  }
+  //   return this.authService.registerWithPhone(registerData);
+  // }
 
-  @Post('phone/password-reset/send-otp')
-  @ApiOperation({ summary: 'Send OTP for password reset' })
-  @ApiResponse({ status: 200, description: 'OTP sent successfully' })
-  @ApiResponse({ status: 404, description: 'Account not found' })
-  async sendPasswordResetOtp(@Body() body: { phoneNumber: string }) {
-    return this.authService.sendPhoneLoginOtp({
-      phoneNumber: body.phoneNumber,
-      purpose: 'password_reset'
-    });
-  }
+  // @Post('phone/password-reset/send-otp')
+  // @ApiOperation({ summary: 'Send OTP for password reset' })
+  // @ApiResponse({ status: 200, description: 'OTP sent successfully' })
+  // @ApiResponse({ status: 404, description: 'Account not found' })
+  // async sendPasswordResetOtp(@Body() body: { phoneNumber: string }) {
+  //   return this.authService.sendPhoneLoginOtp({
+  //     phoneNumber: body.phoneNumber,
+  //     purpose: 'password_reset'
+  //   });
+  // }
 
-  @Post('phone/password-reset')
-  @ApiOperation({ summary: 'Reset password with phone verification' })
-  @ApiResponse({ status: 200, description: 'Password reset successful' })
-  @ApiResponse({ status: 400, description: 'Invalid OTP or data' })
-  async resetPasswordWithPhone(@Body() body: { phoneNumber: string; otp: string; newPassword: string }) {
-    return this.authService.resetPasswordWithPhone(body.phoneNumber, body.otp, body.newPassword);
-  }
+  // @Post('phone/password-reset')
+  // @ApiOperation({ summary: 'Reset password with phone verification' })
+  // @ApiResponse({ status: 200, description: 'Password reset successful' })
+  // @ApiResponse({ status: 400, description: 'Invalid OTP or data' })
+  // async resetPasswordWithPhone(@Body() body: { phoneNumber: string; otp: string; newPassword: string }) {
+  //   return this.authService.resetPasswordWithPhone(body.phoneNumber, body.otp, body.newPassword);
+  // }
 
-  @Post('register')
-  @UseInterceptors(FileInterceptor('image'))
-  @ApiOperation({ summary: 'Register with phone (users) or email (providers) and password' })
-  @ApiResponse({ status: 200, description: 'Registration successful' })
-  @ApiResponse({ status: 400, description: 'Invalid data' })
-  async register(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
-    console.log('Register body:', body);
+  // @Post('register')
+  // @UseInterceptors(FileInterceptor('image'))
+  // @ApiOperation({ summary: 'Register with phone (users) or email (providers) and password' })
+  // @ApiResponse({ status: 200, description: 'Registration successful' })
+  // @ApiResponse({ status: 400, description: 'Invalid data' })
+  // async register(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
+  //   console.log('Register body:', body);
 
-    // Validate required fields manually
-    if (!body.password || !body.name) {
-      throw new BadRequestException('Password and name are required');
-    }
+  //   // Validate required fields manually
+  //   if (!body.password || !body.name) {
+  //     throw new BadRequestException('Password and name are required');
+  //   }
 
-    // Determine registration type based on role or description
-    let registerType = 'user';
-    if (body.description || body.role === 'PROVIDER') {
-      registerType = 'provider';
-      if (!body.email) {
-        throw new BadRequestException('Email is required for provider registration');
-      }
-    } else {
-      if (!body.phone) {
-        throw new BadRequestException('Phone number is required for user registration');
-      }
-    }
+  //   // Determine registration type based on role or description
+  //   let registerType = 'user';
+  //   if (body.description || body.role === 'PROVIDER') {
+  //     registerType = 'provider';
+  //     if (!body.email) {
+  //       throw new BadRequestException('Email is required for provider registration');
+  //     }
+  //   } else {
+  //     if (!body.phone) {
+  //       throw new BadRequestException('Phone number is required for user registration');
+  //     }
+  //   }
 
-    // Normalize multipart data (some parsers send fields as arrays)
-    const registerData: RegisterDto = {
-      registerType: registerType as any,
-      name: Array.isArray(body.name) ? body.name[0] : body.name,
-      email: Array.isArray(body.email) ? body.email[0] : body.email,
-      password: Array.isArray(body.password) ? body.password[0] : body.password,
-      role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
-      address: Array.isArray(body.address) ? body.address[0] : body.address || '',
-      phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
-      state: Array.isArray(body.state) ? body.state[0] : body.state || '',
-      isActive: body.isActive === 'true' || body.isActive === true,
-      officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
-      description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-      serviceIds: this.parseServiceIds(body.serviceIds)
-    };
+  //   // Normalize multipart data (some parsers send fields as arrays)
+  //   const registerData: RegisterDto = {
+  //     registerType: registerType as any,
+  //     name: Array.isArray(body.name) ? body.name[0] : body.name,
+  //     email: Array.isArray(body.email) ? body.email[0] : body.email,
+  //     password: Array.isArray(body.password) ? body.password[0] : body.password,
+  //     role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
+  //     address: Array.isArray(body.address) ? body.address[0] : body.address || '',
+  //     phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
+  //     state: Array.isArray(body.state) ? body.state[0] : body.state || '',
+  //     isActive: body.isActive === 'true' || body.isActive === true,
+  //     officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
+  //     description: Array.isArray(body.description) ? body.description[0] : body.description || '',
+  //     serviceIds: this.parseServiceIds(body.serviceIds)
+  //   };
 
-    // Handle file upload
-    if (file) {
-      const fileResult = await this.filesService.handleUploadedFile(file);
-      registerData.image = fileResult.url;
-    } else {
-      registerData.image = '';
-    }
+  //   // Handle file upload
+  //   if (file) {
+  //     const fileResult = await this.filesService.handleUploadedFile(file);
+  //     registerData.image = fileResult.url;
+  //   } else {
+  //     registerData.image = '';
+  //   }
 
-    return this.authService.register(registerData);
-  }
+  //   return this.authService.register(registerData);
+  // }
 
   @Post('register/initiate')
-  @ApiOperation({ summary: 'Step 1: Initiate registration and send OTP' })
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads/images/users',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        cb(null, `user-${uniqueSuffix}${ext}`);
+      },
+    }),
+  }))
+  @ApiOperation({ summary: 'Step 1: Initiate registration and send OTP - User provides all data including password' })
   @ApiResponse({ status: 200, description: 'Registration initiated, OTP sent' })
   @ApiResponse({ status: 400, description: 'Invalid data or user already exists' })
-  async initiateRegistration(@Body() body: any) {
-    console.log('Initiate registration body:', body);
+  async initiateRegistration(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
+
 
     // Validate required fields
     if (!body.password || !body.name || !body.phoneNumber) {
@@ -210,45 +213,12 @@ export class AuthController {
     }
 
     // Normalize data
-    const registerData = {
-      registerType: RegisterType.USER, // Phone registration is always for users
-      name: Array.isArray(body.name) ? body.name[0] : body.name,
-      email: Array.isArray(body.email) ? body.email[0] : body.email,
-      password: Array.isArray(body.password) ? body.password[0] : body.password,
-      phoneNumber: Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber,
-      role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
-      address: Array.isArray(body.address) ? body.address[0] : body.address || '',
-      phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
-      state: Array.isArray(body.state) ? body.state[0] : body.state || '',
-      isActive: body.isActive === 'true' || body.isActive === true,
-      officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
-      description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-      serviceIds: this.parseServiceIds(body.serviceIds)
-    };
-
-    return this.authService.initiateRegistration(registerData);
-  }
-
-  @Post('register/complete')
-  @UseInterceptors(FileInterceptor('image'))
-  @ApiOperation({ summary: 'Step 2: Complete registration with OTP verification' })
-  @ApiResponse({ status: 200, description: 'Registration completed successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid OTP or data' })
-  async completeRegistration(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
-    console.log('Complete registration body:', body);
-
-    // Validate required fields
-    if (!body.password || !body.name || !body.phoneNumber || !body.otp) {
-      throw new BadRequestException('Password, name, phone number, and OTP are required');
-    }
-
-    // Normalize multipart data
     const registerData: any = {
+      registerType: body.registerType || RegisterType.USER, // Allow both user and provider registration
       name: Array.isArray(body.name) ? body.name[0] : body.name,
       email: Array.isArray(body.email) ? body.email[0] : body.email,
       password: Array.isArray(body.password) ? body.password[0] : body.password,
       phoneNumber: Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber,
-      otp: Array.isArray(body.otp) ? body.otp[0] : body.otp,
       role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
       address: Array.isArray(body.address) ? body.address[0] : body.address || '',
       phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
@@ -261,11 +231,32 @@ export class AuthController {
 
     // Handle file upload
     if (file) {
-      const uploadResult = await this.filesService.handleUploadedFile(file);
-      registerData.image = uploadResult.url;
+      // Since we're using disk storage, we can construct the URL directly
+      const imageUrl = `/uploads/images/users/${file.filename}`;
+      registerData.image = imageUrl;
+    } else {
+      registerData.image = '';
+    }
+    return this.authService.initiateRegistration(registerData);
+  }
+
+  @Post('register/complete')
+  @ApiOperation({ summary: 'Step 2: Complete registration with OTP verification - Only phone and OTP required' })
+  @ApiResponse({ status: 200, description: 'Registration completed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid OTP or registration data expired' })
+  async completeRegistration(@Body() body: { phoneNumber: string; otp: string }) {
+
+
+    // Validate required fields - only phone and OTP are needed
+    if (!body.phoneNumber || !body.otp) {
+      throw new BadRequestException('Phone number and OTP are required');
     }
 
-    return this.authService.completeRegistration(registerData);
+    // Normalize data
+    const phoneNumber = Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber;
+    const otp = Array.isArray(body.otp) ? body.otp[0] : body.otp;
+
+    return this.authService.completeRegistration(phoneNumber, otp);
   }
 
   @Post('me')
@@ -306,6 +297,28 @@ export class AuthController {
   async deactivateAccount(@Request() req) {
     return this.authService.deactivateProviderAccount(req.user.userId);
   }
+
+  @Post('register/check-status')
+  @ApiOperation({ summary: 'Check if registration data exists for a phone number' })
+  @ApiResponse({ status: 200, description: 'Registration status checked' })
+  @ApiResponse({ status: 400, description: 'Phone number required' })
+  async checkRegistrationStatus(@Body() body: { phoneNumber: string }) {
+    if (!body.phoneNumber) {
+      throw new BadRequestException('Phone number is required');
+    }
+    return this.authService.checkRegistrationStatus(body.phoneNumber);
+  }
+
+  // @Post('register/clear-data')
+  // @ApiOperation({ summary: 'Clear registration data for a phone number' })
+  // @ApiResponse({ status: 200, description: 'Registration data cleared' })
+  // @ApiResponse({ status: 400, description: 'Phone number required' })
+  // async clearRegistrationData(@Body() body: { phoneNumber: string }) {
+  //   if (!body.phoneNumber) {
+  //     throw new BadRequestException('Phone number is required');
+  //   }
+  //   return this.authService.clearRegistrationData(body.phoneNumber);
+  // }
 
   private parseServiceIds(serviceIds: any): number[] {
     if (!serviceIds) return [];
