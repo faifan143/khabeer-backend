@@ -779,10 +779,12 @@ export class ProvidersService {
           const enhancedProviderServices = await Promise.all(
             provider.providerServices.map(async (providerService) => {
               // Get active offer for this provider service
+              // Strip time component - only consider date (day, month, year)
               const now = new Date();
+              const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-              // Debug: Log the current time and check for any offers
-              console.log(`Checking offers for provider ${provider.id}, service ${serviceId} at ${now.toISOString()}`);
+              // Debug: Log the current date and check for any offers
+              console.log(`Checking offers for provider ${provider.id}, service ${serviceId} at ${today.toISOString().split('T')[0]}`);
 
               // First, let's get ALL offers for this provider/service to debug
               const allOffers = await this.prisma.offer.findMany({
@@ -795,17 +797,20 @@ export class ProvidersService {
 
               console.log(`Total offers found for provider ${provider.id}, service ${serviceId}: ${allOffers.length}`);
               allOffers.forEach(offer => {
-                console.log(`Offer ${offer.id}: start=${offer.startDate}, end=${offer.endDate}, price=${offer.offerPrice}, isActive=${offer.isActive}`);
+                // Strip time from offer dates for comparison
+                const offerStartDate = new Date(offer.startDate.getFullYear(), offer.startDate.getMonth(), offer.startDate.getDate());
+                const offerEndDate = new Date(offer.endDate.getFullYear(), offer.endDate.getMonth(), offer.endDate.getDate());
+                console.log(`Offer ${offer.id}: start=${offerStartDate.toISOString().split('T')[0]}, end=${offerEndDate.toISOString().split('T')[0]}, price=${offer.offerPrice}, isActive=${offer.isActive}`);
               });
 
-              // Now find the active offer with proper date comparison
+              // Now find the active offer with date-only comparison (ignoring time)
               const activeOffer = await this.prisma.offer.findFirst({
                 where: {
                   providerId: provider.id,
                   serviceId: serviceId,
                   isActive: true,
-                  startDate: { lte: now },
-                  endDate: { gt: now }
+                  startDate: { lte: today },
+                  endDate: { gt: today }
                 },
                 orderBy: {
                   offerPrice: 'asc' // Get the best (lowest) offer price
@@ -813,14 +818,16 @@ export class ProvidersService {
               });
 
               if (activeOffer) {
-                console.log(`Found ACTIVE offer: ${activeOffer.id}, price: ${activeOffer.offerPrice}, start: ${activeOffer.startDate}, end: ${activeOffer.endDate}`);
+                console.log(`Found ACTIVE offer: ${activeOffer.id}, price: ${activeOffer.offerPrice}, start: ${activeOffer.startDate.toISOString().split('T')[0]}, end: ${activeOffer.endDate.toISOString().split('T')[0]}`);
               } else {
                 console.log(`No ACTIVE offer found - date check failed`);
                 // Let's check if any offers exist but fail the date check
                 allOffers.forEach(offer => {
-                  const startCheck = offer.startDate <= now;
-                  const endCheck = offer.endDate > now;
-                  console.log(`Offer ${offer.id}: startDate <= now (${startCheck}), endDate > now (${endCheck})`);
+                  const offerStartDate = new Date(offer.startDate.getFullYear(), offer.startDate.getMonth(), offer.startDate.getDate());
+                  const offerEndDate = new Date(offer.endDate.getFullYear(), offer.endDate.getMonth(), offer.endDate.getDate());
+                  const startCheck = offerStartDate <= today;
+                  const endCheck = offerEndDate > today;
+                  console.log(`Offer ${offer.id}: startDate <= today (${startCheck}), endDate > today (${endCheck})`);
                 });
               }
 
