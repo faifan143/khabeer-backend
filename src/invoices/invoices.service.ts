@@ -107,6 +107,8 @@ export class InvoicesService {
             commissionAmount: true,
             providerAmount: true,
             quantity: true,
+            isMultipleServices: true,
+            servicesBreakdown: true,
             user: {
               select: {
                 id: true,
@@ -132,7 +134,16 @@ export class InvoicesService {
                 id: true,
                 title: true,
                 description: true,
-                category: true,
+                commission: true,
+                category: {
+                  select: {
+                    id: true,
+                    image: true,
+                    titleAr: true,
+                    titleEn: true,
+                    state: true
+                  }
+                }
               }
             }
           }
@@ -145,14 +156,50 @@ export class InvoicesService {
       }
     });
 
-    // Transform the response to include the required fields
-    return invoices.map(invoice => ({
-      ...invoice,
-      commissionAmount: invoice.order.commissionAmount,
-      providerAmount: invoice.order.providerAmount,
-      quantity: invoice.order.quantity,
-      discount: invoice.discount || 0
-    }));
+    // Transform the response to include the required fields and services array
+    return invoices.map(invoice => {
+      let services: any[] = [];
+
+      if (invoice.order.isMultipleServices && invoice.order.servicesBreakdown) {
+        // Use the stored services breakdown from the database and enhance with category data
+        services = (invoice.order.servicesBreakdown as any[]).map(serviceItem => ({
+          ...serviceItem,
+          category: invoice.order.service.category
+        }));
+      } else {
+        // For single service orders, create a single-item array with complete data
+        const service = invoice.order.service;
+        services = [
+          {
+            serviceId: service.id,
+            serviceTitle: service.title,
+            serviceDescription: service.description,
+            quantity: invoice.order.quantity,
+            unitPrice: invoice.order.providerAmount / invoice.order.quantity,
+            totalPrice: invoice.order.providerAmount,
+            commission: service.commission || 0,
+            commissionAmount: invoice.order.commissionAmount,
+            category: service.category
+          }
+        ];
+      }
+
+      // Remove the main service attribute and return only the services array
+      const { service, ...orderWithoutService } = invoice.order;
+
+      return {
+        ...invoice,
+        commissionAmount: invoice.order.commissionAmount,
+        providerAmount: invoice.order.providerAmount,
+        quantity: invoice.order.quantity,
+        discount: invoice.discount || 0,
+        order: {
+          ...orderWithoutService,
+          isMultipleServices: invoice.order.isMultipleServices || false,
+          services
+        }
+      };
+    });
   }
 
   async findOne(id: number, userId: number, role: string) {
@@ -168,6 +215,8 @@ export class InvoicesService {
             commissionAmount: true,
             providerAmount: true,
             quantity: true,
+            isMultipleServices: true,
+            servicesBreakdown: true,
             user: {
               select: {
                 id: true,
@@ -190,7 +239,16 @@ export class InvoicesService {
                 id: true,
                 title: true,
                 description: true,
-                commission: true
+                commission: true,
+                category: {
+                  select: {
+                    id: true,
+                    image: true,
+                    titleAr: true,
+                    titleEn: true,
+                    state: true
+                  }
+                }
               }
             }
           }
@@ -202,13 +260,47 @@ export class InvoicesService {
       throw new NotFoundException('Invoice not found');
     }
 
-    // Transform the response to include the required fields
+    // Transform the response to include the required fields and services array
+    let services: any[] = [];
+
+    if (foundInvoice.order.isMultipleServices && foundInvoice.order.servicesBreakdown) {
+      // Use the stored services breakdown from the database and enhance with category data
+      services = (foundInvoice.order.servicesBreakdown as any[]).map(serviceItem => ({
+        ...serviceItem,
+        category: foundInvoice.order.service.category
+      }));
+    } else {
+      // For single service orders, create a single-item array with complete data
+      const service = foundInvoice.order.service;
+      services = [
+        {
+          serviceId: service.id,
+          serviceTitle: service.title,
+          serviceDescription: service.description,
+          quantity: foundInvoice.order.quantity,
+          unitPrice: foundInvoice.order.providerAmount / foundInvoice.order.quantity,
+          totalPrice: foundInvoice.order.providerAmount,
+          commission: service.commission || 0,
+          commissionAmount: foundInvoice.order.commissionAmount,
+          category: service.category
+        }
+      ];
+    }
+
+    // Remove the main service attribute and return only the services array
+    const { service, ...orderWithoutService } = foundInvoice.order;
+
     return {
       ...foundInvoice,
       commissionAmount: foundInvoice.order.commissionAmount,
       providerAmount: foundInvoice.order.providerAmount,
       quantity: foundInvoice.order.quantity,
-      discount: foundInvoice.discount || 0
+      discount: foundInvoice.discount || 0,
+      order: {
+        ...orderWithoutService,
+        isMultipleServices: foundInvoice.order.isMultipleServices || false,
+        services
+      }
     };
   }
 
@@ -254,6 +346,8 @@ export class InvoicesService {
             commissionAmount: true,
             providerAmount: true,
             quantity: true,
+            isMultipleServices: true,
+            servicesBreakdown: true,
             user: {
               select: {
                 id: true,
@@ -273,7 +367,17 @@ export class InvoicesService {
               select: {
                 id: true,
                 title: true,
-                description: true
+                description: true,
+                commission: true,
+                category: {
+                  select: {
+                    id: true,
+                    image: true,
+                    titleAr: true,
+                    titleEn: true,
+                    state: true
+                  }
+                }
               }
             }
           }
@@ -281,13 +385,47 @@ export class InvoicesService {
       }
     });
 
-    // Transform the response to include the required fields
+    // Transform the response to include the required fields and services array
+    let services: any[] = [];
+
+    if (updatedInvoice.order.isMultipleServices && updatedInvoice.order.servicesBreakdown) {
+      // Use the stored services breakdown from the database and enhance with category data
+      services = (updatedInvoice.order.servicesBreakdown as any[]).map(serviceItem => ({
+        ...serviceItem,
+        category: updatedInvoice.order.service.category
+      }));
+    } else {
+      // For single service orders, create a single-item array with complete data
+      const service = updatedInvoice.order.service;
+      services = [
+        {
+          serviceId: service.id,
+          serviceTitle: service.title,
+          serviceDescription: service.description,
+          quantity: updatedInvoice.order.quantity,
+          unitPrice: updatedInvoice.order.providerAmount / updatedInvoice.order.quantity,
+          totalPrice: updatedInvoice.order.providerAmount,
+          commission: service.commission || 0,
+          commissionAmount: updatedInvoice.order.commissionAmount,
+          category: service.category
+        }
+      ];
+    }
+
+    // Remove the main service attribute and return only the services array
+    const { service, ...orderWithoutService } = updatedInvoice.order;
+
     return {
       ...updatedInvoice,
       commissionAmount: updatedInvoice.order.commissionAmount,
       providerAmount: updatedInvoice.order.providerAmount,
       quantity: updatedInvoice.order.quantity,
-      discount: updatedInvoice.discount || 0
+      discount: updatedInvoice.discount || 0,
+      order: {
+        ...orderWithoutService,
+        isMultipleServices: updatedInvoice.order.isMultipleServices || false,
+        services
+      }
     };
   }
 
@@ -363,6 +501,8 @@ export class InvoicesService {
             commissionAmount: true,
             providerAmount: true,
             quantity: true,
+            isMultipleServices: true,
+            servicesBreakdown: true,
             service: {
               select: {
                 title: true,
@@ -379,21 +519,34 @@ export class InvoicesService {
       }
     });
 
-    return invoices.map(invoice => ({
-      invoiceId: invoice.id,
-      orderId: invoice.order.id,
-      serviceTitle: invoice.order.service.title,
-      totalAmount: invoice.totalAmount,
-      discount: invoice.discount,
-      netAmount: invoice.totalAmount - invoice.discount,
-      commission: invoice.order.service.commission,
-      commissionAmount: invoice.order.commissionAmount,
-      providerAmount: invoice.order.providerAmount,
-      quantity: invoice.order.quantity,
-      paymentStatus: invoice.paymentStatus,
-      paymentDate: invoice.paymentDate,
-      orderDate: invoice.order.orderDate
-    }));
+    return invoices.map(invoice => {
+      // Handle multiple services for reporting
+      let serviceTitle = invoice.order.service.title;
+      let totalQuantity = invoice.order.quantity;
+
+      if (invoice.order.isMultipleServices && invoice.order.servicesBreakdown) {
+        const services = invoice.order.servicesBreakdown as any[];
+        serviceTitle = services.map(s => `${s.serviceTitle} (${s.quantity})`).join(', ');
+        totalQuantity = services.reduce((sum, s) => sum + s.quantity, 0);
+      }
+
+      return {
+        invoiceId: invoice.id,
+        orderId: invoice.order.id,
+        serviceTitle,
+        totalAmount: invoice.totalAmount,
+        discount: invoice.discount,
+        netAmount: invoice.totalAmount - invoice.discount,
+        commission: invoice.order.service.commission,
+        commissionAmount: invoice.order.commissionAmount,
+        providerAmount: invoice.order.providerAmount,
+        quantity: totalQuantity,
+        paymentStatus: invoice.paymentStatus,
+        paymentDate: invoice.paymentDate,
+        orderDate: invoice.order.orderDate,
+        isMultipleServices: invoice.order.isMultipleServices || false
+      };
+    });
   }
 
   // Provider methods for payment confirmation
@@ -411,6 +564,8 @@ export class InvoicesService {
             commissionAmount: true,
             providerAmount: true,
             quantity: true,
+            isMultipleServices: true,
+            servicesBreakdown: true,
             user: {
               select: {
                 id: true,
@@ -423,7 +578,17 @@ export class InvoicesService {
               select: {
                 id: true,
                 title: true,
-                description: true
+                description: true,
+                commission: true,
+                category: {
+                  select: {
+                    id: true,
+                    image: true,
+                    titleAr: true,
+                    titleEn: true,
+                    state: true
+                  }
+                }
               }
             }
           }
@@ -436,13 +601,49 @@ export class InvoicesService {
       }
     });
 
-    // Transform the response to include the required fields
-    return invoices.map(invoice => ({
-      ...invoice,
-      commissionAmount: invoice.order.commissionAmount,
-      providerAmount: invoice.order.providerAmount,
-      quantity: invoice.order.quantity,
-      discount: invoice.discount || 0
-    }));
+    // Transform the response to include the required fields and services array
+    return invoices.map(invoice => {
+      let services: any[] = [];
+
+      if (invoice.order.isMultipleServices && invoice.order.servicesBreakdown) {
+        // Use the stored services breakdown from the database and enhance with category data
+        services = (invoice.order.servicesBreakdown as any[]).map(serviceItem => ({
+          ...serviceItem,
+          category: invoice.order.service.category
+        }));
+      } else {
+        // For single service orders, create a single-item array with complete data
+        const service = invoice.order.service;
+        services = [
+          {
+            serviceId: service.id,
+            serviceTitle: service.title,
+            serviceDescription: service.description,
+            quantity: invoice.order.quantity,
+            unitPrice: invoice.order.providerAmount / invoice.order.quantity,
+            totalPrice: invoice.order.providerAmount,
+            commission: service.commission || 0,
+            commissionAmount: invoice.order.commissionAmount,
+            category: service.category
+          }
+        ];
+      }
+
+      // Remove the main service attribute and return only the services array
+      const { service, ...orderWithoutService } = invoice.order;
+
+      return {
+        ...invoice,
+        commissionAmount: invoice.order.commissionAmount,
+        providerAmount: invoice.order.providerAmount,
+        quantity: invoice.order.quantity,
+        discount: invoice.discount || 0,
+        order: {
+          ...orderWithoutService,
+          isMultipleServices: invoice.order.isMultipleServices || false,
+          services
+        }
+      };
+    });
   }
 }
