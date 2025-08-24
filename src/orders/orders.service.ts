@@ -184,10 +184,13 @@ export class OrdersService {
       let services: any[] = [];
       
       if (order.isMultipleServices && order.servicesBreakdown) {
-        // Use the stored services breakdown from the database
-        services = order.servicesBreakdown as any[];
+        // Use the stored services breakdown from the database and enhance with category data
+        services = (order.servicesBreakdown as any[]).map(serviceItem => ({
+          ...serviceItem,
+          category: order.service.category
+        }));
       } else {
-        // For single service orders, create a single-item array
+        // For single service orders, create a single-item array with complete data
         const service = order.service;
         services = [
           {
@@ -199,13 +202,17 @@ export class OrdersService {
             unitPrice: order.providerAmount / order.quantity,
             totalPrice: order.providerAmount,
             commission: service.commission || 0,
-            commissionAmount: order.commissionAmount
+            commissionAmount: order.commissionAmount,
+            category: service.category
           }
         ];
       }
 
+      // Remove the main service attribute and return only the services array
+      const { service, ...orderWithoutService } = order;
+      
       return {
-        ...order,
+        ...orderWithoutService,
         isMultipleServices: order.isMultipleServices || false,
         services,
         duration: order.scheduledDate
@@ -249,7 +256,16 @@ export class OrdersService {
             title: true,
             description: true,
             image: true,
-            commission: true
+            commission: true,
+            category: {
+              select: {
+                id: true,
+                image: true,
+                titleAr: true,
+                titleEn: true,
+                state: true
+              }
+            }
           }
         },
         invoice: true
@@ -264,10 +280,13 @@ export class OrdersService {
     let services: any[] = [];
     
     if (order.isMultipleServices && order.servicesBreakdown) {
-      // Use the stored services breakdown from the database
-      services = order.servicesBreakdown as any[];
+      // Use the stored services breakdown from the database and enhance with category data
+      services = (order.servicesBreakdown as any[]).map(serviceItem => ({
+        ...serviceItem,
+        category: order.service.category
+      }));
     } else {
-      // For single service orders, create a single-item array
+      // For single service orders, create a single-item array with complete data
       const service = order.service;
       services = [
         {
@@ -279,13 +298,17 @@ export class OrdersService {
           unitPrice: order.providerAmount / order.quantity,
           totalPrice: order.providerAmount,
           commission: service.commission || 0,
-          commissionAmount: order.commissionAmount
+          commissionAmount: order.commissionAmount,
+          category: service.category
         }
       ];
     }
 
+    // Remove the main service attribute and return only the services array
+    const { service, ...orderWithoutService } = order;
+
     return {
-      ...order,
+      ...orderWithoutService,
       isMultipleServices: order.isMultipleServices || false,
       services,
       duration: order.scheduledDate

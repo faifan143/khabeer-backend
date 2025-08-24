@@ -602,10 +602,13 @@ export class ProvidersService {
         let services: any[] = [];
         
         if (order.isMultipleServices && order.servicesBreakdown) {
-          // Use the stored services breakdown from the database
-          services = order.servicesBreakdown as any[];
+          // Use the stored services breakdown from the database and enhance with category data
+          services = (order.servicesBreakdown as any[]).map(serviceItem => ({
+            ...serviceItem,
+            category: order.service.category
+          }));
         } else {
-          // For single service orders, create a single-item array
+          // For single service orders, create a single-item array with complete data
           const service = order.service;
           services = [
             {
@@ -617,13 +620,17 @@ export class ProvidersService {
               unitPrice: order.providerAmount / order.quantity,
               totalPrice: order.providerAmount,
               commission: service.commission || 0,
-              commissionAmount: order.commissionAmount
+              commissionAmount: order.commissionAmount,
+              category: service.category
             }
           ];
         }
         
+        // Remove the main service attribute and return only the services array
+        const { service, ...orderWithoutService } = order;
+        
         return {
-          ...order,
+          ...orderWithoutService,
           duration: order.scheduledDate, // Use scheduled date as duration
           isMultipleServices: order.isMultipleServices || false,
           services,
@@ -633,11 +640,6 @@ export class ProvidersService {
             state: order.user.state || '',
             latitude: order.user.latitude ? Number(order.user.latitude) : null,
             longitude: order.user.longitude ? Number(order.user.longitude) : null
-          },
-          service: {
-            ...order.service,
-            image: order.service.image || '',
-            category: order.service.category || undefined
           }
         };
       });
@@ -701,10 +703,13 @@ export class ProvidersService {
         let services: any[] = [];
         
         if (order.isMultipleServices && order.servicesBreakdown) {
-          // Use the stored services breakdown from the database
-          services = order.servicesBreakdown as any[];
+          // Use the stored services breakdown from the database and enhance with category data
+          services = (order.servicesBreakdown as any[]).map(serviceItem => ({
+            ...serviceItem,
+            category: order.service.category
+          }));
         } else {
-          // For single service orders, create a single-item array
+          // For single service orders, create a single-item array with complete data
           const service = order.service;
           services = [
             {
@@ -716,13 +721,17 @@ export class ProvidersService {
               unitPrice: order.providerAmount / order.quantity,
               totalPrice: order.providerAmount,
               commission: service.commission || 0,
-              commissionAmount: order.commissionAmount
+              commissionAmount: order.commissionAmount,
+              category: service.category
             }
           ];
         }
         
+        // Remove the main service attribute and return only the services array
+        const { service, ...orderWithoutService } = order;
+        
         return {
-          ...order,
+          ...orderWithoutService,
           duration: order.scheduledDate, // Use scheduled date as duration
           isMultipleServices: order.isMultipleServices || false,
           services,
@@ -732,11 +741,6 @@ export class ProvidersService {
             state: order.user.state || '',
             latitude: order.user.latitude ? Number(order.user.latitude) : null,
             longitude: order.user.longitude ? Number(order.user.longitude) : null
-          },
-          service: {
-            ...order.service,
-            image: order.service.image || '',
-            category: order.service.category || undefined
           }
         };
       });
