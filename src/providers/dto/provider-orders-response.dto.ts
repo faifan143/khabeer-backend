@@ -15,6 +15,8 @@ export class ProviderOrderResponseDto {
         name: string;
         email: string;
         phone: string;
+        image: string;
+        state: string;
         latitude: number | null;
         longitude: number | null;
     };
@@ -22,7 +24,17 @@ export class ProviderOrderResponseDto {
         id: number;
         title: string;
         description: string;
+        image: string;
+        category?: {
+            id: number;
+            image: string;
+            titleAr: string;
+            titleEn: string;
+            state: string;
+        };
     };
+    // Duration is now the scheduled date
+    duration?: Date;
 }
 
 export class ProviderOrdersResponseDto {

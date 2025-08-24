@@ -15,6 +15,8 @@ export declare class ProviderOrderResponseDto {
         name: string;
         email: string;
         phone: string;
+        image: string;
+        state: string;
         latitude: number | null;
         longitude: number | null;
     };
@@ -22,7 +24,16 @@ export declare class ProviderOrderResponseDto {
         id: number;
         title: string;
         description: string;
+        image: string;
+        category?: {
+            id: number;
+            image: string;
+            titleAr: string;
+            titleEn: string;
+            state: string;
+        };
     };
+    duration?: Date;
 }
 export declare class ProviderOrdersResponseDto {
     orders: ProviderOrderResponseDto[];

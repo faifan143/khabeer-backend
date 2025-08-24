@@ -211,6 +211,14 @@ export declare class ProvidersController {
                 price: number;
                 isActive: boolean;
             };
+            activeOffer: {
+                startDate: Date;
+                endDate: Date;
+                originalPrice: number;
+                offerPrice: number;
+                description: string;
+                id: number;
+            } | null;
         }[];
         total: number;
     }>;

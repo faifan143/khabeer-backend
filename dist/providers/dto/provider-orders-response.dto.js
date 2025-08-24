@@ -15,6 +15,7 @@ class ProviderOrderResponseDto {
     bookingId;
     user;
     service;
+    duration;
 }
 exports.ProviderOrderResponseDto = ProviderOrderResponseDto;
 class ProviderOrdersResponseDto {

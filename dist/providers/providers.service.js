@@ -329,6 +329,8 @@ let ProvidersService = class ProvidersService {
                             name: true,
                             email: true,
                             phone: true,
+                            image: true,
+                            state: true,
                             latitude: true,
                             longitude: true
                         }
@@ -337,7 +339,17 @@ let ProvidersService = class ProvidersService {
                         select: {
                             id: true,
                             title: true,
-                            description: true
+                            description: true,
+                            image: true,
+                            category: {
+                                select: {
+                                    id: true,
+                                    image: true,
+                                    titleAr: true,
+                                    titleEn: true,
+                                    state: true
+                                }
+                            }
                         }
                     }
                 },
@@ -345,9 +357,27 @@ let ProvidersService = class ProvidersService {
                     orderDate: 'desc'
                 }
             });
+            const transformedOrders = orders.map(order => {
+                return {
+                    ...order,
+                    duration: order.scheduledDate,
+                    user: {
+                        ...order.user,
+                        image: order.user.image || '',
+                        state: order.user.state || '',
+                        latitude: order.user.latitude ? Number(order.user.latitude) : null,
+                        longitude: order.user.longitude ? Number(order.user.longitude) : null
+                    },
+                    service: {
+                        ...order.service,
+                        image: order.service.image || '',
+                        category: order.service.category || undefined
+                    }
+                };
+            });
             return {
-                orders: orders,
-                total: orders.length,
+                orders: transformedOrders,
+                total: transformedOrders.length,
                 status: 'all'
             };
         }
@@ -369,6 +399,8 @@ let ProvidersService = class ProvidersService {
                             name: true,
                             email: true,
                             phone: true,
+                            image: true,
+                            state: true,
                             latitude: true,
                             longitude: true
                         }
@@ -377,7 +409,17 @@ let ProvidersService = class ProvidersService {
                         select: {
                             id: true,
                             title: true,
-                            description: true
+                            description: true,
+                            image: true,
+                            category: {
+                                select: {
+                                    id: true,
+                                    image: true,
+                                    titleAr: true,
+                                    titleEn: true,
+                                    state: true
+                                }
+                            }
                         }
                     }
                 },
@@ -385,9 +427,27 @@ let ProvidersService = class ProvidersService {
                     orderDate: 'desc'
                 }
             });
+            const transformedOrders = orders.map(order => {
+                return {
+                    ...order,
+                    duration: order.scheduledDate,
+                    user: {
+                        ...order.user,
+                        image: order.user.image || '',
+                        state: order.user.state || '',
+                        latitude: order.user.latitude ? Number(order.user.latitude) : null,
+                        longitude: order.user.longitude ? Number(order.user.longitude) : null
+                    },
+                    service: {
+                        ...order.service,
+                        image: order.service.image || '',
+                        category: order.service.category || undefined
+                    }
+                };
+            });
             return {
-                orders: orders,
-                total: orders.length,
+                orders: transformedOrders,
+                total: transformedOrders.length,
                 status: status.toLowerCase()
             };
         }
@@ -785,6 +845,33 @@ let ProvidersService = class ProvidersService {
             throw new common_1.InternalServerErrorException('Error fetching provider full details');
         }
     }
+    async getActiveOffer(providerId, serviceId) {
+        const now = new Date();
+        const allOffers = await this.prisma.offer.findMany({
+            where: {
+                providerId,
+                serviceId,
+                isActive: true
+            },
+            select: {
+                id: true,
+                startDate: true,
+                endDate: true,
+                description: true,
+                offerPrice: true,
+                originalPrice: true
+            }
+        });
+        const activeOffer = allOffers.find(offer => {
+            const startDate = new Date(offer.startDate);
+            const endDate = new Date(offer.endDate);
+            const startDateOnly = startDate.toISOString().split('T')[0];
+            const endDateOnly = endDate.toISOString().split('T')[0];
+            const nowDateOnly = now.toISOString().split('T')[0];
+            return startDateOnly <= nowDateOnly && endDateOnly >= nowDateOnly;
+        });
+        return activeOffer || null;
+    }
     async getCategoryServicesByProviderId(providerId, categoryId) {
         try {
             const [provider, category] = await Promise.all([
@@ -814,25 +901,29 @@ let ProvidersService = class ProvidersService {
                 }
             });
             const filteredServices = providerServices.filter(ps => ps.service.categoryId === categoryId);
-            const services = filteredServices.map(ps => ({
-                id: ps.service.id,
-                title: ps.service.title,
-                description: ps.service.description,
-                image: ps.service.image,
-                commission: ps.service.commission,
-                categoryId: ps.service.categoryId || 0,
-                providerService: {
-                    id: ps.id,
-                    price: ps.price,
-                    isActive: ps.isActive
-                }
+            const servicesWithOffers = await Promise.all(filteredServices.map(async (ps) => {
+                const activeOffer = await this.getActiveOffer(ps.providerId, ps.serviceId);
+                return {
+                    id: ps.service.id,
+                    title: ps.service.title,
+                    description: ps.service.description,
+                    image: ps.service.image,
+                    commission: ps.service.commission,
+                    categoryId: ps.service.categoryId || 0,
+                    providerService: {
+                        id: ps.id,
+                        price: ps.price,
+                        isActive: ps.isActive
+                    },
+                    activeOffer: activeOffer || null
+                };
             }));
             return {
                 categoryId: category.id,
                 categoryName: category.titleEn || category.titleAr,
                 providerId: provider.id,
                 providerName: provider.name,
-                services,
+                services: servicesWithOffers,
                 total: filteredServices.length
             };
         }

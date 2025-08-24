@@ -117,7 +117,7 @@ let OrdersService = class OrdersService {
         const where = role === 'PROVIDER'
             ? { providerId: userId }
             : { userId };
-        return this.prisma.order.findMany({
+        const orders = await this.prisma.order.findMany({
             where,
             include: {
                 user: {
@@ -126,6 +126,8 @@ let OrdersService = class OrdersService {
                         name: true,
                         phone: true,
                         email: true,
+                        image: true,
+                        state: true,
                         latitude: true,
                         longitude: true
                     }
@@ -143,7 +145,16 @@ let OrdersService = class OrdersService {
                         id: true,
                         title: true,
                         description: true,
-                        image: true
+                        image: true,
+                        category: {
+                            select: {
+                                id: true,
+                                image: true,
+                                titleAr: true,
+                                titleEn: true,
+                                state: true
+                            }
+                        }
                     }
                 },
                 invoice: true
@@ -152,6 +163,27 @@ let OrdersService = class OrdersService {
                 orderDate: 'desc'
             }
         });
+        if (role === 'PROVIDER') {
+            return orders.map(order => {
+                return {
+                    ...order,
+                    duration: order.scheduledDate,
+                    user: {
+                        ...order.user,
+                        image: order.user.image || '',
+                        state: order.user.state || '',
+                        latitude: order.user.latitude ? Number(order.user.latitude) : null,
+                        longitude: order.user.longitude ? Number(order.user.longitude) : null
+                    },
+                    service: {
+                        ...order.service,
+                        image: order.service.image || '',
+                        category: order.service.category || undefined
+                    }
+                };
+            });
+        }
+        return orders;
     }
     async findOne(id, userId, role) {
         const where = role === 'PROVIDER'

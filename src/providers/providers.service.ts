@@ -344,6 +344,8 @@ export class ProvidersService {
               name: true,
               email: true,
               phone: true,
+              image: true,
+              state: true,
               latitude: true,
               longitude: true
             }
@@ -352,7 +354,17 @@ export class ProvidersService {
             select: {
               id: true,
               title: true,
-              description: true
+              description: true,
+              image: true,
+              category: {
+                select: {
+                  id: true,
+                  image: true,
+                  titleAr: true,
+                  titleEn: true,
+                  state: true
+                }
+              }
             }
           }
         },
@@ -361,9 +373,29 @@ export class ProvidersService {
         }
       });
 
+      // Transform orders to include calculated fields
+      const transformedOrders = orders.map(order => {
+        return {
+          ...order,
+          duration: order.scheduledDate, // Use scheduled date as duration
+          user: {
+            ...order.user,
+            image: order.user.image || '',
+            state: order.user.state || '',
+            latitude: order.user.latitude ? Number(order.user.latitude) : null,
+            longitude: order.user.longitude ? Number(order.user.longitude) : null
+          },
+          service: {
+            ...order.service,
+            image: order.service.image || '',
+            category: order.service.category || undefined
+          }
+        };
+      });
+
       return {
-        orders: orders as ProviderOrderResponseDto[],
-        total: orders.length,
+        orders: transformedOrders as unknown as ProviderOrderResponseDto[],
+        total: transformedOrders.length,
         status: 'all'
       };
     } catch (error) {
@@ -385,6 +417,8 @@ export class ProvidersService {
               name: true,
               email: true,
               phone: true,
+              image: true,
+              state: true,
               latitude: true,
               longitude: true
             }
@@ -393,7 +427,17 @@ export class ProvidersService {
             select: {
               id: true,
               title: true,
-              description: true
+              description: true,
+              image: true,
+              category: {
+                select: {
+                  id: true,
+                  image: true,
+                  titleAr: true,
+                  titleEn: true,
+                  state: true
+                }
+              }
             }
           }
         },
@@ -402,9 +446,29 @@ export class ProvidersService {
         }
       });
 
+      // Transform orders to include calculated fields
+      const transformedOrders = orders.map(order => {
+        return {
+          ...order,
+          duration: order.scheduledDate, // Use scheduled date as duration
+          user: {
+            ...order.user,
+            image: order.user.image || '',
+            state: order.user.state || '',
+            latitude: order.user.latitude ? Number(order.user.latitude) : null,
+            longitude: order.user.longitude ? Number(order.user.longitude) : null
+          },
+          service: {
+            ...order.service,
+            image: order.service.image || '',
+            category: order.service.category || undefined
+          }
+        };
+      });
+
       return {
-        orders: orders as ProviderOrderResponseDto[],
-        total: orders.length,
+        orders: transformedOrders as unknown as ProviderOrderResponseDto[],
+        total: transformedOrders.length,
         status: status.toLowerCase()
       };
     } catch (error) {

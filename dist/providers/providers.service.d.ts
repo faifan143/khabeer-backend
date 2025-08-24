@@ -309,6 +309,7 @@ export declare class ProvidersService {
     updateFCMToken(providerId: number, fcmToken: string): Promise<any>;
     removeFCMToken(providerId: number): Promise<any>;
     getProviderFullDetails(providerId: number): Promise<ProviderFullDetailsDto>;
+    private getActiveOffer;
     getCategoryServicesByProviderId(providerId: number, categoryId: number): Promise<{
         categoryId: number;
         categoryName: string;
@@ -326,6 +327,14 @@ export declare class ProvidersService {
                 price: number;
                 isActive: boolean;
             };
+            activeOffer: {
+                startDate: Date;
+                endDate: Date;
+                originalPrice: number;
+                offerPrice: number;
+                description: string;
+                id: number;
+            } | null;
         }[];
         total: number;
     }>;

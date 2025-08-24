@@ -141,7 +141,7 @@ export class OrdersService {
       ? { providerId: userId }
       : { userId };
 
-    return this.prisma.order.findMany({
+    const orders = await this.prisma.order.findMany({
       where,
       include: {
         user: {
@@ -150,6 +150,8 @@ export class OrdersService {
             name: true,
             phone: true,
             email: true,
+            image: true,
+            state: true,
             latitude: true,
             longitude: true
           }
@@ -167,7 +169,16 @@ export class OrdersService {
             id: true,
             title: true,
             description: true,
-            image: true
+            image: true,
+            category: {
+              select: {
+                id: true,
+                image: true,
+                titleAr: true,
+                titleEn: true,
+                state: true
+              }
+            }
           }
         },
         invoice: true
@@ -176,6 +187,30 @@ export class OrdersService {
         orderDate: 'desc'
       }
     });
+
+    // Transform orders to include calculated fields for providers
+    if (role === 'PROVIDER') {
+      return orders.map(order => {
+        return {
+          ...order,
+          duration: order.scheduledDate, // Use scheduled date as duration
+          user: {
+            ...order.user,
+            image: order.user.image || '',
+            state: order.user.state || '',
+            latitude: order.user.latitude ? Number(order.user.latitude) : null,
+            longitude: order.user.longitude ? Number(order.user.longitude) : null
+          },
+          service: {
+            ...order.service,
+            image: order.service.image || '',
+            category: order.service.category || undefined
+          }
+        };
+      });
+    }
+
+    return orders;
   }
 
   async findOne(id: number, userId: number, role: string) {
