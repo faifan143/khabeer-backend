@@ -1315,6 +1315,23 @@ let AdminService = class AdminService {
             throw error;
         }
     }
+    async deleteNotification(id) {
+        try {
+            const notification = await this.prisma.notification.findUnique({
+                where: { id }
+            });
+            if (!notification) {
+                throw new common_1.NotFoundException('Notification not found');
+            }
+            await this.prisma.notification.delete({
+                where: { id }
+            });
+            return { message: 'Notification deleted successfully' };
+        }
+        catch (error) {
+            throw error;
+        }
+    }
     async getAllInvoices(status, startDate, endDate) {
         try {
             const where = {};
@@ -1322,11 +1339,13 @@ let AdminService = class AdminService {
                 where.paymentStatus = status;
             }
             if (startDate || endDate) {
-                where.createdAt = {};
+                where.order = {
+                    orderDate: {}
+                };
                 if (startDate)
-                    where.createdAt.gte = startDate;
+                    where.order.orderDate.gte = startDate;
                 if (endDate)
-                    where.createdAt.lte = endDate;
+                    where.order.orderDate.lte = endDate;
             }
             const invoices = await this.prisma.invoice.findMany({
                 where,

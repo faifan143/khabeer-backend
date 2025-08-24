@@ -86,14 +86,6 @@ let OrdersService = class OrdersService {
                 invoice: true
             }
         });
-        await this.prisma.invoice.create({
-            data: {
-                orderId: order.id,
-                totalAmount: order.totalAmount,
-                discount: discount,
-                paymentStatus: 'pending'
-            }
-        });
         try {
             await this.notificationsService.notifyNewOrder(order.id, order.providerId, order.service.title, order.user.name);
         }
@@ -254,16 +246,14 @@ let OrdersService = class OrdersService {
             updateData.providerLocation = updateStatusDto.providerLocation;
         }
         if (updateStatusDto.status === order_status_dto_1.OrderStatus.COMPLETED) {
-            if (!order.invoice) {
-                await this.prisma.invoice.create({
-                    data: {
-                        orderId: order.id,
-                        totalAmount: order.totalAmount,
-                        discount: 0,
-                        paymentStatus: 'unpaid'
-                    }
-                });
-            }
+            await this.prisma.invoice.create({
+                data: {
+                    orderId: order.id,
+                    totalAmount: order.totalAmount,
+                    discount: 0,
+                    paymentStatus: 'unpaid'
+                }
+            });
         }
         const updatedOrder = await this.prisma.order.update({
             where: { id },
@@ -850,14 +840,6 @@ let OrdersService = class OrdersService {
             const provider = await tx.provider.findUnique({
                 where: { id: createOrderDto.providerId },
                 select: { id: true, name: true, phone: true, image: true }
-            });
-            await tx.invoice.create({
-                data: {
-                    orderId: order.id,
-                    totalAmount: order.totalAmount,
-                    discount: appliedOffers.reduce((sum, o) => sum + o.discount, 0),
-                    paymentStatus: 'pending'
-                }
             });
             return { order, user, provider, orderProviderLocation };
         });

@@ -516,7 +516,6 @@ export declare class AdminService {
             };
             invoice: {
                 id: number;
-                isVerified: boolean;
                 orderId: number;
                 discount: number;
                 totalAmount: number;
@@ -525,8 +524,6 @@ export declare class AdminService {
                 paymentStatus: string;
                 payoutDate: Date | null;
                 payoutStatus: string;
-                verifiedAt: Date | null;
-                verifiedBy: number | null;
             } | null;
         } & {
             serviceId: number;
@@ -876,6 +873,9 @@ export declare class AdminService {
         failureCount: number;
         successCount: number;
     }>;
+    deleteNotification(id: number): Promise<{
+        message: string;
+    }>;
     getAllInvoices(status?: string, startDate?: Date, endDate?: Date): Promise<{
         id: number;
         orderId: number;
@@ -1034,7 +1034,6 @@ export declare class AdminService {
         };
     } & {
         id: number;
-        isVerified: boolean;
         orderId: number;
         discount: number;
         totalAmount: number;
@@ -1043,8 +1042,6 @@ export declare class AdminService {
         paymentStatus: string;
         payoutDate: Date | null;
         payoutStatus: string;
-        verifiedAt: Date | null;
-        verifiedBy: number | null;
     }>;
     markInvoiceAsPaid(id: number, paymentMethod?: string): Promise<{
         order: {
@@ -1111,7 +1108,6 @@ export declare class AdminService {
         };
     } & {
         id: number;
-        isVerified: boolean;
         orderId: number;
         discount: number;
         totalAmount: number;
@@ -1120,7 +1116,5 @@ export declare class AdminService {
         paymentStatus: string;
         payoutDate: Date | null;
         payoutStatus: string;
-        verifiedAt: Date | null;
-        verifiedBy: number | null;
     }>;
 }

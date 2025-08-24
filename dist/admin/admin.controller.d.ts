@@ -424,7 +424,6 @@ export declare class AdminController {
         };
     } & {
         id: number;
-        isVerified: boolean;
         orderId: number;
         discount: number;
         totalAmount: number;
@@ -433,8 +432,6 @@ export declare class AdminController {
         paymentStatus: string;
         payoutDate: Date | null;
         payoutStatus: string;
-        verifiedAt: Date | null;
-        verifiedBy: number | null;
     }>;
     markInvoiceAsPaid(id: number, body: {
         paymentMethod?: string;
@@ -503,7 +500,6 @@ export declare class AdminController {
         };
     } & {
         id: number;
-        isVerified: boolean;
         orderId: number;
         discount: number;
         totalAmount: number;
@@ -512,8 +508,6 @@ export declare class AdminController {
         paymentStatus: string;
         payoutDate: Date | null;
         payoutStatus: string;
-        verifiedAt: Date | null;
-        verifiedBy: number | null;
     }>;
     getPendingJoinRequests(): Promise<({
         joinRequests: {
@@ -774,7 +768,6 @@ export declare class AdminController {
             };
             invoice: {
                 id: number;
-                isVerified: boolean;
                 orderId: number;
                 discount: number;
                 totalAmount: number;
@@ -783,8 +776,6 @@ export declare class AdminController {
                 paymentStatus: string;
                 payoutDate: Date | null;
                 payoutStatus: string;
-                verifiedAt: Date | null;
-                verifiedBy: number | null;
             } | null;
         } & {
             serviceId: number;
@@ -1093,5 +1084,7 @@ export declare class AdminController {
         failureCount: number;
         successCount: number;
     }>;
-    deleteNotification(id: number): Promise<any>;
+    deleteNotification(id: number): Promise<{
+        message: string;
+    }>;
 }

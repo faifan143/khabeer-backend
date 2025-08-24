@@ -19,11 +19,13 @@ let ProviderServiceService = class ProviderServiceService {
     }
     async getActiveOffer(providerId, serviceId) {
         const now = new Date();
-        const allOffers = await this.prisma.offer.findMany({
+        const activeOffer = await this.prisma.offer.findFirst({
             where: {
                 providerId,
                 serviceId,
-                isActive: true
+                isActive: true,
+                startDate: { lte: now },
+                endDate: { gt: now }
             },
             select: {
                 id: true,
@@ -32,17 +34,12 @@ let ProviderServiceService = class ProviderServiceService {
                 description: true,
                 offerPrice: true,
                 originalPrice: true
+            },
+            orderBy: {
+                offerPrice: 'asc'
             }
         });
-        const activeOffer = allOffers.find(offer => {
-            const startDate = new Date(offer.startDate);
-            const endDate = new Date(offer.endDate);
-            const startDateOnly = startDate.toISOString().split('T')[0];
-            const endDateOnly = endDate.toISOString().split('T')[0];
-            const nowDateOnly = now.toISOString().split('T')[0];
-            return startDateOnly <= nowDateOnly && endDateOnly >= nowDateOnly;
-        });
-        return activeOffer || null;
+        return activeOffer;
     }
     async create(providerId, createProviderServiceDto) {
         const { serviceId, price, isActive = true } = createProviderServiceDto;

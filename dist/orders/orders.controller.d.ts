@@ -60,7 +60,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -69,8 +68,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
         serviceId: number;
         id: number;
@@ -150,7 +147,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -159,8 +155,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -211,7 +205,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -220,8 +213,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
         serviceId: number;
         id: number;
@@ -276,7 +267,6 @@ export declare class OrdersController {
             };
             invoice: {
                 id: number;
-                isVerified: boolean;
                 orderId: number;
                 discount: number;
                 totalAmount: number;
@@ -285,8 +275,6 @@ export declare class OrdersController {
                 paymentStatus: string;
                 payoutDate: Date | null;
                 payoutStatus: string;
-                verifiedAt: Date | null;
-                verifiedBy: number | null;
             } | null;
         } & {
             serviceId: number;
@@ -348,7 +336,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -357,8 +344,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -403,7 +388,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -412,8 +396,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -458,7 +440,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -467,8 +448,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -513,7 +492,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -522,8 +500,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -568,7 +544,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -577,8 +552,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -620,7 +593,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -629,8 +601,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -672,7 +642,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -681,8 +650,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -724,7 +691,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -733,8 +699,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -776,7 +740,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -785,8 +748,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -828,7 +789,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -837,8 +797,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -880,7 +838,6 @@ export declare class OrdersController {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -889,8 +846,6 @@ export declare class OrdersController {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;

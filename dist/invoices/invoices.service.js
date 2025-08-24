@@ -30,7 +30,7 @@ let InvoicesService = class InvoicesService {
         if (!order) {
             throw new common_1.NotFoundException('Order not found');
         }
-        return this.prisma.invoice.create({
+        const newInvoice = await this.prisma.invoice.create({
             data: {
                 orderId: createInvoiceDto.orderId,
                 totalAmount: createInvoiceDto.totalAmount,
@@ -40,7 +40,10 @@ let InvoicesService = class InvoicesService {
             },
             include: {
                 order: {
-                    include: {
+                    select: {
+                        commissionAmount: true,
+                        providerAmount: true,
+                        quantity: true,
                         user: {
                             select: {
                                 id: true,
@@ -67,22 +70,42 @@ let InvoicesService = class InvoicesService {
                 }
             }
         });
+        return {
+            ...newInvoice,
+            commissionAmount: newInvoice.order.commissionAmount,
+            providerAmount: newInvoice.order.providerAmount,
+            quantity: newInvoice.order.quantity,
+            discount: newInvoice.discount || 0
+        };
     }
-    async findAll(userId, role) {
+    async findAll(userId, role, status) {
         const where = role === 'PROVIDER'
             ? { order: { providerId: userId } }
             : { order: { userId } };
-        return this.prisma.invoice.findMany({
+        if (status) {
+            where.paymentStatus = status;
+        }
+        const invoices = await this.prisma.invoice.findMany({
             where,
             include: {
                 order: {
-                    include: {
+                    select: {
+                        scheduledDate: true,
+                        orderDate: true,
+                        commissionAmount: true,
+                        providerAmount: true,
+                        quantity: true,
                         user: {
                             select: {
                                 id: true,
                                 name: true,
                                 email: true,
-                                phone: true
+                                phone: true,
+                                state: true,
+                                image: true,
+                                latitude: true,
+                                longitude: true,
+                                address: true,
                             }
                         },
                         provider: {
@@ -96,7 +119,8 @@ let InvoicesService = class InvoicesService {
                             select: {
                                 id: true,
                                 title: true,
-                                description: true
+                                description: true,
+                                category: true,
                             }
                         }
                     }
@@ -108,16 +132,26 @@ let InvoicesService = class InvoicesService {
                 }
             }
         });
+        return invoices.map(invoice => ({
+            ...invoice,
+            commissionAmount: invoice.order.commissionAmount,
+            providerAmount: invoice.order.providerAmount,
+            quantity: invoice.order.quantity,
+            discount: invoice.discount || 0
+        }));
     }
     async findOne(id, userId, role) {
         const where = role === 'PROVIDER'
             ? { id, order: { providerId: userId } }
             : { id, order: { userId } };
-        const invoice = await this.prisma.invoice.findFirst({
+        const foundInvoice = await this.prisma.invoice.findFirst({
             where,
             include: {
                 order: {
-                    include: {
+                    select: {
+                        commissionAmount: true,
+                        providerAmount: true,
+                        quantity: true,
                         user: {
                             select: {
                                 id: true,
@@ -147,23 +181,29 @@ let InvoicesService = class InvoicesService {
                 }
             }
         });
-        if (!invoice) {
+        if (!foundInvoice) {
             throw new common_1.NotFoundException('Invoice not found');
         }
-        return invoice;
+        return {
+            ...foundInvoice,
+            commissionAmount: foundInvoice.order.commissionAmount,
+            providerAmount: foundInvoice.order.providerAmount,
+            quantity: foundInvoice.order.quantity,
+            discount: foundInvoice.discount || 0
+        };
     }
     async updatePaymentStatus(id, updatePaymentStatusDto, userId, role) {
-        const invoice = await this.prisma.invoice.findUnique({
+        const existingInvoice = await this.prisma.invoice.findUnique({
             where: { id },
             include: { order: true }
         });
-        if (!invoice) {
+        if (!existingInvoice) {
             throw new common_1.NotFoundException('Invoice not found');
         }
-        if (role === 'PROVIDER' && invoice.order.providerId !== userId) {
+        if (role === 'PROVIDER' && existingInvoice.order.providerId !== userId) {
             throw new common_1.BadRequestException('You can only update invoices for your own orders');
         }
-        if (role === 'USER' && invoice.order.userId !== userId) {
+        if (role === 'USER' && existingInvoice.order.userId !== userId) {
             throw new common_1.BadRequestException('You can only update invoices for your own orders');
         }
         const updateData = {
@@ -178,12 +218,15 @@ let InvoicesService = class InvoicesService {
         else if (updatePaymentStatusDto.paymentStatus === 'paid') {
             updateData.paymentDate = new Date();
         }
-        return this.prisma.invoice.update({
+        const updatedInvoice = await this.prisma.invoice.update({
             where: { id },
             data: updateData,
             include: {
                 order: {
-                    include: {
+                    select: {
+                        commissionAmount: true,
+                        providerAmount: true,
+                        quantity: true,
                         user: {
                             select: {
                                 id: true,
@@ -210,6 +253,13 @@ let InvoicesService = class InvoicesService {
                 }
             }
         });
+        return {
+            ...updatedInvoice,
+            commissionAmount: updatedInvoice.order.commissionAmount,
+            providerAmount: updatedInvoice.order.providerAmount,
+            quantity: updatedInvoice.order.quantity,
+            discount: updatedInvoice.discount || 0
+        };
     }
     async getPaymentStats(userId, role) {
         const where = role === 'PROVIDER'
@@ -267,7 +317,12 @@ let InvoicesService = class InvoicesService {
             where,
             include: {
                 order: {
-                    include: {
+                    select: {
+                        id: true,
+                        orderDate: true,
+                        commissionAmount: true,
+                        providerAmount: true,
+                        quantity: true,
                         service: {
                             select: {
                                 title: true,
@@ -291,94 +346,59 @@ let InvoicesService = class InvoicesService {
             discount: invoice.discount,
             netAmount: invoice.totalAmount - invoice.discount,
             commission: invoice.order.service.commission,
+            commissionAmount: invoice.order.commissionAmount,
+            providerAmount: invoice.order.providerAmount,
+            quantity: invoice.order.quantity,
             paymentStatus: invoice.paymentStatus,
             paymentDate: invoice.paymentDate,
             orderDate: invoice.order.orderDate
         }));
     }
-    async confirmPayment(invoiceId, providerId) {
-        const invoice = await this.prisma.invoice.findUnique({
-            where: { id: invoiceId },
-            include: {
-                order: {
-                    include: {
-                        provider: true
-                    }
-                }
-            }
-        });
-        if (!invoice) {
-            throw new common_1.NotFoundException('Invoice not found');
-        }
-        if (invoice.order.providerId !== providerId) {
-            throw new common_1.BadRequestException('You can only confirm payments for your own orders');
-        }
-        if (invoice.paymentStatus !== 'paid') {
-            throw new common_1.BadRequestException('Invoice must be marked as paid by user before confirmation');
-        }
-        if (invoice.isVerified) {
-            throw new common_1.BadRequestException('Payment is already confirmed');
-        }
-        return this.prisma.invoice.update({
-            where: { id: invoiceId },
-            data: {
-                isVerified: true,
-                verifiedBy: providerId,
-                verifiedAt: new Date()
-            },
-            include: {
-                order: {
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                name: true,
-                                email: true
-                            }
-                        },
-                        provider: {
-                            select: {
-                                id: true,
-                                name: true,
-                                email: true
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-    async getProviderPendingConfirmations(providerId) {
-        return this.prisma.invoice.findMany({
+    async getProviderUnpaidInvoices(providerId) {
+        const invoices = await this.prisma.invoice.findMany({
             where: {
-                paymentStatus: 'paid',
-                isVerified: false,
+                paymentStatus: 'unpaid',
                 order: {
                     providerId: providerId
                 }
             },
             include: {
                 order: {
-                    include: {
+                    select: {
+                        commissionAmount: true,
+                        providerAmount: true,
+                        quantity: true,
                         user: {
                             select: {
                                 id: true,
                                 name: true,
-                                email: true
+                                email: true,
+                                phone: true
                             }
                         },
                         service: {
                             select: {
-                                title: true
+                                id: true,
+                                title: true,
+                                description: true
                             }
                         }
                     }
                 }
             },
             orderBy: {
-                paymentDate: 'desc'
+                order: {
+                    orderDate: 'desc'
+                }
             }
         });
+        return invoices.map(invoice => ({
+            ...invoice,
+            commissionAmount: invoice.order.commissionAmount,
+            providerAmount: invoice.order.providerAmount,
+            quantity: invoice.order.quantity,
+            discount: invoice.discount || 0
+        }));
     }
 };
 exports.InvoicesService = InvoicesService;

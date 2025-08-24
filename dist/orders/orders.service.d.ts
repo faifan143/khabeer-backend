@@ -62,7 +62,6 @@ export declare class OrdersService {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -71,8 +70,6 @@ export declare class OrdersService {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
         serviceId: number;
         id: number;
@@ -122,7 +119,6 @@ export declare class OrdersService {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -131,8 +127,6 @@ export declare class OrdersService {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -183,7 +177,6 @@ export declare class OrdersService {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -192,8 +185,6 @@ export declare class OrdersService {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
         serviceId: number;
         id: number;
@@ -237,7 +228,6 @@ export declare class OrdersService {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -246,8 +236,6 @@ export declare class OrdersService {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -289,7 +277,6 @@ export declare class OrdersService {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -298,8 +285,6 @@ export declare class OrdersService {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -341,7 +326,6 @@ export declare class OrdersService {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -350,8 +334,6 @@ export declare class OrdersService {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -410,7 +392,6 @@ export declare class OrdersService {
             };
             invoice: {
                 id: number;
-                isVerified: boolean;
                 orderId: number;
                 discount: number;
                 totalAmount: number;
@@ -419,8 +400,6 @@ export declare class OrdersService {
                 paymentStatus: string;
                 payoutDate: Date | null;
                 payoutStatus: string;
-                verifiedAt: Date | null;
-                verifiedBy: number | null;
             } | null;
         } & {
             serviceId: number;
@@ -485,7 +464,6 @@ export declare class OrdersService {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -494,8 +472,6 @@ export declare class OrdersService {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -540,7 +516,6 @@ export declare class OrdersService {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -549,8 +524,6 @@ export declare class OrdersService {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -595,7 +568,6 @@ export declare class OrdersService {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -604,8 +576,6 @@ export declare class OrdersService {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;
@@ -650,7 +620,6 @@ export declare class OrdersService {
         };
         invoice: {
             id: number;
-            isVerified: boolean;
             orderId: number;
             discount: number;
             totalAmount: number;
@@ -659,8 +628,6 @@ export declare class OrdersService {
             paymentStatus: string;
             payoutDate: Date | null;
             payoutStatus: string;
-            verifiedAt: Date | null;
-            verifiedBy: number | null;
         } | null;
     } & {
         serviceId: number;

@@ -507,11 +507,13 @@ let OffersService = class OffersService {
     }
     async getFlexibleActiveOffers(limit = 20) {
         console.log('🔍 Getting flexible active offers with limit:', limit);
-        console.log('📅 Current date:', new Date().toISOString());
+        const now = new Date();
+        console.log('📅 Current date:', now.toISOString());
         const offers = await this.prisma.offer.findMany({
             where: {
                 isActive: true,
-                endDate: { gt: new Date() }
+                startDate: { lte: now },
+                endDate: { gt: now }
             },
             include: {
                 provider: {
