@@ -50,17 +50,17 @@ export declare class ProviderServiceService {
     private getActiveOffer;
     create(providerId: number, createProviderServiceDto: CreateProviderServiceDto): Promise<{
         service: {
-            description: string;
             id: number;
             image: string;
             title: string;
+            description: string;
             commission: number;
         };
     } & {
-        serviceId: number;
         id: number;
-        isActive: boolean;
         providerId: number;
+        serviceId: number;
+        isActive: boolean;
         price: number;
     }>;
     findAll(providerId?: number, activeOnly?: boolean): Promise<ProviderServiceWithOfferResponse[]>;

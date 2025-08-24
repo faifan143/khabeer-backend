@@ -55,13 +55,14 @@ export class ProviderServiceService {
   constructor(private readonly prisma: PrismaService) { }
 
   private async getActiveOffer(providerId: number, serviceId: number) {
-    return await this.prisma.offer.findFirst({
+    const now = new Date();
+
+    // First, let's find any offers for this provider and service
+    const allOffers = await this.prisma.offer.findMany({
       where: {
         providerId,
         serviceId,
-        isActive: true,
-        startDate: { lte: new Date() },
-        endDate: { gt: new Date() }
+        isActive: true
       },
       select: {
         id: true,
@@ -72,6 +73,23 @@ export class ProviderServiceService {
         originalPrice: true
       }
     });
+
+    // Find the active offer based on date range
+    // Use date-only comparison to avoid timezone issues
+    const activeOffer = allOffers.find(offer => {
+      const startDate = new Date(offer.startDate);
+      const endDate = new Date(offer.endDate);
+
+      // Convert to date-only strings (YYYY-MM-DD) for comparison
+      const startDateOnly = startDate.toISOString().split('T')[0];
+      const endDateOnly = endDate.toISOString().split('T')[0];
+      const nowDateOnly = now.toISOString().split('T')[0];
+
+      // Compare dates only, ignoring time
+      return startDateOnly <= nowDateOnly && endDateOnly >= nowDateOnly;
+    });
+
+    return activeOffer || null;
   }
 
   async create(providerId: number, createProviderServiceDto: CreateProviderServiceDto) {
