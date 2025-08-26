@@ -1,8 +1,9 @@
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, ConnectedSocket, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
+import { Logger, UnauthorizedException } from '@nestjs/common';
 import { LocationTrackingService } from './location-tracking.service';
 import { LocationUpdateDto, StartTrackingDto, StopTrackingDto } from './dto/location-update.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({
   namespace: 'location-tracking',
@@ -19,21 +20,50 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
   private providerSockets = new Map<number, string>(); // providerId -> socketId
   private userSockets = new Map<number, string>(); // userId -> socketId
 
-  constructor(private readonly locationTrackingService: LocationTrackingService) { }
+  constructor(
+    private readonly locationTrackingService: LocationTrackingService,
+    private readonly jwtService: JwtService
+  ) { }
 
-  handleConnection(client: Socket) {
-    const userId = client.data?.userId;
-    const userRole = client.data?.userRole;
+  async handleConnection(client: Socket) {
+    try {
+      // Get JWT token from handshake auth or query
+      const token = client.handshake.auth.token || client.handshake.query.token;
+      
+      if (!token) {
+        this.logger.error('No JWT token provided');
+        client.emit('error', { message: 'Authentication required' });
+        client.disconnect();
+        return;
+      }
 
-    if (userRole === 'PROVIDER') {
-      this.providerSockets.set(userId, client.id);
-      this.logger.log(`Provider ${userId} connected`);
-    } else {
-      this.userSockets.set(userId, client.id);
-      this.logger.log(`User ${userId} connected`);
+      // Verify JWT token
+      const payload = this.jwtService.verify(token);
+      
+      // Set user data on socket
+      client.data.userId = payload.userId;
+      client.data.userRole = payload.role;
+      client.data.userEmail = payload.email;
+
+      if (payload.role === 'PROVIDER') {
+        this.providerSockets.set(payload.userId, client.id);
+        this.logger.log(`Provider ${payload.userId} connected`);
+      } else {
+        this.userSockets.set(payload.userId, client.id);
+        this.logger.log(`User ${payload.userId} connected`);
+      }
+
+      client.emit('connected', { 
+        userId: payload.userId, 
+        userRole: payload.role,
+        message: 'Successfully authenticated'
+      });
+
+    } catch (error) {
+      this.logger.error('Authentication failed:', error.message);
+      client.emit('error', { message: 'Authentication failed' });
+      client.disconnect();
     }
-
-    client.emit('connected', { userId, userRole });
   }
 
   handleDisconnect(client: Socket) {

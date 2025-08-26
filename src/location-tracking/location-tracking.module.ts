@@ -15,6 +15,6 @@ import { PrismaModule } from '../prisma/prisma.module';
   ],
   controllers: [LocationTrackingController],
   providers: [LocationTrackingGateway, LocationTrackingService],
-  exports: [LocationTrackingService],
+  exports: [LocationTrackingService, JwtModule],
 })
 export class LocationTrackingModule {} 
