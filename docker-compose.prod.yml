@@ -95,13 +95,14 @@ services:
       APP_URL_IMAGE: ${APP_URL_IMAGE:-http://31.97.71.187:3001}
 
       # OTP Configuration - Set to 'false' to bypass OTP verification
-      ENABLE_OTP: ${ENABLE_OTP:-false}
+      ENABLE_OTP: ${ENABLE_OTP:-true}
 
       # SMS Configuration (for when OTP is enabled)
-      TAMIMAH_SMS_API_URL: ${TAMIMAH_SMS_API_URL}
-      TAMIMAH_SMS_USERNAME: ${TAMIMAH_SMS_USERNAME}
-      TAMIMAH_SMS_PASSWORD: ${TAMIMAH_SMS_PASSWORD}
-      TAMIMAH_SMS_SENDER_ID: ${TAMIMAH_SMS_SENDER_ID:-Khabeerw}
+      TAMIMAH_SMS_API_URL: ${TAMIMAH_SMS_API_URL:-https://tamimahsms.com/user/smspush.aspx}
+      SMS_USERNAME: ${SMS_USERNAME:-Khabsms}
+      SMS_PASSWORD: ${SMS_PASSWORD:-Khab!rsm$24!}
+      TAMIMAH_SMS_SENDER_ID: ${TAMIMAH_SMS_SENDER_ID:-Khabeer}
+      TAMIMAH_SMS_SOURCE: ${TAMIMAH_SMS_SOURCE:-OTP}
 
       # Firebase Service Account
       FIREBASE_SERVICE_ACCOUNT: ${FIREBASE_SERVICE_ACCOUNT}

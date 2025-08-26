@@ -9,7 +9,13 @@ import { Roles } from '../auth/roles.decorator';
 @ApiTags('SMS OTP')
 @Controller('sms')
 export class SmsController {
-  constructor(private readonly smsService: SmsService) {}
+  constructor(private readonly smsService: SmsService) { }
+
+  @Get('test')
+  @ApiOperation({ summary: 'Test SMS module' })
+  async testSmsModule() {
+    return { message: 'SMS module is working!', timestamp: new Date().toISOString() };
+  }
 
   @Post('otp/send')
   @ApiOperation({ summary: 'Send OTP via SMS' })

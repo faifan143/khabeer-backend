@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString, IsBoolean, IsInt } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class LocationUpdateDto {
   @IsNumber()
@@ -11,39 +11,16 @@ export class LocationUpdateDto {
   @IsNumber()
   accuracy?: number;
 
-  @IsOptional()
   @IsString()
-  orderId?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  orderId: string; // Numeric order ID as string
 }
 
 export class StartTrackingDto {
   @IsString()
-  orderId: string;
-
-  @IsOptional()
-  @IsNumber()
-  updateInterval?: number; // in seconds, default 30
+  orderId: string; // Numeric order ID as string
 }
 
 export class StopTrackingDto {
   @IsString()
-  orderId: string;
-}
-
-export class TrackOrderDto {
-  @IsString()
-  orderId: string;
-}
-
-export interface LocationData {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-  timestamp: Date;
-  providerId: number;
-  orderId: string;
+  orderId: string; // Numeric order ID as string
 } 

@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SendOtpDto, VerifyOtpDto, OtpResponseDto } from './dto/send-sms.dto';
 import axios from 'axios';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class SmsService {
@@ -28,41 +27,53 @@ export class SmsService {
    */
   private async sendSms(phoneNumber: string, message: string): Promise<{ success: boolean; message: string }> {
     try {
-      // Tamimah SMS API configuration
-      const apiUrl = this.configService.get<string>('TAMIMAH_SMS_API_URL');
-      const username = this.configService.get<string>('TAMIMAH_SMS_USERNAME');
-      const password = this.configService.get<string>('TAMIMAH_SMS_PASSWORD');
+      // Tamimah SMS API configuration - using the working endpoint
+      const apiUrl = this.configService.get<string>('TAMIMAH_SMS_API_URL', 'https://tamimahsms.com/user/smspush.aspx');
+      const username = this.configService.get<string>('SMS_USERNAME', 'Khabsms');
+      const password = this.configService.get<string>('SMS_PASSWORD', 'Khab!rsm$24!');
       const sender = this.configService.get<string>('TAMIMAH_SMS_SENDER_ID', 'Khabeer');
+      const source = this.configService.get<string>('TAMIMAH_SMS_SOURCE', 'OTP');
 
       if (!apiUrl || !username || !password) {
         throw new InternalServerErrorException('SMS service configuration is missing');
       }
 
-      // Prepare request payload for Tamimah SMS
-      const payload = {
-        username,
-        password,
-        sender,
-        numbers: phoneNumber,
-        message,
-        unicode: 'U', // For Arabic support
-        return: 'full' // Return full response
-      };
+      // Format phone number for Oman (968xxxxxxxx)
+      let formattedPhone = phoneNumber.replace(/\D/g, ''); // Remove non-digits
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = '968' + formattedPhone.substring(1);
+      } else if (formattedPhone.startsWith('+968')) {
+        formattedPhone = formattedPhone.substring(1);
+      } else if (formattedPhone.startsWith('968')) {
+        // Already in correct format
+      } else {
+        formattedPhone = '968' + formattedPhone;
+      }
 
-      this.logger.log(`Sending SMS to ${phoneNumber}`);
+      // Build query parameters for GET request (matching Flutter implementation)
+      const params = new URLSearchParams({
+        username: username,
+        password: password,
+        phoneno: formattedPhone,
+        message: message,
+        sender: sender,
+        source: source
+      });
 
-      // Make API call to Tamimah SMS service
-      const response = await axios.post(apiUrl, payload, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const fullUrl = `${apiUrl}?${params.toString()}`;
+
+      this.logger.log(`Sending SMS to ${formattedPhone} (original: ${phoneNumber})`);
+      this.logger.log(`SMS URL: ${fullUrl}`);
+
+      // Make GET request to Tamimah SMS service (matching Flutter implementation)
+      const response = await axios.get(fullUrl, {
         timeout: 10000, // 10 seconds timeout
       });
 
       this.logger.log(`SMS API Response: ${JSON.stringify(response.data)}`);
 
-      // Handle Tamimah SMS response
-      if (response.data && response.data.status === 'success') {
+      // Handle Tamimah SMS response - check if it's successful
+      if (response.status === 200) {
         // Log successful SMS
         await this.logSmsActivity(phoneNumber, message, 'sent', response.data);
 
@@ -71,7 +82,7 @@ export class SmsService {
           message: 'SMS sent successfully'
         };
       } else {
-        throw new BadRequestException(`SMS sending failed: ${response.data?.message || 'Unknown error'}`);
+        throw new BadRequestException(`SMS sending failed: ${response.statusText || 'Unknown error'}`);
       }
 
     } catch (error) {
@@ -107,37 +118,15 @@ export class SmsService {
         };
       }
 
-      // Check if there's a recent OTP request (rate limiting)
-      const recentOtp = await this.prisma.otp.findFirst({
-        where: {
-          phoneNumber,
-          purpose,
-          createdAt: {
-            gte: new Date(Date.now() - 2 * 60 * 1000) // 2 minutes ago
-          }
-        }
-      });
-
-      if (recentOtp) {
-        const timeDiff = Date.now() - recentOtp.createdAt.getTime();
-        const retryAfter = Math.ceil((2 * 60 * 1000 - timeDiff) / 1000);
-
-        return {
-          success: false,
-          message: 'Please wait before requesting another OTP',
-          retryAfter
-        };
-      }
-
       // Generate OTP
       const otp = this.generateOtp(6);
       const expiresIn = 10 * 60; // 10 minutes
 
-      // Create OTP record in database
+      // Create OTP record in database (store plain text OTP)
       const otpRecord = await this.prisma.otp.create({
         data: {
           phoneNumber,
-          otp: await this.hashOtp(otp),
+          otp: otp, // Store plain text OTP (no hashing)
           purpose,
           expiresAt: new Date(Date.now() + expiresIn * 1000),
           attempts: 0
@@ -216,8 +205,8 @@ export class SmsService {
         };
       }
 
-      // Verify OTP
-      const isValid = await this.verifyOtpHash(otp, otpRecord.otp);
+      // Verify OTP (plain text comparison)
+      const isValid = otp === otpRecord.otp;
 
       if (!isValid) {
         // Increment attempts
@@ -252,21 +241,6 @@ export class SmsService {
       this.logger.error(`Error verifying OTP: ${error.message}`, error.stack);
       throw new InternalServerErrorException('Failed to verify OTP');
     }
-  }
-
-  /**
-   * Hash OTP for secure storage
-   */
-  private async hashOtp(otp: string): Promise<string> {
-    return crypto.createHash('sha256').update(otp).digest('hex');
-  }
-
-  /**
-   * Verify OTP hash
-   */
-  private async verifyOtpHash(otp: string, hash: string): Promise<boolean> {
-    const otpHash = await this.hashOtp(otp);
-    return otpHash === hash;
   }
 
   /**
