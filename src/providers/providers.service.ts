@@ -600,7 +600,7 @@ export class ProvidersService {
       // Transform orders to always include services array
       const transformedOrders = orders.map(order => {
         let services: any[] = [];
-        
+
         if (order.isMultipleServices && order.servicesBreakdown) {
           // Use the stored services breakdown from the database and enhance with category data
           services = (order.servicesBreakdown as any[]).map(serviceItem => ({
@@ -625,10 +625,10 @@ export class ProvidersService {
             }
           ];
         }
-        
+
         // Remove the main service attribute and return only the services array
         const { service, ...orderWithoutService } = order;
-        
+
         return {
           ...orderWithoutService,
           duration: order.scheduledDate, // Use scheduled date as duration
@@ -701,7 +701,7 @@ export class ProvidersService {
       // Transform orders to always include services array
       const transformedOrders = orders.map(order => {
         let services: any[] = [];
-        
+
         if (order.isMultipleServices && order.servicesBreakdown) {
           // Use the stored services breakdown from the database and enhance with category data
           services = (order.servicesBreakdown as any[]).map(serviceItem => ({
@@ -726,10 +726,10 @@ export class ProvidersService {
             }
           ];
         }
-        
+
         // Remove the main service attribute and return only the services array
         const { service, ...orderWithoutService } = order;
-        
+
         return {
           ...orderWithoutService,
           duration: order.scheduledDate, // Use scheduled date as duration
@@ -752,6 +752,125 @@ export class ProvidersService {
       };
     } catch (error) {
       throw new InternalServerErrorException('Error fetching provider orders by status');
+    }
+  }
+
+  async getProviderPendingOrders(providerId: number): Promise<ProviderOrdersResponseDto> {
+    try {
+      const orders = await this.prisma.order.findMany({
+        where: {
+          providerId,
+          status: 'pending'
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              image: true,
+              state: true,
+              latitude: true,
+              longitude: true
+            }
+          },
+          service: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              image: true,
+              commission: true,
+              category: {
+                select: {
+                  id: true,
+                  image: true,
+                  titleAr: true,
+                  titleEn: true,
+                  state: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          orderDate: 'desc'
+        }
+      });
+
+      // Transform orders to always include services array
+      const transformedOrders = orders.map(order => {
+        let services: any[] = [];
+
+        if (order.isMultipleServices && order.servicesBreakdown) {
+          // Use the stored services breakdown from the database and enhance with category data
+          services = (order.servicesBreakdown as any[]).map(serviceItem => ({
+            ...serviceItem,
+            category: order.service.category
+          }));
+        } else {
+          // For single service orders, create a single-item array with complete data
+          const service = order.service;
+          services = [
+            {
+              serviceId: service.id,
+              serviceTitle: service.title,
+              serviceDescription: service.description,
+              serviceImage: service.image,
+              quantity: order.quantity,
+              unitPrice: order.providerAmount / order.quantity,
+              totalPrice: order.providerAmount,
+              commission: service.commission || 0,
+              commissionAmount: order.commissionAmount,
+              category: service.category
+            }
+          ];
+        }
+
+        // Remove the main service attribute and return only the services array
+        const { service, ...orderWithoutService } = order;
+
+        return {
+          ...orderWithoutService,
+          duration: order.scheduledDate, // Use scheduled date as duration
+          isMultipleServices: order.isMultipleServices || false,
+          services,
+          user: {
+            ...order.user,
+            image: order.user.image || '',
+            state: order.user.state || '',
+            latitude: order.user.latitude ? Number(order.user.latitude) : null,
+            longitude: order.user.longitude ? Number(order.user.longitude) : null
+          }
+        };
+      });
+
+      return {
+        orders: transformedOrders as unknown as ProviderOrderResponseDto[],
+        total: transformedOrders.length,
+        status: 'pending'
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Error fetching provider pending orders');
+    }
+  }
+
+  async getProviderPendingOrdersCount(providerId: number): Promise<{ count: number; status: string }> {
+    try {
+      const count = await this.prisma.order.count({
+        where: {
+          providerId,
+          status: 'pending'
+        }
+      });
+
+      return {
+        count,
+        status: 'pending'
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Error fetching provider pending orders count');
     }
   }
 

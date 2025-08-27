@@ -252,6 +252,28 @@ export class ProvidersController {
     return this.providersService.getProviderOrders(Number(id));
   }
 
+  @Get(':id/orders/pending')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async getProviderPendingOrders(@Param('id') id: string, @Request() req) {
+    // Providers can only access their own orders, admins can access any
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+      throw new BadRequestException('You can only access your own orders');
+    }
+    return this.providersService.getProviderPendingOrders(Number(id));
+  }
+
+  @Get(':id/orders/pending/count')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROVIDER', 'ADMIN')
+  async getProviderPendingOrdersCount(@Param('id') id: string, @Request() req) {
+    // Providers can only access their own orders, admins can access any
+    if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
+      throw new BadRequestException('You can only access your own orders');
+    }
+    return this.providersService.getProviderPendingOrdersCount(Number(id));
+  }
+
   @Get(':id/orders/:status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROVIDER', 'ADMIN')
