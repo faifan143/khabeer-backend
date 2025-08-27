@@ -12,6 +12,21 @@ export class OrdersService {
     private readonly notificationsService: BusinessFlowNotificationsService
   ) { }
 
+  /**
+   * Normalizes a date to remove time components (hours, minutes, seconds, milliseconds)
+   * Only compares years, months, and days
+   */
+  private normalizeDateToDateOnly(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  /**
+   * Gets the current date normalized to date-only (no time components)
+   */
+  private getCurrentDateOnly(): Date {
+    return this.normalizeDateToDateOnly(new Date());
+  }
+
   async create(createOrderDto: CreateOrderDto, userId: number) {
     // Validate provider and service exist
     const provider = await this.prisma.provider.findUnique({
@@ -44,8 +59,8 @@ export class OrdersService {
       throw new BadRequestException('Provider does not offer this service');
     }
 
-    // Check for valid offers
-    const now = new Date();
+    // Check for valid offers - use date-only comparison
+    const now = this.getCurrentDateOnly();
     const validOffer = await this.prisma.offer.findFirst({
       where: {
         providerId: createOrderDto.providerId,
@@ -182,7 +197,7 @@ export class OrdersService {
     // Transform orders to always include services array
     const transformedOrders = orders.map(order => {
       let services: any[] = [];
-      
+
       if (order.isMultipleServices && order.servicesBreakdown) {
         // Use the stored services breakdown from the database and enhance with category data
         services = (order.servicesBreakdown as any[]).map(serviceItem => ({
@@ -210,7 +225,7 @@ export class OrdersService {
 
       // Remove the main service attribute and return only the services array
       const { service, ...orderWithoutService } = order;
-      
+
       return {
         ...orderWithoutService,
         isMultipleServices: order.isMultipleServices || false,
@@ -278,7 +293,7 @@ export class OrdersService {
 
     // Always create a services array - single service orders get one item
     let services: any[] = [];
-    
+
     if (order.isMultipleServices && order.servicesBreakdown) {
       // Use the stored services breakdown from the database and enhance with category data
       services = (order.servicesBreakdown as any[]).map(serviceItem => ({
@@ -746,7 +761,7 @@ export class OrdersService {
     const where = {
       ...baseWhere,
       scheduledDate: {
-        gte: new Date()
+        gte: this.getCurrentDateOnly()
       },
       status: {
         in: [OrderStatus.PENDING, OrderStatus.ACCEPTED]
@@ -789,7 +804,7 @@ export class OrdersService {
     const where = {
       ...baseWhere,
       scheduledDate: {
-        lt: new Date()
+        lt: this.getCurrentDateOnly()
       },
       status: {
         in: [OrderStatus.ACCEPTED, OrderStatus.IN_PROGRESS]
@@ -1016,8 +1031,8 @@ export class OrdersService {
       throw new BadRequestException('Provider does not offer one or more of the requested services');
     }
 
-    // Check for valid offers for each service
-    const now = new Date();
+    // Check for valid offers for each service - use date-only comparison
+    const now = this.getCurrentDateOnly();
     const offers = await this.prisma.offer.findMany({
       where: {
         providerId: createOrderDto.providerId,

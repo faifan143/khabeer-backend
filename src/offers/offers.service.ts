@@ -24,13 +24,28 @@ export interface UpdateOfferDto {
 export class OffersService {
   constructor(private readonly prisma: PrismaService) { }
 
+  /**
+   * Normalizes a date to remove time components (hours, minutes, seconds, milliseconds)
+   * Only compares years, months, and days
+   */
+  private normalizeDateToDateOnly(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  /**
+   * Gets the current date normalized to date-only (no time components)
+   */
+  private getCurrentDateOnly(): Date {
+    return this.normalizeDateToDateOnly(new Date());
+  }
+
   async create(providerId: number, createOfferDto: CreateOfferDto) {
     const { serviceId, startDate, endDate, originalPrice, offerPrice, description } = createOfferDto;
 
-    // Validate dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const now = new Date();
+    // Validate dates - normalize to date-only for comparison
+    const start = this.normalizeDateToDateOnly(new Date(startDate));
+    const end = this.normalizeDateToDateOnly(new Date(endDate));
+    const now = this.getCurrentDateOnly();
 
     if (start < now) {
       throw new BadRequestException('Start date cannot be in the past');
@@ -163,8 +178,8 @@ export class OffersService {
 
     if (activeOnly) {
       where.isActive = true;
-      where.startDate = { lte: new Date() };
-      where.endDate = { gt: new Date() };
+      where.startDate = { lte: this.getCurrentDateOnly() };
+      where.endDate = { gt: this.getCurrentDateOnly() };
     }
 
     const offers = await this.prisma.offer.findMany({
@@ -240,11 +255,11 @@ export class OffersService {
 
     const { startDate, endDate, originalPrice, offerPrice, description, isActive } = updateOfferDto;
 
-    // Validate dates if provided
+    // Validate dates if provided - normalize to date-only for comparison
     if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const now = new Date();
+      const start = this.normalizeDateToDateOnly(new Date(startDate));
+      const end = this.normalizeDateToDateOnly(new Date(endDate));
+      const now = this.getCurrentDateOnly();
 
       if (start < now) {
         throw new BadRequestException('Start date cannot be in the past');
@@ -269,8 +284,8 @@ export class OffersService {
     const updatedOffer = await this.prisma.offer.update({
       where: { id },
       data: {
-        ...(startDate && { startDate: new Date(startDate) }),
-        ...(endDate && { endDate: new Date(endDate) }),
+        ...(startDate && { startDate: this.normalizeDateToDateOnly(new Date(startDate)) }),
+        ...(endDate && { endDate: this.normalizeDateToDateOnly(new Date(endDate)) }),
         ...(originalPrice && { originalPrice }),
         ...(offerPrice && { offerPrice }),
         ...(description !== undefined && { description }),
@@ -320,7 +335,7 @@ export class OffersService {
 
   async getActiveOffers(limit: number = 20) {
     console.log('🔍 Getting active offers with limit:', limit);
-    const now = new Date();
+    const now = this.getCurrentDateOnly();
     console.log('📅 Current date (UTC):', now.toISOString());
     console.log('📅 Current date (local):', now.toString());
     console.log('🌍 Timezone offset (minutes):', now.getTimezoneOffset());
@@ -423,7 +438,7 @@ export class OffersService {
       throw new NotFoundException('Provider not found');
     }
 
-    const now = new Date();
+    const now = this.getCurrentDateOnly();
     const offers = await this.prisma.offer.findMany({
       where: {
         providerId,
@@ -453,7 +468,7 @@ export class OffersService {
     const expiredOffers = await this.prisma.offer.findMany({
       where: {
         isActive: true,
-        endDate: { lt: new Date() }
+        endDate: { lt: this.getCurrentDateOnly() }
       }
     });
 
@@ -496,7 +511,7 @@ export class OffersService {
 
     return {
       totalOffers: offers.length,
-      currentDate: new Date().toISOString(),
+      currentDate: this.getCurrentDateOnly().toISOString(),
       offers: offers.map(o => ({
         id: o.id,
         providerId: o.providerId,
@@ -516,14 +531,14 @@ export class OffersService {
         },
         // Check each filter criteria
         passesIsActive: o.isActive,
-        passesStartDate: o.startDate <= new Date(),
-        passesEndDate: o.endDate > new Date(),
+        passesStartDate: o.startDate <= this.getCurrentDateOnly(),
+        passesEndDate: o.endDate > this.getCurrentDateOnly(),
         passesProviderVerified: o.provider.isVerified,
         passesProviderActive: o.provider.isActive,
         // Overall result
         wouldBeVisible: o.isActive &&
-          o.startDate <= new Date() &&
-          o.endDate > new Date() &&
+          o.startDate <= this.getCurrentDateOnly() &&
+          o.endDate > this.getCurrentDateOnly() &&
           o.provider.isVerified &&
           o.provider.isActive
       }))
@@ -531,7 +546,7 @@ export class OffersService {
   }
 
   async debugActiveOffersCriteria() {
-    const now = new Date();
+    const now = this.getCurrentDateOnly();
 
     // Check offers that fail each criteria
     const inactiveOffers = await this.prisma.offer.findMany({
@@ -592,7 +607,7 @@ export class OffersService {
 
   async getFlexibleActiveOffers(limit: number = 20) {
     console.log('🔍 Getting flexible active offers with limit:', limit);
-    const now = new Date();
+    const now = this.getCurrentDateOnly();
     console.log('📅 Current date:', now.toISOString());
 
     // Use the same date validation logic as all other offer endpoints
@@ -643,7 +658,7 @@ export class OffersService {
 
   async getAvailableOffers(limit: number = 20) {
     console.log('🔍 Getting available offers with limit:', limit);
-    const now = new Date();
+    const now = this.getCurrentDateOnly();
     console.log('📅 Current date:', now.toISOString());
 
     // Use the same date validation logic as all other offer endpoints
@@ -710,7 +725,7 @@ export class OffersService {
       throw new NotFoundException('Offer not found');
     }
 
-    const now = new Date();
+    const now = this.getCurrentDateOnly();
 
     const result: {
       offer: any;
