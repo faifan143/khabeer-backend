@@ -33,6 +33,6 @@ import { SmsModule } from '../sms/sms.module';
   ],
   providers: [AuthService, JwtStrategy, RolesGuard, UsersService],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule { }

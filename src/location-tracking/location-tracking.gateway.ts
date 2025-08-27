@@ -1,9 +1,9 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, ConnectedSocket, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { Logger, UnauthorizedException } from '@nestjs/common';
-import { LocationTrackingService } from './location-tracking.service';
-import { LocationUpdateDto, StartTrackingDto, StopTrackingDto } from './dto/location-update.dto';
+import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { LocationUpdateDto, StartTrackingDto, StopTrackingDto } from './dto/location-update.dto';
+import { LocationTrackingService } from './location-tracking.service';
 
 @WebSocketGateway({
   namespace: 'location-tracking',
@@ -29,7 +29,7 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
     try {
       // Get JWT token from handshake auth or query
       const token = client.handshake.auth.token || client.handshake.query.token;
-      
+
       if (!token) {
         this.logger.error('No JWT token provided');
         client.emit('error', { message: 'Authentication required' });
@@ -38,26 +38,55 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
       }
 
       // Verify JWT token
-      const payload = this.jwtService.verify(token);
-      
-      // Set user data on socket
-      client.data.userId = payload.userId;
-      client.data.userRole = payload.role;
-      client.data.userEmail = payload.email;
-
-      if (payload.role === 'PROVIDER') {
-        this.providerSockets.set(payload.userId, client.id);
-        this.logger.log(`Provider ${payload.userId} connected`);
-      } else {
-        this.userSockets.set(payload.userId, client.id);
-        this.logger.log(`User ${payload.userId} connected`);
+      let payload: any;
+      try {
+        payload = this.jwtService.verify(token);
+      } catch (jwtError) {
+        this.logger.error('JWT verification failed:', jwtError.message);
+        client.emit('error', { message: 'Invalid or expired token' });
+        client.disconnect();
+        return;
       }
 
-      client.emit('connected', { 
-        userId: payload.userId, 
-        userRole: payload.role,
+      // Extract user data from JWT payload
+      // The JWT payload structure is: { username, sub, role }
+      const userId = payload.sub;           // ✅ Use 'sub' field for user ID
+      const userRole = payload.role;        // ✅ Use 'role' field
+      const userEmail = payload.username;   // ✅ Use 'username' field for email
+
+      if (!userId || !userRole) {
+        this.logger.error('Invalid JWT payload - missing userId or role');
+        client.emit('error', { message: 'Invalid token payload' });
+        client.disconnect();
+        return;
+      }
+
+      // Set user data on socket
+      client.data.userId = userId;
+      client.data.userRole = userRole;
+      client.data.userEmail = userEmail;
+
+      if (userRole === 'PROVIDER') {
+        this.providerSockets.set(userId, client.id);
+        this.logger.log(`Provider ${userId} connected with socket ${client.id}`);
+      } else if (userRole === 'USER') {
+        this.userSockets.set(userId, client.id);
+        this.logger.log(`User ${userId} connected with socket ${client.id}`);
+      } else {
+        this.logger.warn(`Unknown role ${userRole} for user ${userId}`);
+        client.emit('error', { message: 'Invalid user role' });
+        client.disconnect();
+        return;
+      }
+
+      client.emit('connected', {
+        userId: userId,
+        userRole: userRole,
+        userEmail: userEmail,
         message: 'Successfully authenticated'
       });
+
+      this.logger.log(`User ${userId} (${userRole}) successfully authenticated`);
 
     } catch (error) {
       this.logger.error('Authentication failed:', error.message);
@@ -70,12 +99,20 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
     const userId = client.data?.userId;
     const userRole = client.data?.userRole;
 
-    if (userRole === 'PROVIDER') {
-      this.providerSockets.delete(userId);
-      this.logger.log(`Provider ${userId} disconnected`);
+    if (userId && userRole) {
+      if (userRole === 'PROVIDER') {
+        this.providerSockets.delete(userId);
+        this.logger.log(`Provider ${userId} disconnected from socket ${client.id}`);
+
+        // 🔥 CRITICAL FIX: Clear all tracking sessions for this provider
+        const clearedCount = this.locationTrackingService.clearProviderTracking(userId);
+        this.logger.log(`Cleared ${clearedCount} tracking sessions for disconnected provider ${userId}`);
+      } else if (userRole === 'USER') {
+        this.userSockets.delete(userId);
+        this.logger.log(`User ${userId} disconnected from socket ${client.id}`);
+      }
     } else {
-      this.userSockets.delete(userId);
-      this.logger.log(`User ${userId} disconnected`);
+      this.logger.warn(`Socket ${client.id} disconnected without user data`);
     }
   }
 
@@ -89,7 +126,16 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
       const providerId = client.data?.userId;
       const userRole = client.data?.userRole;
 
+      this.logger.log(`Provider ${providerId} attempting to start tracking for order ${data.orderId}`);
+
+      if (!providerId || !userRole) {
+        this.logger.error('Missing user data in socket');
+        client.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
       if (userRole !== 'PROVIDER') {
+        this.logger.warn(`User ${providerId} with role ${userRole} attempted to start tracking`);
         client.emit('error', { message: 'Only providers can start tracking' });
         return;
       }
@@ -114,8 +160,13 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
             providerId: providerId,
             message: 'Provider started sharing location'
           });
+          this.logger.log(`Notified user ${trackingData.userId} that provider ${providerId} started tracking`);
+        } else {
+          this.logger.warn(`User ${trackingData.userId} not connected for order ${data.orderId}`);
         }
       }
+
+      this.logger.log(`Provider ${providerId} successfully started tracking order ${data.orderId}`);
 
     } catch (error) {
       this.logger.error('Error starting tracking:', error.message);
@@ -133,7 +184,14 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
       const providerId = client.data?.userId;
       const userRole = client.data?.userRole;
 
+      if (!providerId || !userRole) {
+        this.logger.error('Missing user data in socket');
+        client.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
       if (userRole !== 'PROVIDER') {
+        this.logger.warn(`User ${providerId} with role ${userRole} attempted to update location`);
         client.emit('error', { message: 'Only providers can update location' });
         return;
       }
@@ -160,8 +218,13 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
               timestamp: new Date()
             }
           });
+          this.logger.log(`Location update sent to user ${trackingData.userId} for order ${data.orderId}`);
+        } else {
+          this.logger.warn(`User ${trackingData.userId} not connected for order ${data.orderId}`);
         }
       }
+
+      this.logger.log(`Provider ${providerId} location updated for order ${data.orderId}: ${data.latitude}, ${data.longitude}`);
 
     } catch (error) {
       this.logger.error('Error updating location:', error.message);
@@ -179,7 +242,14 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
       const providerId = client.data?.userId;
       const userRole = client.data?.userRole;
 
+      if (!providerId || !userRole) {
+        this.logger.error('Missing user data in socket');
+        client.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
       if (userRole !== 'PROVIDER') {
+        this.logger.warn(`User ${providerId} with role ${userRole} attempted to stop tracking`);
         client.emit('error', { message: 'Only providers can stop tracking' });
         return;
       }
@@ -204,8 +274,13 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
             providerId: providerId,
             message: 'Provider stopped sharing location'
           });
+          this.logger.log(`Notified user ${trackingData.userId} that provider ${providerId} stopped tracking`);
+        } else {
+          this.logger.warn(`User ${trackingData.userId} not connected for order ${data.orderId}`);
         }
       }
+
+      this.logger.log(`Provider ${providerId} successfully stopped tracking order ${data.orderId}`);
 
     } catch (error) {
       this.logger.error('Error stopping tracking:', error.message);
@@ -223,10 +298,19 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
       const userId = client.data?.userId;
       const userRole = client.data?.userRole;
 
+      if (!userId || !userRole) {
+        this.logger.error('Missing user data in socket');
+        client.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
       if (userRole !== 'USER') {
+        this.logger.warn(`User ${userId} with role ${userRole} attempted to track order`);
         client.emit('error', { message: 'Only users can track orders' });
         return;
       }
+
+      this.logger.log(`User ${userId} attempting to track order ${data.orderId}`);
 
       // Join order-specific room
       client.join(`order_${data.orderId}`);
@@ -241,6 +325,8 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
         providerId: currentLocation.providerId,
         message: 'Started listening to provider location'
       });
+
+      this.logger.log(`User ${userId} successfully started tracking order ${data.orderId}`);
 
     } catch (error) {
       this.logger.error('Error starting order tracking:', error.message);
@@ -258,7 +344,14 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
       const userId = client.data?.userId;
       const userRole = client.data?.userRole;
 
+      if (!userId || !userRole) {
+        this.logger.error('Missing user data in socket');
+        client.emit('error', { message: 'Authentication required' });
+        return;
+      }
+
       if (userRole !== 'USER') {
+        this.logger.warn(`User ${userId} with role ${userRole} attempted to stop tracking order`);
         client.emit('error', { message: 'Only users can stop tracking orders' });
         return;
       }
@@ -271,9 +364,29 @@ export class LocationTrackingGateway implements OnGatewayConnection, OnGatewayDi
         message: 'Stopped listening to provider location'
       });
 
+      this.logger.log(`User ${userId} stopped tracking order ${data.orderId}`);
+
     } catch (error) {
       this.logger.error('Error stopping order tracking:', error.message);
       client.emit('error', { message: error.message });
     }
+  }
+
+  // Debug method to get current socket status
+  @SubscribeMessage('get_socket_status')
+  async handleGetSocketStatus(@ConnectedSocket() client: Socket) {
+    const userId = client.data?.userId;
+    const userRole = client.data?.userRole;
+    const userEmail = client.data?.userEmail;
+
+    client.emit('socket_status', {
+      userId,
+      userRole,
+      userEmail,
+      socketId: client.id,
+      connected: client.connected,
+      providerSocketsCount: this.providerSockets.size,
+      userSocketsCount: this.userSockets.size
+    });
   }
 } 

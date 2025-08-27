@@ -1,5 +1,6 @@
 import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { SmsService } from './sms.service';
 import { SendOtpDto, VerifyOtpDto, OtpResponseDto } from './dto/send-sms.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -9,7 +10,10 @@ import { Roles } from '../auth/roles.decorator';
 @ApiTags('SMS OTP')
 @Controller('sms')
 export class SmsController {
-  constructor(private readonly smsService: SmsService) { }
+  constructor(
+    private readonly smsService: SmsService,
+    private readonly configService: ConfigService // 🔥 CRITICAL FIX: Inject ConfigService
+  ) { }
 
   @Get('test')
   @ApiOperation({ summary: 'Test SMS module' })
@@ -40,11 +44,11 @@ export class SmsController {
   @ApiOperation({ summary: 'Get SMS service status' })
   @ApiResponse({ status: 200, description: 'SMS service status' })
   async getSmsStatus() {
-    // Check if SMS service is configured
+    // 🔥 CRITICAL FIX: Use ConfigService instead of process.env
     const isConfigured = !!(
-      process.env.TAMIMAH_SMS_API_URL &&
-      process.env.TAMIMAH_SMS_USERNAME &&
-      process.env.TAMIMAH_SMS_PASSWORD
+      this.configService.get('TAMIMAH_SMS_API_URL') &&
+      this.configService.get('SMS_USERNAME') &&
+      this.configService.get('SMS_PASSWORD')
     );
 
     return {

@@ -1,4 +1,4 @@
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '../generated/prisma/index'; // 🔥 CRITICAL FIX: Correct import path
 
 const prisma = new PrismaClient();
 

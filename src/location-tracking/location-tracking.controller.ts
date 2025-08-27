@@ -5,9 +5,14 @@ import {
   UseGuards,
   Request,
   NotFoundException,
+  Post,
+  Body,
+  Delete,
 } from '@nestjs/common';
 import { LocationTrackingService } from './location-tracking.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('location-tracking')
 @UseGuards(JwtAuthGuard)
@@ -86,6 +91,149 @@ export class LocationTrackingController {
       activeTrackingCount: activeTracking.length,
       timestamp: new Date().toISOString(),
       message: 'Location tracking service is running'
+    };
+  }
+
+  // Debug endpoint to get all active tracking sessions (Admin only)
+  @Get('debug/active-tracking')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  async getActiveTrackingDebug() {
+    const activeTracking = this.locationTrackingService.getAllActiveTracking();
+
+    return {
+      success: true,
+      activeTrackingCount: Object.keys(activeTracking).length,
+      activeTracking,
+      timestamp: new Date().toISOString(),
+      message: 'Active tracking sessions retrieved'
+    };
+  }
+
+  // Debug endpoint to get tracking status for specific order (Admin only)
+  @Get('debug/order/:orderId/tracking')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  async getOrderTrackingDebug(@Param('orderId') orderId: string) {
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
+      return {
+        success: false,
+        message: 'Invalid order ID format',
+        orderId
+      };
+    }
+
+    const trackingStatus = this.locationTrackingService.getTrackingStatus(orderIdNumber);
+
+    return {
+      success: true,
+      orderId: orderIdNumber,
+      isTracking: !!trackingStatus,
+      trackingData: trackingStatus,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  // Debug endpoint to test JWT token parsing
+  @Post('debug/test-auth')
+  async testAuth(@Request() req) {
+    const user = req.user;
+
+    return {
+      success: true,
+      message: 'JWT token parsed successfully',
+      userData: {
+        userId: user?.userId,
+        userRole: user?.userRole,
+        userEmail: user?.userEmail,
+        fullUser: user
+      },
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  // Debug endpoint to check order details
+  @Get('debug/order/:orderId/details')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  async getOrderDetails(@Param('orderId') orderId: string) {
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
+      return {
+        success: false,
+        message: 'Invalid order ID format',
+        orderId
+      };
+    }
+
+    try {
+      // This would need to be implemented in the service or use Prisma directly
+      // For now, return basic info
+      return {
+        success: true,
+        orderId: orderIdNumber,
+        message: 'Order details endpoint - implement database query',
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error retrieving order details',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  // Debug endpoint to force clear tracking for a stuck order (Admin only)
+  @Delete('debug/order/:orderId/clear-tracking')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  async forceClearTracking(@Param('orderId') orderId: string) {
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
+      return {
+        success: false,
+        message: 'Invalid order ID format',
+        orderId
+      };
+    }
+
+    const wasTracking = this.locationTrackingService.forceClearTracking(orderIdNumber);
+
+    return {
+      success: true,
+      orderId: orderIdNumber,
+      wasTracking,
+      message: wasTracking ? 'Tracking cleared successfully' : 'No tracking was active for this order',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  // Debug endpoint to check if specific order is being tracked
+  @Get('debug/order/:orderId/is-tracking')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  async checkOrderTracking(@Param('orderId') orderId: string) {
+    const orderIdNumber = parseInt(orderId);
+    if (isNaN(orderIdNumber)) {
+      return {
+        success: false,
+        message: 'Invalid order ID format',
+        orderId
+      };
+    }
+
+    const isTracking = this.locationTrackingService.isOrderBeingTracked(orderIdNumber);
+    const trackingInfo = this.locationTrackingService.getOrderTrackingInfo(orderIdNumber);
+
+    return {
+      success: true,
+      orderId: orderIdNumber,
+      isTracking,
+      trackingInfo,
+      timestamp: new Date().toISOString()
     };
   }
 } 

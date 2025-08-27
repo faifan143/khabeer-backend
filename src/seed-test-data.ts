@@ -1,4 +1,4 @@
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '../generated/prisma/index'; // 🔥 CRITICAL FIX: Correct import path
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
