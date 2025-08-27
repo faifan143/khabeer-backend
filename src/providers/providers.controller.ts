@@ -138,7 +138,7 @@ export class ProvidersController {
   @Roles('PROVIDER', 'ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
-      destination: './uploads/images/providers',
+      destination: './uploads',
       filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         const ext = extname(file.originalname);
