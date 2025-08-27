@@ -163,14 +163,8 @@ export class LocationTrackingService {
           longitude: this.toDecimalString(longitude, 8),
           accuracy: accuracy !== undefined ? this.toDecimalString(accuracy, 2) : null,
           timestamp: new Date(),
-          isActive: true,
-          // Connect to existing order and provider (Prisma will handle the relations)
-          order: {
-            connect: { id: orderIdNumber }
-          },
-          provider: {
-            connect: { id: providerId }
-          }
+          isActive: true
+          // 🔥 CRITICAL FIX: Remove order and provider connections - use foreign keys directly
         }
       });
       this.logger.log(`Location data saved to database for order ${orderIdNumber}`);
