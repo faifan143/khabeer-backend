@@ -6,6 +6,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { ProviderOrderResponseDto, ProviderOrdersResponseDto } from './dto/provider-orders-response.dto';
 import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
 import { ProviderFullDetailsDto } from './dto/provider-full-details.dto';
+import { ProviderPendingCountResponseDto } from './dto/provider-pending-count.dto';
 
 @Injectable()
 export class ProvidersService {
@@ -24,8 +25,10 @@ export class ProvidersService {
           location: true,
           isActive: true,
           isVerified: true,
-          createdAt: true
+          createdAt: true,
+          providerServices: true
         }
+
       });
 
       // Enhance providers with rating information
@@ -856,18 +859,29 @@ export class ProvidersService {
     }
   }
 
-  async getProviderPendingOrdersCount(providerId: number): Promise<{ count: number; status: string }> {
+  async getProviderPendingOrdersCount(providerId: number): Promise<ProviderPendingCountResponseDto> {
     try {
-      const count = await this.prisma.order.count({
-        where: {
-          providerId,
-          status: 'pending'
-        }
-      });
+      const [count, whatsappSupport] = await Promise.all([
+        this.prisma.order.count({
+          where: {
+            providerId,
+            status: 'pending'
+          }
+        }),
+        this.prisma.systemSettings.findUnique({
+          where: {
+            key: 'whatsapp_support'
+          },
+          select: {
+            value: true
+          }
+        })
+      ]);
 
       return {
         count,
-        status: 'pending'
+        status: 'pending',
+        support: whatsappSupport?.value || null
       };
     } catch (error) {
       throw new InternalServerErrorException('Error fetching provider pending orders count');
