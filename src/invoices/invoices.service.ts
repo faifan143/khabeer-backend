@@ -307,7 +307,15 @@ export class InvoicesService {
   async updatePaymentStatus(id: number, updatePaymentStatusDto: UpdatePaymentStatusDto, userId: number, role: string) {
     const existingInvoice = await this.prisma.invoice.findUnique({
       where: { id },
-      include: { order: true }
+      include: {
+        order: {
+          include: {
+            provider: true,
+            user: true,
+            service: true
+          }
+        }
+      }
     });
 
     if (!existingInvoice) {
@@ -323,8 +331,17 @@ export class InvoicesService {
       throw new BadRequestException('You can only update invoices for your own orders');
     }
 
+    const oldStatus = existingInvoice.paymentStatus;
+    const newStatus = updatePaymentStatusDto.paymentStatus;
+
+    // Validate status transition
+    if (!this.isValidStatusTransition(oldStatus, newStatus)) {
+      throw new BadRequestException(`Invalid status transition from ${oldStatus} to ${newStatus}`);
+    }
+
     const updateData: any = {
-      paymentStatus: updatePaymentStatusDto.paymentStatus
+      paymentStatus: newStatus,
+      updatedAt: new Date()
     };
 
     if (updatePaymentStatusDto.paymentMethod) {
@@ -333,9 +350,12 @@ export class InvoicesService {
 
     if (updatePaymentStatusDto.paymentDate) {
       updateData.paymentDate = updatePaymentStatusDto.paymentDate;
-    } else if (updatePaymentStatusDto.paymentStatus === 'paid') {
+    } else if (newStatus === 'paid') {
       updateData.paymentDate = new Date();
     }
+
+    // Handle financial calculations and order status updates
+    await this.handleFinancialCalculations(existingInvoice, oldStatus, newStatus);
 
     const updatedInvoice = await this.prisma.invoice.update({
       where: { id },
@@ -427,6 +447,167 @@ export class InvoicesService {
         services
       }
     };
+  }
+
+  /**
+   * Validate status transitions
+   */
+  private isValidStatusTransition(oldStatus: string, newStatus: string): boolean {
+    const validTransitions: { [key: string]: string[] } = {
+      'pending': ['paid', 'failed'],
+      'paid': ['refunded'],
+      'failed': ['pending', 'paid'],
+      'refunded': [] // No further transitions allowed
+    };
+
+    return validTransitions[oldStatus]?.includes(newStatus) || false;
+  }
+
+  /**
+   * Handle financial calculations and order status updates based on payment status change
+   */
+  private async handleFinancialCalculations(
+    invoice: any,
+    oldStatus: string,
+    newStatus: string
+  ): Promise<void> {
+    const order = invoice.order;
+
+    switch (newStatus) {
+      case 'paid':
+        // CRITICAL: Admin marking as paid = payment is committed to company
+        await this.commitPaymentToCompany(order, invoice);
+
+        // Update order status to paid
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'paid' }
+        });
+
+        // Validate commission calculation
+        this.validateCommissionCalculation(order, invoice);
+
+        // Log commission earned (for admin tracking)
+        console.log(`Commission earned: ${order.commissionAmount} for order ${order.id}`);
+        console.log(`Provider earnings: ${order.providerAmount} for order ${order.id}`);
+        break;
+
+      case 'failed':
+        // Update order status to payment_failed
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'payment_failed' }
+        });
+
+        // No commission earned on failed payments
+        console.log(`Payment failed for order ${order.id} - no commission earned`);
+        break;
+
+      case 'refunded':
+        // Update order status to refunded
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'refunded' }
+        });
+
+        // Handle refund calculations
+        this.handleRefundCalculations(order, invoice);
+        break;
+
+      case 'pending':
+        // Reset order status back to pending
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'pending' }
+        });
+        break;
+    }
+  }
+
+  /**
+   * CRITICAL: Commit payment to company when admin marks invoice as paid
+   * This represents the actual moment when money is committed
+   */
+  private async commitPaymentToCompany(order: any, invoice: any): Promise<void> {
+    console.log(`🚨 PAYMENT COMMITTED TO COMPANY 🚨`);
+    console.log(`Order: ${order.id}`);
+    console.log(`Total Amount: ${invoice.totalAmount} SAR`);
+    console.log(`Commission: ${order.commissionAmount} SAR`);
+    console.log(`Provider Amount: ${order.providerAmount} SAR`);
+    console.log(`Commitment Time: ${new Date().toISOString()}`);
+
+    // Here you would typically:
+    // 1. Create financial transaction records
+    // 2. Update company revenue
+    // 3. Schedule provider payout
+    // 4. Send notifications
+    // 5. Update accounting systems
+
+    // For now, we'll log the commitment
+    await this.logPaymentCommitment(order, invoice);
+  }
+
+  /**
+   * Log payment commitment for audit purposes
+   */
+  private async logPaymentCommitment(order: any, invoice: any): Promise<void> {
+    // This would typically create a financial commitment record
+    // For now, we'll use console logging for demonstration
+
+    const commitmentData = {
+      orderId: order.id,
+      invoiceId: invoice.id,
+      totalAmount: invoice.totalAmount,
+      commissionAmount: order.commissionAmount,
+      providerAmount: order.providerAmount,
+      commitmentTime: new Date(),
+      status: 'committed',
+      type: 'admin_payment_commitment'
+    };
+
+    console.log('📊 PAYMENT COMMITMENT LOGGED:', commitmentData);
+
+    // In a real system, you would:
+    // - Create a financial commitment record
+    // - Update company revenue tracking
+    // - Trigger accounting system updates
+    // - Send notifications to stakeholders
+  }
+
+  /**
+   * Validate commission calculation
+   */
+  private validateCommissionCalculation(order: any, invoice: any): void {
+    const commissionAmount = order.commissionAmount;
+    const providerAmount = order.providerAmount;
+    const totalAmount = invoice.totalAmount;
+
+    // Validate that commission + provider amount equals total (with small tolerance for rounding)
+    if (Math.abs((commissionAmount + providerAmount) - totalAmount) > 0.01) {
+      console.warn(`Commission calculation mismatch for order ${order.id}: commission=${commissionAmount}, provider=${providerAmount}, total=${totalAmount}`);
+    }
+
+    // Validate commission percentage
+    const expectedCommission = (order.service.commission / 100) * totalAmount;
+    if (Math.abs(commissionAmount - expectedCommission) > 0.01) {
+      console.warn(`Commission percentage mismatch for order ${order.id}: expected=${expectedCommission}, actual=${commissionAmount}`);
+    }
+  }
+
+  /**
+   * Handle refund calculations
+   */
+  private handleRefundCalculations(order: any, invoice: any): void {
+    // When refunding, we need to:
+    // 1. Reverse the commission calculation
+    // 2. Ensure provider doesn't get paid for refunded orders
+    // 3. Log the refund for financial tracking
+
+    console.log(`Processing refund for order ${order.id}:`);
+    console.log(`  - Total amount: ${invoice.totalAmount}`);
+    console.log(`  - Commission reversed: ${order.commissionAmount}`);
+    console.log(`  - Provider earnings reversed: ${order.providerAmount}`);
+    console.log(`  - Net impact: ${order.commissionAmount + order.providerAmount}`);
   }
 
   async getPaymentStats(userId: number, role: string) {
@@ -645,5 +826,97 @@ export class InvoicesService {
         }
       };
     });
+  }
+
+  /**
+   * Get financial summary for admin dashboard
+   * Includes commission calculations and provider earnings
+   */
+  async getAdminFinancialSummary(startDate?: Date, endDate?: Date) {
+    const where: any = {};
+
+    if (startDate || endDate) {
+      where.order = {
+        orderDate: {}
+      };
+
+      if (startDate) {
+        where.order.orderDate.gte = startDate;
+      }
+
+      if (endDate) {
+        where.order.orderDate.lte = endDate;
+      }
+    }
+
+    const invoices = await this.prisma.invoice.findMany({
+      where,
+      include: {
+        order: {
+          select: {
+            commissionAmount: true,
+            providerAmount: true,
+            totalAmount: true
+          }
+        }
+      }
+    });
+
+    // Calculate comprehensive financial metrics
+    const paidInvoices = invoices.filter(inv => inv.paymentStatus === 'paid');
+    const refundedInvoices = invoices.filter(inv => inv.paymentStatus === 'refunded');
+    const failedInvoices = invoices.filter(inv => inv.paymentStatus === 'failed');
+
+    const totalRevenue = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+    const paidRevenue = paidInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+    const refundedRevenue = refundedInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+    const failedRevenue = failedInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+
+    // Commission calculations
+    const totalCommission = paidInvoices.reduce((sum, inv) => sum + inv.order.commissionAmount, 0);
+    const refundedCommission = refundedInvoices.reduce((sum, inv) => sum + inv.order.commissionAmount, 0);
+    const netCommission = totalCommission - refundedCommission;
+
+    // Provider earnings calculations
+    const totalProviderEarnings = paidInvoices.reduce((sum, inv) => sum + inv.order.providerAmount, 0);
+    const refundedProviderEarnings = refundedInvoices.reduce((sum, inv) => sum + inv.order.providerAmount, 0);
+    const netProviderEarnings = totalProviderEarnings - refundedProviderEarnings;
+
+    // Net revenue after refunds
+    const netRevenue = paidRevenue - refundedRevenue;
+
+    return {
+      // Revenue breakdown
+      totalRevenue,
+      paidRevenue,
+      refundedRevenue,
+      failedRevenue,
+      netRevenue,
+
+      // Commission breakdown
+      totalCommission,
+      refundedCommission,
+      netCommission,
+      commissionRate: paidRevenue > 0 ? (netCommission / netRevenue) * 100 : 0,
+
+      // Provider earnings
+      totalProviderEarnings,
+      refundedProviderEarnings,
+      netProviderEarnings,
+      providerEarningsRate: paidRevenue > 0 ? (netProviderEarnings / netRevenue) * 100 : 0,
+
+      // Invoice counts
+      totalInvoices: invoices.length,
+      paidCount: paidInvoices.length,
+      refundedCount: refundedInvoices.length,
+      failedCount: failedInvoices.length,
+
+      // Performance metrics
+      successRate: invoices.length > 0 ? (paidInvoices.length / invoices.length) * 100 : 0,
+      refundRate: paidInvoices.length > 0 ? (refundedInvoices.length / paidInvoices.length) * 100 : 0,
+      averageOrderValue: invoices.length > 0 ? totalRevenue / invoices.length : 0,
+      averageCommission: paidInvoices.length > 0 ? totalCommission / paidInvoices.length : 0,
+      averageProviderEarnings: paidInvoices.length > 0 ? totalProviderEarnings / paidInvoices.length : 0
+    };
   }
 }

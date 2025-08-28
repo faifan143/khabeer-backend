@@ -1,19 +1,19 @@
 import {
+    Body,
     Controller,
     Get,
-    Post,
-    Body,
     Param,
-    Put,
-    UseGuards,
-    Request,
     ParseIntPipe,
-    Query
+    Post,
+    Put,
+    Query,
+    Request,
+    UseGuards
 } from '@nestjs/common';
-import { InvoicesService, CreateInvoiceDto, UpdatePaymentStatusDto } from './invoices.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { CreateInvoiceDto, InvoicesService, UpdatePaymentStatusDto } from './invoices.service';
 
 @Controller('invoices')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -107,5 +107,17 @@ export class InvoicesController {
         };
 
         return this.invoicesService.updatePaymentStatus(id, updateDto, req.user.userId, req.user.role);
+    }
+
+    @Get('admin/financial-summary')
+    @Roles('ADMIN')
+    async getAdminFinancialSummary(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        const start = startDate ? new Date(startDate) : undefined;
+        const end = endDate ? new Date(endDate) : undefined;
+
+        return this.invoicesService.getAdminFinancialSummary(start, end);
     }
 }
