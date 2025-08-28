@@ -26,8 +26,19 @@ export class ProvidersService {
           isActive: true,
           isVerified: true,
           createdAt: true,
-          providerServices: true
-        }
+          providerServices: {
+            where: {
+              isActive: true
+            },
+            include: {
+              service: {
+                include: {
+                  category: true
+                }
+              }
+            }
+          }
+        },
 
       });
 
@@ -153,8 +164,19 @@ export class ProvidersService {
           offers: true,
           orders: true,
           ratings: true,
-          providerServices: true,
-        }
+          providerServices: {
+            where: {
+              isActive: true
+            },
+            include: {
+              service: {
+                include: {
+                  category: true
+                }
+              }
+            }
+          }
+        },
       });
       if (!provider) {
         throw new NotFoundException(`Provider with ID ${id} not found`);
