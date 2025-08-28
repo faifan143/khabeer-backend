@@ -938,12 +938,16 @@ export class AuthService {
       } else {
         // Create regular user
         const user = await this.usersService.create(userData);
-
+        const payload = { username: user.name, sub: user.id, role: user.role };
         // User is already returned without password from the service
         return {
-          ...user,
-          role: 'USER',
-          message: 'User registered successfully'
+          user: {
+            ...user,
+            role: 'USER',
+          },
+          message: 'User registered successfully',
+          success: true,
+          access_token: this.jwtService.sign(payload)
         };
       }
 
