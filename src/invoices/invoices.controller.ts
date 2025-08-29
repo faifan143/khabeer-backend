@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     Param,
     ParseIntPipe,
@@ -119,5 +120,29 @@ export class InvoicesController {
         const end = endDate ? new Date(endDate) : undefined;
 
         return this.invoicesService.getAdminFinancialSummary(start, end);
+    }
+
+    @Delete(':id')
+    @Roles('ADMIN')
+    async softDelete(@Param('id', ParseIntPipe) id: number, @Request() req) {
+        return this.invoicesService.softDelete(id, req.user.userId, req.user.role);
+    }
+
+    @Put(':id/restore')
+    @Roles('ADMIN')
+    async restore(@Param('id', ParseIntPipe) id: number, @Request() req) {
+        return this.invoicesService.restore(id, req.user.userId, req.user.role);
+    }
+
+    @Put(':id/reactivate')
+    @Roles('ADMIN')
+    async reactivateFailedInvoice(@Param('id', ParseIntPipe) id: number, @Request() req) {
+        return this.invoicesService.reactivateFailedInvoice(id, req.user.userId, req.user.role);
+    }
+
+    @Get('admin/deleted')
+    @Roles('ADMIN')
+    async getDeletedInvoices(@Request() req) {
+        return this.invoicesService.getDeletedInvoices(req.user.userId, req.user.role);
     }
 }

@@ -725,7 +725,7 @@ export class AdminService {
                     select: {
                         id: true,
                         name: true,
-                        email: true,
+                        phone: true,
                         image: true
                     }
                 },
@@ -1436,10 +1436,11 @@ export class AdminService {
 
             return notifications.map(notification => ({
                 ...notification,
-                targetAudience: JSON.parse(notification.targetAudience as string)
+                targetAudience: notification.targetAudience // Already an object, no need to parse
             }));
         } catch (error) {
-            throw error;
+            console.error('Error in getAllNotifications:', error);
+            throw new Error(`Failed to retrieve notifications: ${error.message}`);
         }
     }
 
@@ -1490,7 +1491,7 @@ export class AdminService {
 
             return {
                 ...updatedNotification,
-                targetAudience: JSON.parse(updatedNotification.targetAudience as string)
+                targetAudience: updatedNotification.targetAudience // Already an object, no need to parse
             };
         } catch (error) {
             throw error;

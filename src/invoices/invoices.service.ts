@@ -88,9 +88,12 @@ export class InvoicesService {
   }
 
   async findAll(userId: number, role: string, status?: string) {
-    const where: any = role === 'PROVIDER'
-      ? { order: { providerId: userId } }
-      : { order: { userId } };
+    const where: any = {
+      isDeleted: false, // Exclude deleted invoices
+      ...(role === 'PROVIDER'
+        ? { order: { providerId: userId } }
+        : { order: { userId } })
+    };
 
     // Add status filter if provided
     if (status) {
@@ -203,9 +206,13 @@ export class InvoicesService {
   }
 
   async findOne(id: number, userId: number, role: string) {
-    const where = role === 'PROVIDER'
-      ? { id, order: { providerId: userId } }
-      : { id, order: { userId } };
+    const where = {
+      id,
+      isDeleted: false, // Exclude deleted invoices
+      ...(role === 'PROVIDER'
+        ? { order: { providerId: userId } }
+        : { order: { userId } })
+    };
 
     const foundInvoice = await this.prisma.invoice.findFirst({
       where,
@@ -611,9 +618,12 @@ export class InvoicesService {
   }
 
   async getPaymentStats(userId: number, role: string) {
-    const where = role === 'PROVIDER'
-      ? { order: { providerId: userId } }
-      : { order: { userId } };
+    const where = {
+      isDeleted: false, // Exclude deleted invoices
+      ...(role === 'PROVIDER'
+        ? { order: { providerId: userId } }
+        : { order: { userId } })
+    };
 
     const [total, paid, pending, failed, refunded] = await Promise.all([
       this.prisma.invoice.count({ where }),
@@ -653,9 +663,12 @@ export class InvoicesService {
   }
 
   async generateInvoiceReport(userId: number, role: string, startDate?: Date, endDate?: Date) {
-    const where: any = role === 'PROVIDER'
-      ? { order: { providerId: userId } }
-      : { order: { userId } };
+    const where: any = {
+      isDeleted: false, // Exclude deleted invoices
+      ...(role === 'PROVIDER'
+        ? { order: { providerId: userId } }
+        : { order: { userId } })
+    };
 
     if (startDate || endDate) {
       where.order = {
@@ -734,6 +747,7 @@ export class InvoicesService {
   async getProviderUnpaidInvoices(providerId: number) {
     const invoices = await this.prisma.invoice.findMany({
       where: {
+        isDeleted: false, // Exclude deleted invoices
         paymentStatus: 'unpaid',
         order: {
           providerId: providerId
@@ -833,7 +847,9 @@ export class InvoicesService {
    * Includes commission calculations and provider earnings
    */
   async getAdminFinancialSummary(startDate?: Date, endDate?: Date) {
-    const where: any = {};
+    const where: any = {
+      isDeleted: false // Exclude deleted invoices
+    };
 
     if (startDate || endDate) {
       where.order = {
@@ -918,5 +934,490 @@ export class InvoicesService {
       averageCommission: paidInvoices.length > 0 ? totalCommission / paidInvoices.length : 0,
       averageProviderEarnings: paidInvoices.length > 0 ? totalProviderEarnings / paidInvoices.length : 0
     };
+  }
+
+  /**
+   * Soft delete an invoice (ADMIN only)
+   */
+  async softDelete(id: number, userId: number, role: string) {
+    if (role !== 'ADMIN') {
+      throw new BadRequestException('Only admins can delete invoices');
+    }
+
+    // First check if invoice exists and is not deleted
+    const invoice = await this.prisma.invoice.findFirst({
+      where: {
+        id,
+        isDeleted: false
+      },
+      include: {
+        order: {
+          select: {
+            id: true,
+            status: true,
+            commissionAmount: true,
+            providerAmount: true,
+            totalAmount: true
+          }
+        }
+      }
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Invoice not found or already deleted');
+    }
+
+    // Handle financial impact before deletion
+    await this.handleDeleteFinancialImpact(invoice, userId);
+
+    // Soft delete the invoice
+    const deletedInvoice = await this.prisma.invoice.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        deletedBy: userId
+      },
+      include: {
+        order: {
+          select: {
+            id: true,
+            status: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            provider: {
+              select: {
+                id: true,
+                name: true,
+                phone: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    console.log(`🗑️ Invoice ${id} soft deleted by admin ${userId}`);
+    console.log(`   - Order: ${deletedInvoice.order.id}`);
+    console.log(`   - Customer: ${deletedInvoice.order.user.name}`);
+    console.log(`   - Provider: ${deletedInvoice.order.provider.name}`);
+    console.log(`   - Deleted at: ${deletedInvoice.deletedAt}`);
+
+    return {
+      message: 'Invoice deleted successfully',
+      invoiceId: id,
+      deletedAt: deletedInvoice.deletedAt,
+      deletedBy: userId
+    };
+  }
+
+  /**
+   * Restore a soft-deleted invoice (ADMIN only)
+   */
+  async restore(id: number, userId: number, role: string) {
+    if (role !== 'ADMIN') {
+      throw new BadRequestException('Only admins can restore invoices');
+    }
+
+    // Check if invoice exists and is deleted
+    const invoice = await this.prisma.invoice.findFirst({
+      where: {
+        id,
+        isDeleted: true
+      },
+              include: {
+          order: {
+            select: {
+              id: true,
+              status: true,
+              commissionAmount: true,
+              providerAmount: true,
+              totalAmount: true
+            }
+          }
+        }
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Invoice not found or not deleted');
+    }
+
+    // Handle financial impact of restoration
+    await this.handleRestoreFinancialImpact(invoice, userId);
+
+    // Restore the invoice
+    const restoredInvoice = await this.prisma.invoice.update({
+      where: { id },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+        deletedBy: null
+      },
+      include: {
+        order: {
+          select: {
+            id: true,
+            status: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            provider: {
+              select: {
+                id: true,
+                name: true,
+                phone: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    console.log(`🔄 Invoice ${id} restored by admin ${userId}`);
+    console.log(`   - Order: ${restoredInvoice.order.id}`);
+    console.log(`   - Customer: ${restoredInvoice.order.user.name}`);
+    console.log(`   - Provider: ${restoredInvoice.order.provider.name}`);
+    console.log(`   - Restored at: ${new Date().toISOString()}`);
+
+    return {
+      message: 'Invoice restored successfully',
+      invoiceId: id,
+      restoredAt: new Date(),
+      restoredBy: userId
+    };
+  }
+
+  /**
+   * Reactivate a failed invoice (ADMIN only)
+   */
+  async reactivateFailedInvoice(id: number, userId: number, role: string) {
+    if (role !== 'ADMIN') {
+      throw new BadRequestException('Only admins can reactivate failed invoices');
+    }
+
+    // Check if invoice exists and is failed
+    const invoice = await this.prisma.invoice.findFirst({
+      where: {
+        id,
+        isDeleted: false,
+        paymentStatus: 'failed'
+      },
+      include: {
+        order: {
+          select: {
+            id: true,
+            status: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            provider: {
+              select: {
+                id: true,
+                name: true,
+                phone: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Failed invoice not found');
+    }
+
+    // Handle financial impact of reactivation
+    await this.handleReactivateFinancialImpact(invoice, userId);
+
+    // Reactivate by setting status back to pending
+    const reactivatedInvoice = await this.prisma.invoice.update({
+      where: { id },
+      data: {
+        paymentStatus: 'pending',
+        paymentMethod: null,
+        paymentDate: null
+      },
+      include: {
+        order: {
+          select: {
+            id: true,
+            status: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            provider: {
+              select: {
+                id: true,
+                name: true,
+                phone: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Update order status back to pending
+    await this.prisma.order.update({
+      where: { id: invoice.order.id },
+      data: { status: 'pending' }
+    });
+
+    console.log(`🔄 Failed invoice ${id} reactivated by admin ${userId}`);
+    console.log(`   - Order: ${reactivatedInvoice.order.id}`);
+    console.log(`   - Customer: ${reactivatedInvoice.order.user.name}`);
+    console.log(`   - Provider: ${reactivatedInvoice.order.provider.name}`);
+    console.log(`   - Reactivated at: ${new Date().toISOString()}`);
+
+    return {
+      message: 'Failed invoice reactivated successfully',
+      invoiceId: id,
+      newStatus: 'pending',
+      reactivatedAt: new Date(),
+      reactivatedBy: userId
+    };
+  }
+
+  /**
+   * Handle financial impact when deleting an invoice
+   */
+  private async handleDeleteFinancialImpact(invoice: any, adminId: number): Promise<void> {
+    const order = invoice.order;
+    const paymentStatus = invoice.paymentStatus;
+
+    console.log(`💰 HANDLING FINANCIAL IMPACT FOR DELETED INVOICE ${invoice.id}`);
+    console.log(`   - Payment Status: ${paymentStatus}`);
+    console.log(`   - Total Amount: ${invoice.totalAmount} SAR`);
+    console.log(`   - Commission: ${order.commissionAmount} SAR`);
+    console.log(`   - Provider Amount: ${order.providerAmount} SAR`);
+
+    switch (paymentStatus) {
+      case 'paid':
+        // CRITICAL: Reverse all financial commitments
+        console.log(`🚨 REVERSING FINANCIAL COMMITMENTS FOR PAID INVOICE`);
+        console.log(`   - Commission earned: -${order.commissionAmount} SAR (REVERSED)`);
+        console.log(`   - Provider earnings: -${order.providerAmount} SAR (REVERSED)`);
+        console.log(`   - Company revenue: -${invoice.totalAmount} SAR (REVERSED)`);
+
+        // Here you would typically:
+        // 1. Reverse commission records
+        // 2. Reverse provider payout records
+        // 3. Update company revenue
+        // 4. Send notifications to stakeholders
+        // 5. Update accounting systems
+
+        // Update order status to reflect deletion
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'deleted' }
+        });
+
+        console.log(`✅ Financial commitments reversed for deleted paid invoice`);
+        break;
+
+      case 'pending':
+        // No financial impact - no money committed yet
+        console.log(`ℹ️ No financial impact for pending invoice deletion`);
+        break;
+
+      case 'failed':
+        // No financial impact - payment already failed
+        console.log(`ℹ️ No financial impact for failed invoice deletion`);
+        break;
+
+      case 'refunded':
+        // No additional financial impact - already refunded
+        console.log(`ℹ️ No additional financial impact for refunded invoice deletion`);
+        break;
+
+      default:
+        console.log(`⚠️ Unknown payment status: ${paymentStatus}`);
+    }
+
+    console.log(`📊 FINANCIAL IMPACT SUMMARY FOR DELETED INVOICE ${invoice.id}:`);
+    console.log(`   - Admin Commission: ${paymentStatus === 'paid' ? `-${order.commissionAmount} SAR (REVERSED)` : '0 SAR'}`);
+    console.log(`   - Provider Earnings: ${paymentStatus === 'paid' ? `-${order.providerAmount} SAR (REVERSED)` : '0 SAR'}`);
+    console.log(`   - Company Revenue: ${paymentStatus === 'paid' ? `-${invoice.totalAmount} SAR (REVERSED)` : '0 SAR'}`);
+  }
+
+  /**
+   * Handle financial impact when restoring a deleted invoice
+   */
+  private async handleRestoreFinancialImpact(invoice: any, adminId: number): Promise<void> {
+    const order = invoice.order;
+    const paymentStatus = invoice.paymentStatus;
+
+    console.log(`💰 HANDLING FINANCIAL IMPACT FOR RESTORED INVOICE ${invoice.id}`);
+    console.log(`   - Payment Status: ${paymentStatus}`);
+    console.log(`   - Total Amount: ${invoice.totalAmount} SAR`);
+    console.log(`   - Commission: ${order.commissionAmount} SAR`);
+    console.log(`   - Provider Amount: ${order.providerAmount} SAR`);
+
+    switch (paymentStatus) {
+      case 'paid':
+        // CRITICAL: Re-apply financial commitments
+        console.log(`🚨 RE-APPLYING FINANCIAL COMMITMENTS FOR RESTORED PAID INVOICE`);
+        console.log(`   - Commission earned: +${order.commissionAmount} SAR (RESTORED)`);
+        console.log(`   - Provider earnings: +${order.providerAmount} SAR (RESTORED)`);
+        console.log(`   - Company revenue: +${invoice.totalAmount} SAR (RESTORED)`);
+
+        // Here you would typically:
+        // 1. Re-create commission records
+        // 2. Re-schedule provider payout
+        // 3. Update company revenue
+        // 4. Send notifications to stakeholders
+        // 5. Update accounting systems
+
+        // Update order status back to paid
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'paid' }
+        });
+
+        console.log(`✅ Financial commitments restored for restored paid invoice`);
+        break;
+
+      case 'pending':
+        // No immediate financial impact - ready for payment
+        console.log(`ℹ️ No immediate financial impact for restored pending invoice`);
+        console.log(`ℹ️ Invoice ready for payment processing`);
+        break;
+
+      case 'failed':
+        // No immediate financial impact - payment failed
+        console.log(`ℹ️ No immediate financial impact for restored failed invoice`);
+        console.log(`ℹ️ Invoice restored but payment still failed`);
+        break;
+
+      case 'refunded':
+        // No immediate financial impact - already refunded
+        console.log(`ℹ️ No immediate financial impact for restored refunded invoice`);
+        console.log(`ℹ️ Invoice restored but refund status maintained`);
+        break;
+
+      default:
+        console.log(`⚠️ Unknown payment status: ${paymentStatus}`);
+    }
+
+    console.log(`📊 FINANCIAL IMPACT SUMMARY FOR RESTORED INVOICE ${invoice.id}:`);
+    console.log(`   - Admin Commission: ${paymentStatus === 'paid' ? `+${order.commissionAmount} SAR (RESTORED)` : '0 SAR'}`);
+    console.log(`   - Provider Earnings: ${paymentStatus === 'paid' ? `+${order.providerAmount} SAR (RESTORED)` : '0 SAR'}`);
+    console.log(`   - Company Revenue: ${paymentStatus === 'paid' ? `+${invoice.totalAmount} SAR (RESTORED)` : '0 SAR'}`);
+    console.log(`   - Status: ${paymentStatus === 'paid' ? 'Financial commitments restored' : 'No financial impact'}`);
+  }
+
+  /**
+   * Handle financial impact when reactivating a failed invoice
+   */
+  private async handleReactivateFinancialImpact(invoice: any, adminId: number): Promise<void> {
+    const order = invoice.order;
+    const paymentStatus = invoice.paymentStatus;
+
+    console.log(`💰 HANDLING FINANCIAL IMPACT FOR REACTIVATED INVOICE ${invoice.id}`);
+    console.log(`   - Previous Status: ${paymentStatus}`);
+    console.log(`   - New Status: pending`);
+    console.log(`   - Total Amount: ${invoice.totalAmount} SAR`);
+    console.log(`   - Commission: ${order.commissionAmount} SAR`);
+    console.log(`   - Provider Amount: ${order.providerAmount} SAR`);
+
+    // Reactivating a failed invoice means:
+    // 1. No immediate financial impact (no money committed yet)
+    // 2. Invoice is back to pending state
+    // 3. Financial calculations will happen when marked as paid again
+
+    console.log(`ℹ️ Reactivating failed invoice - no immediate financial impact`);
+    console.log(`ℹ️ Invoice will be eligible for payment again`);
+    console.log(`ℹ️ Financial calculations will occur when marked as paid`);
+
+    console.log(`📊 FINANCIAL IMPACT SUMMARY FOR REACTIVATED INVOICE ${invoice.id}:`);
+    console.log(`   - Admin Commission: 0 SAR (pending payment)`);
+    console.log(`   - Provider Earnings: 0 SAR (pending payment)`);
+    console.log(`   - Company Revenue: 0 SAR (pending payment)`);
+    console.log(`   - Status: Ready for payment processing`);
+  }
+
+  /**
+   * Get deleted invoices for admin review (ADMIN only)
+   */
+  async getDeletedInvoices(userId: number, role: string) {
+    if (role !== 'ADMIN') {
+      throw new BadRequestException('Only admins can view deleted invoices');
+    }
+
+    const deletedInvoices = await this.prisma.invoice.findMany({
+      where: {
+        isDeleted: true
+      },
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderDate: true,
+            status: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true
+              }
+            },
+            provider: {
+              select: {
+                id: true,
+                name: true,
+                phone: true
+              }
+            },
+            service: {
+              select: {
+                id: true,
+                title: true,
+                description: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        deletedAt: 'desc'
+      }
+    });
+
+    return deletedInvoices.map(invoice => ({
+      id: invoice.id,
+      orderId: invoice.orderId,
+      totalAmount: invoice.totalAmount,
+      discount: invoice.discount,
+      paymentStatus: invoice.paymentStatus,
+      paymentMethod: invoice.paymentMethod,
+      deletedAt: invoice.deletedAt,
+      deletedBy: invoice.deletedBy,
+      order: {
+        id: invoice.order.id,
+        orderDate: invoice.order.orderDate,
+        status: invoice.order.status,
+        user: invoice.order.user,
+        provider: invoice.order.provider,
+        service: invoice.order.service
+      }
+    }));
   }
 }

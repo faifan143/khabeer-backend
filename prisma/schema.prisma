@@ -135,6 +135,9 @@ model Invoice {
   paymentStatus String    @default("pending")
   payoutDate    DateTime?
   payoutStatus  String    @default("pending")
+  isDeleted     Boolean   @default(false)
+  deletedAt     DateTime?
+  deletedBy     Int?
   order         Order     @relation(fields: [orderId], references: [id])
 }
 
