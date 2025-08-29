@@ -79,7 +79,7 @@ REDIS_URL=redis://:redis_password@localhost:6379
 
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
-JWT_EXPIRES_IN=7d
+JWT_EXPIRES_IN=30d
 
 # CORS Configuration
 CORS_ORIGIN=*
