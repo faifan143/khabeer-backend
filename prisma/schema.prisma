@@ -24,6 +24,7 @@ model Service {
   description      String
   commission       Float
   whatsapp         String
+  state            String?
   categoryId       Int?
   offers           Offer[]
   orders           Order[]
