@@ -8,9 +8,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { RolesGuard } from './roles.guard';
+import { ActiveStatusGuard } from './active-status.guard';
+import { ComprehensiveAuthGuard } from './comprehensive-auth.guard';
 import { UsersService } from 'src/users/users.service';
 import { FilesModule } from 'src/files/files.module';
 import { SmsModule } from '../sms/sms.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
@@ -19,6 +22,7 @@ import { SmsModule } from '../sms/sms.module';
     UsersModule,
     ProvidersModule,
     SmsModule,
+    PrismaModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -31,8 +35,8 @@ import { SmsModule } from '../sms/sms.module';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, JwtStrategy, RolesGuard, UsersService],
+  providers: [AuthService, JwtStrategy, RolesGuard, ActiveStatusGuard, ComprehensiveAuthGuard, UsersService],
   controllers: [AuthController],
-  exports: [AuthService, JwtModule],
+  exports: [AuthService, JwtModule, ActiveStatusGuard, ComprehensiveAuthGuard],
 })
 export class AuthModule { }

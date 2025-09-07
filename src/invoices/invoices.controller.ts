@@ -11,13 +11,12 @@ import {
     Request,
     UseGuards
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { Roles } from '../auth/roles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
 import { CreateInvoiceDto, InvoicesService, UpdatePaymentStatusDto } from './invoices.service';
 
 @Controller('invoices')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(ComprehensiveAuthGuard)
 export class InvoicesController {
     constructor(private readonly invoicesService: InvoicesService) { }
 

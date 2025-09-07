@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Body, Post, Put, Delete, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Param, Body, Post, Put, Delete, UploadedFile, UseInterceptors, Query } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { ServicesService } from './services.service';
@@ -15,8 +15,18 @@ export class ServicesController {
   ) { }
 
   @Get()
-  async findAll() {
-    return this.servicesService.findAll();
+  async findAll(@Query('serviceType') serviceType?: string) {
+    return this.servicesService.findAll(serviceType);
+  }
+
+  @Get('normal')
+  async findNormalServices() {
+    return this.servicesService.findNormalServices();
+  }
+
+  @Get('khabeer')
+  async findKhabeerServices() {
+    return this.servicesService.findKhabeerServices();
   }
 
   @Get('category/:categoryId')

@@ -3,8 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { SmsService } from './sms.service';
 import { SendOtpDto, VerifyOtpDto, OtpResponseDto } from './dto/send-sms.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('SMS OTP')
@@ -39,7 +38,7 @@ export class SmsController {
   }
 
   @Get('status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Get SMS service status' })
   @ApiResponse({ status: 200, description: 'SMS service status' })

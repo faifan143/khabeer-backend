@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/dto/create-notification.dto';
+import { AdminProviderResponseDto, AdminProvidersResponseDto } from './dto/admin-provider-response.dto';
 
 @Injectable()
 export class AdminService {
@@ -478,8 +479,8 @@ export class AdminService {
         });
     }
 
-    async getAllProviders() {
-        return this.prisma.provider.findMany({
+    async getAllProviders(): Promise<AdminProvidersResponseDto> {
+        const providers = await this.prisma.provider.findMany({
             where: { isVerified: true },
             select: {
                 id: true,
@@ -505,9 +506,6 @@ export class AdminService {
                 orders: {
                     where: { status: 'completed' },
                     select: {
-                        id: true,
-                        totalAmount: true,
-                        providerAmount: true,
                         commissionAmount: true
                     }
                 },
@@ -529,7 +527,23 @@ export class AdminService {
             },
             orderBy: { createdAt: 'desc' }
         });
+
+        // Calculate only the total commission sum for each provider
+        const providersWithCommission = providers.map(provider => {
+            const totalCommission = provider.orders.reduce((sum, order) => sum + order.commissionAmount, 0);
+
+            return {
+                ...provider,
+                totalCommission: Math.round(totalCommission * 100) / 100
+            } as AdminProviderResponseDto;
+        });
+
+        return {
+            providers: providersWithCommission,
+            total: providersWithCommission.length
+        };
     }
+
 
     async getUnverifiedProviders() {
         return this.prisma.provider.findMany({
@@ -1071,7 +1085,13 @@ export class AdminService {
                     select: { id: true, name: true, email: true, phone: true }
                 },
                 service: {
-                    select: { id: true, title: true, description: true, commission: true }
+                    select: {
+                        id: true,
+                        title: true,
+                        description: true,
+                        commission: true,
+                        state: true
+                    }
                 },
                 invoice: true
             },

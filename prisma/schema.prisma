@@ -22,9 +22,10 @@ model Service {
   image            String
   title            String
   description      String
-  commission       Float
+  commission       Float?
   whatsapp         String
   state            String?
+  serviceType      String            @default("NORMAL")
   categoryId       Int?
   offers           Offer[]
   orders           Order[]
@@ -38,7 +39,7 @@ model Provider {
   image             String
   description       String
   state             String
-  phone             String               @unique
+  phone             String                @unique
   isActive          Boolean               @default(false)
   officialDocuments String?
   isVerified        Boolean               @default(false)
@@ -71,11 +72,11 @@ model User {
   email             String?          @unique
   password          String
   role              String           @default("USER")
-  latitude          Decimal?         @db.Decimal(10, 8)
-  longitude         Decimal?         @db.Decimal(11, 8)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   fcm               String?
+  latitude          Decimal?         @db.Decimal(10, 8)
+  longitude         Decimal?         @db.Decimal(11, 8)
   orders            Order[]
   ratings           ProviderRating[]
   userLocations     UserLocation[]
@@ -101,29 +102,29 @@ model UserLocation {
 }
 
 model Order {
-  id                Int                @id @default(autoincrement())
-  userId            Int
-  providerId        Int
-  serviceId         Int
-  status            String             @default("pending")
-  orderDate         DateTime           @default(now())
-  bookingId         String             @unique @default(cuid())
-  commissionAmount  Float
-  location          String?
-  locationDetails   String?
-  providerAmount    Float
-  providerLocation  Json?
-  quantity          Int                @default(1)
-  scheduledDate     DateTime?
-  totalAmount       Float
-  isMultipleServices Boolean           @default(false)
-  servicesBreakdown Json?
-  activeConnections ActiveConnection[]
-  invoice           Invoice?
-  locationTracking  LocationTracking[]
-  provider          Provider           @relation(fields: [providerId], references: [id])
-  service           Service            @relation(fields: [serviceId], references: [id])
-  user              User               @relation(fields: [userId], references: [id])
+  id                 Int                @id @default(autoincrement())
+  userId             Int
+  providerId         Int
+  serviceId          Int
+  status             String             @default("pending")
+  orderDate          DateTime           @default(now())
+  bookingId          String             @unique @default(cuid())
+  commissionAmount   Float
+  location           String?
+  locationDetails    String?
+  providerAmount     Float
+  providerLocation   Json?
+  quantity           Int                @default(1)
+  scheduledDate      DateTime?
+  totalAmount        Float
+  isMultipleServices Boolean            @default(false)
+  servicesBreakdown  Json?
+  activeConnections  ActiveConnection[]
+  invoice            Invoice?
+  locationTracking   LocationTracking[]
+  provider           Provider           @relation(fields: [providerId], references: [id])
+  service            Service            @relation(fields: [serviceId], references: [id])
+  user               User               @relation(fields: [userId], references: [id])
 }
 
 model Invoice {
@@ -136,9 +137,9 @@ model Invoice {
   paymentStatus String    @default("pending")
   payoutDate    DateTime?
   payoutStatus  String    @default("pending")
-  isDeleted     Boolean   @default(false)
   deletedAt     DateTime?
   deletedBy     Int?
+  isDeleted     Boolean   @default(false)
   order         Order     @relation(fields: [orderId], references: [id])
 }
 

@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Request, UseGuards, UploadedFile, UseInterceptors, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { ComprehensiveAuthGuard } from './comprehensive-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto, RegisterType } from './dto/register.dto';
 import { PhoneLoginDto, PhoneRegistrationDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
@@ -260,7 +260,7 @@ export class AuthController {
   }
 
   @Post('me')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @ApiOperation({ summary: 'Get current user information' })
   @ApiResponse({ status: 200, description: 'User information retrieved' })
   async me(@Request() req) {
@@ -268,7 +268,7 @@ export class AuthController {
   }
 
   @Post('upgrade-to-provider')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @ApiOperation({ summary: 'Upgrade user account to provider' })
   @ApiResponse({ status: 200, description: 'Account upgraded successfully' })
   async upgradeToProvider(@Request() req, @Body() providerData: any) {
@@ -283,7 +283,7 @@ export class AuthController {
   }
 
   @Post('activate-account')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @ApiOperation({ summary: 'Activate provider account' })
   @ApiResponse({ status: 200, description: 'Account activated successfully' })
   async activateAccount(@Request() req) {
@@ -291,7 +291,7 @@ export class AuthController {
   }
 
   @Post('deactivate-account')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @ApiOperation({ summary: 'Deactivate provider account' })
   @ApiResponse({ status: 200, description: 'Account deactivated successfully' })
   async deactivateAccount(@Request() req) {

@@ -36,10 +36,7 @@ export class ProviderVerificationService {
             throw new BadRequestException('Provider already has a verification request');
         }
 
-        // Validate documents
-        if (!documents || documents.length === 0) {
-            throw new BadRequestException('At least one document is required');
-        }
+        // Documents are now optional - no validation needed
 
         // Create verification request
         const verification = await this.prisma.providerVerification.create({
@@ -350,9 +347,7 @@ export class ProviderVerificationService {
         // Remove the document from the array
         const updatedDocuments = verification.documents.filter(doc => doc !== documentUrl);
 
-        if (updatedDocuments.length === 0) {
-            throw new BadRequestException('At least one document is required');
-        }
+        // Documents are now optional - no minimum requirement
 
         const updatedVerification = await this.prisma.providerVerification.update({
             where: { id },
@@ -421,9 +416,7 @@ export class ProviderVerificationService {
         // Remove the document from the array
         const updatedDocuments = verification.documents.filter(doc => doc !== documentUrl);
 
-        if (updatedDocuments.length === 0) {
-            throw new BadRequestException('At least one document is required');
-        }
+        // Documents are now optional - no minimum requirement
 
         const updatedVerification = await this.prisma.providerVerification.update({
             where: { providerId },

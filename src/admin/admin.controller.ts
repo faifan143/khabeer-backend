@@ -20,13 +20,14 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { FilesService } from '../files/files.service';
 import { CreateAdBannerDto, UpdateAdBannerDto, AdBannerResponseDto } from './dto/ad-banner.dto';
+import { AdminProvidersResponseDto } from './dto/admin-provider-response.dto';
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 @Roles('ADMIN')
 export class AdminController {
     constructor(
@@ -62,7 +63,7 @@ export class AdminController {
     }
 
     @Get('providers')
-    async getAllProviders() {
+    async getAllProviders(): Promise<AdminProvidersResponseDto> {
         return this.adminService.getAllProviders();
     }
 

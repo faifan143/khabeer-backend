@@ -15,12 +15,11 @@ import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateOrderMultipleServicesDto } from './dto/create-order-multiple-services.dto';
 import { UpdateOrderStatusDto, OrderStatus } from './dto/order-status.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('orders')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(ComprehensiveAuthGuard)
 export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 
@@ -53,7 +52,7 @@ export class OrdersController {
     }
 
     @Get('history')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     async getOrderHistory(
         @Request() req,
         @Query('page') page?: number,
@@ -63,7 +62,7 @@ export class OrdersController {
     }
 
     @Get('analytics')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     async getOrderAnalytics(
         @Request() req,
         @Query('startDate') startDate?: string,
@@ -75,7 +74,7 @@ export class OrdersController {
     }
 
     @Get('date-range')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     async getOrdersByDateRange(
         @Request() req,
         @Query('startDate') startDate: string,
@@ -90,7 +89,7 @@ export class OrdersController {
     }
 
     @Get('status/:status')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     async getOrdersByStatus(
         @Request() req,
         @Param('status') status: string
@@ -99,13 +98,13 @@ export class OrdersController {
     }
 
     @Get('upcoming')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     async getUpcomingOrders(@Request() req) {
         return this.ordersService.getUpcomingOrders(req.user.userId, req.user.role);
     }
 
     @Get('overdue')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     async getOverdueOrders(@Request() req) {
         return this.ordersService.getOverdueOrders(req.user.userId, req.user.role);
     }
@@ -177,7 +176,7 @@ export class OrdersController {
     }
 
     @Put('bulk-update')
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     @Roles('PROVIDER')
     async bulkUpdateStatus(
         @Request() req,

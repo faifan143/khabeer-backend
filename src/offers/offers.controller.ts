@@ -12,12 +12,11 @@ import {
     ParseIntPipe
 } from '@nestjs/common';
 import { OffersService, CreateOfferDto, UpdateOfferDto } from './offers.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('offers')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(ComprehensiveAuthGuard)
 export class OffersController {
     constructor(private readonly offersService: OffersService) { }
 

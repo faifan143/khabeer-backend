@@ -2,7 +2,7 @@ import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, Up
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { UsersService } from './users.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserLocationDto } from './dto/create-user-location.dto';
@@ -23,7 +23,7 @@ export class UsersController {
   }
 
   @Get('profile')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   async getProfile(@Request() req) {
     return this.usersService.getProfile(req.user.userId);
   }
@@ -61,7 +61,7 @@ export class UsersController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads/images/users',
@@ -96,7 +96,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   async remove(@Param('id') id: string, @Request() req) {
     if (req.user.userId !== Number(id) && req.user.role !== 'ADMIN') {
       return { error: 'Unauthorized' };
@@ -106,19 +106,19 @@ export class UsersController {
 
   // User Location Management Endpoints
   @Get('locations')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   async getUserLocations(@Request() req) {
     return this.usersService.getUserLocations(req.user.userId);
   }
 
   @Post('locations')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   async createUserLocation(@Body() createLocationDto: CreateUserLocationDto, @Request() req) {
     return this.usersService.createUserLocation(req.user.userId, createLocationDto);
   }
 
   @Put('locations/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   async updateUserLocation(
     @Param('id') id: string,
     @Body() updateLocationDto: UpdateUserLocationDto,
@@ -128,13 +128,13 @@ export class UsersController {
   }
 
   @Delete('locations/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   async deleteUserLocation(@Param('id') id: string, @Request() req) {
     return this.usersService.deleteUserLocation(req.user.userId, Number(id));
   }
 
   @Put('locations/:id/set-default')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   async setDefaultLocation(@Param('id') id: string, @Request() req) {
     return this.usersService.setDefaultLocation(req.user.userId, Number(id));
   }

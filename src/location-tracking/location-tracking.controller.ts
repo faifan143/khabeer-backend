@@ -10,12 +10,11 @@ import {
   Delete,
 } from '@nestjs/common';
 import { LocationTrackingService } from './location-tracking.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('location-tracking')
-@UseGuards(JwtAuthGuard)
+@UseGuards(ComprehensiveAuthGuard)
 export class LocationTrackingController {
   constructor(private readonly locationTrackingService: LocationTrackingService) { }
 
@@ -96,7 +95,7 @@ export class LocationTrackingController {
 
   // Debug endpoint to get all active tracking sessions (Admin only)
   @Get('debug/active-tracking')
-  @UseGuards(RolesGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @Roles('ADMIN')
   async getActiveTrackingDebug() {
     const activeTracking = this.locationTrackingService.getAllActiveTracking();
@@ -112,7 +111,7 @@ export class LocationTrackingController {
 
   // Debug endpoint to get tracking status for specific order (Admin only)
   @Get('debug/order/:orderId/tracking')
-  @UseGuards(RolesGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @Roles('ADMIN')
   async getOrderTrackingDebug(@Param('orderId') orderId: string) {
     const orderIdNumber = parseInt(orderId);
@@ -155,7 +154,7 @@ export class LocationTrackingController {
 
   // Debug endpoint to check order details
   @Get('debug/order/:orderId/details')
-  @UseGuards(RolesGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @Roles('ADMIN')
   async getOrderDetails(@Param('orderId') orderId: string) {
     const orderIdNumber = parseInt(orderId);
@@ -188,7 +187,7 @@ export class LocationTrackingController {
 
   // Debug endpoint to force clear tracking for a stuck order (Admin only)
   @Delete('debug/order/:orderId/clear-tracking')
-  @UseGuards(RolesGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @Roles('ADMIN')
   async forceClearTracking(@Param('orderId') orderId: string) {
     const orderIdNumber = parseInt(orderId);
@@ -213,7 +212,7 @@ export class LocationTrackingController {
 
   // Debug endpoint to check if specific order is being tracked
   @Get('debug/order/:orderId/is-tracking')
-  @UseGuards(RolesGuard)
+  @UseGuards(ComprehensiveAuthGuard)
   @Roles('ADMIN')
   async checkOrderTracking(@Param('orderId') orderId: string) {
     const orderIdNumber = parseInt(orderId);

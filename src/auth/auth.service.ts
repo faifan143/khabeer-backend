@@ -135,7 +135,7 @@ export class AuthService {
   async login(user: { id: number; email?: string; phone?: string; role: string }) {
     try {
       const username = user.email || user.phone;
-      const payload = { username, sub: user.id, role: user.role };
+      const payload = { username, sub: user.id, role: user.role, phone: user.phone };
 
       const result = {
         access_token: this.jwtService.sign(payload),
@@ -164,7 +164,7 @@ export class AuthService {
       }
 
       const username = user.email || user.phone;
-      const payload = { username, sub: user.id, role: user.role };
+      const payload = { username, sub: user.id, role: user.role, phone: user.phone };
       return {
         access_token: this.jwtService.sign(payload),
         user: {
@@ -938,7 +938,7 @@ export class AuthService {
       } else {
         // Create regular user
         const user = await this.usersService.create(userData);
-        const payload = { username: user.name, sub: user.id, role: user.role };
+        const payload = { username: user.name, sub: user.id, role: user.role, phone: phoneNumber };
         // User is already returned without password from the service
         return {
           user: {

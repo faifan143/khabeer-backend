@@ -14,8 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('notifications')
@@ -26,7 +25,7 @@ export class NotificationsController {
     ) { }
 
     @Post()
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new notification' })
@@ -39,7 +38,7 @@ export class NotificationsController {
     }
 
     @Post(':id/send')
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Send a notification to target audience' })
@@ -53,7 +52,7 @@ export class NotificationsController {
     }
 
     @Get()
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get all notifications with pagination' })
@@ -70,7 +69,7 @@ export class NotificationsController {
     }
 
     @Get(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get notification by ID' })
@@ -83,7 +82,7 @@ export class NotificationsController {
     }
 
     @Delete(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Delete a notification' })
@@ -100,7 +99,7 @@ export class NotificationsController {
 
     // Order-specific notifications
     @Post('orders/:orderId')
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Send order-specific notification' })
@@ -124,7 +123,7 @@ export class NotificationsController {
 
     // Offer-specific notifications
     @Post('offers/:offerId')
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Send offer-specific notification' })
@@ -148,7 +147,7 @@ export class NotificationsController {
 
     // Topic information endpoint
     @Get('topics/info')
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get FCM topic information' })
@@ -161,7 +160,7 @@ export class NotificationsController {
 
     // Test FCM topics endpoint
     @Post('topics/test')
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(ComprehensiveAuthGuard)
     @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Send test messages to all FCM topics' })

@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsNotEmpty } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsNotEmpty, IsIn } from 'class-validator';
 
 export class CreateServiceDto {
   @IsString()
@@ -9,18 +9,24 @@ export class CreateServiceDto {
   @IsNotEmpty()
   description: string;
 
+  @IsOptional()
   @IsNumber()
-  commission: number;
+  commission?: number;
 
   @IsString()
   @IsNotEmpty()
   whatsapp: string;
 
   @IsOptional()
-  @IsNumber()
-  categoryId?: number;
+  @IsString()
+  state?: string;
 
   @IsOptional()
   @IsString()
-  state?: string;
+  @IsIn(['NORMAL', 'KHABEER'])
+  serviceType?: string;
+
+  @IsOptional()
+  @IsNumber()
+  categoryId?: number;
 }

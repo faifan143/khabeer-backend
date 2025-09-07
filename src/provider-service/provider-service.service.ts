@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ServicesService } from '../services/services.service';
 
 export interface CreateProviderServiceDto {
   serviceId: number;
@@ -38,7 +39,7 @@ export interface ProviderServiceWithOfferResponse {
     title: string;
     description: string;
     image: string;
-    commission: number;
+    commission: number | null;
   };
   activeOffer?: {
     id: number;
@@ -52,7 +53,10 @@ export interface ProviderServiceWithOfferResponse {
 
 @Injectable()
 export class ProviderServiceService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly servicesService: ServicesService
+  ) { }
 
   private async getActiveOffer(providerId: number, serviceId: number) {
     const now = new Date();
@@ -88,6 +92,12 @@ export class ProviderServiceService {
     // Validate price
     if (price <= 0) {
       throw new BadRequestException('Price must be greater than 0');
+    }
+
+    // Check if service can be assigned to providers
+    const canBeAssigned = await this.servicesService.canBeAssignedToProviders(serviceId);
+    if (!canBeAssigned) {
+      throw new BadRequestException('This service cannot be assigned to providers');
     }
 
     // Check if provider exists
@@ -400,16 +410,28 @@ export class ProviderServiceService {
       throw new NotFoundException('Provider not found');
     }
 
-    // Validate all services exist
+    // Validate all services exist and can be assigned to providers
     const serviceIds = services.map(s => s.serviceId);
     const existingServices = await this.prisma.service.findMany({
       where: {
         id: { in: serviceIds }
+      },
+      select: {
+        id: true,
+        title: true,
+        serviceType: true
       }
     });
 
     if (existingServices.length !== serviceIds.length) {
       throw new BadRequestException('One or more services not found');
+    }
+
+    // Check if all services can be assigned to providers
+    for (const service of existingServices) {
+      if (service.serviceType !== 'NORMAL') {
+        throw new BadRequestException(`Service "${service.title}" cannot be assigned to providers`);
+      }
     }
 
     // Check for existing provider services

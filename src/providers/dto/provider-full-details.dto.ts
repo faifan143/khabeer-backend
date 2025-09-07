@@ -7,7 +7,7 @@ export class ProviderServiceDetailDto {
         title: string;
         description: string;
         image: string;
-        commission: number;
+        commission: number | null;
         categoryId: number;
     };
 }

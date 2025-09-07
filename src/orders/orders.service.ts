@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { BusinessFlowNotificationsService } from '../notifications/business-flow-notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ServicesService } from '../services/services.service';
 import { CreateOrderMultipleServicesDto } from './dto/create-order-multiple-services.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderStatus, UpdateOrderStatusDto } from './dto/order-status.dto';
@@ -9,7 +10,8 @@ import { OrderStatus, UpdateOrderStatusDto } from './dto/order-status.dto';
 export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationsService: BusinessFlowNotificationsService
+    private readonly notificationsService: BusinessFlowNotificationsService,
+    private readonly servicesService: ServicesService
   ) { }
 
   /**
@@ -50,6 +52,12 @@ export class OrdersService {
       throw new NotFoundException('Service not found');
     }
 
+    // Check if service can be ordered (only NORMAL services can be ordered)
+    const canBeOrdered = await this.servicesService.canBeOrdered(createOrderDto.serviceId);
+    if (!canBeOrdered) {
+      throw new BadRequestException('This service cannot be ordered directly. Please contact via WhatsApp.');
+    }
+
     // Check if provider offers this service
     const providerService = provider.providerServices.find(
       ps => ps.serviceId === createOrderDto.serviceId && ps.isActive
@@ -76,7 +84,7 @@ export class OrdersService {
 
     // Calculate amounts
     const providerPrice = providerService.price;
-    const commission = service.commission;
+    const commission = service.commission || 0; // Default to 0 if null
     const quantity = createOrderDto.quantity || 1;
 
     // Use offer price if available, otherwise use regular price
@@ -1015,11 +1023,26 @@ export class OrdersService {
     // Validate all services exist and provider offers them
     const serviceIds = createOrderDto.services.map(s => s.serviceId);
     const services = await this.prisma.service.findMany({
-      where: { id: { in: serviceIds } }
+      where: { id: { in: serviceIds } },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        image: true,
+        commission: true,
+        serviceType: true
+      }
     });
 
     if (services.length !== serviceIds.length) {
       throw new BadRequestException('One or more services not found');
+    }
+
+    // Check if all services can be ordered (only NORMAL services can be ordered)
+    for (const service of services) {
+      if (service.serviceType !== 'NORMAL') {
+        throw new BadRequestException(`Service "${service.title}" cannot be ordered directly. Please contact via WhatsApp.`);
+      }
     }
 
     // Check if provider offers all services
@@ -1062,7 +1085,7 @@ export class OrdersService {
       const finalUnitPrice = offer ? offer.offerPrice : unitPrice;
       const quantity = serviceItem.quantity;
       const serviceTotal = finalUnitPrice * quantity;
-      const commission = service.commission * quantity;
+      const commission = (service.commission || 0) * quantity;
 
       subtotal += serviceTotal;
       totalCommission += commission;
