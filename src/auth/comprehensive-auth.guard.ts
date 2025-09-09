@@ -14,6 +14,7 @@ export class ComprehensiveAuthGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const user = request.user;
 
+        console.log('🔍 ComprehensiveAuthGuard URL Request:', request.url);
         console.log('🔍 ComprehensiveAuthGuard - User info:');
         console.log(`   User: ${JSON.stringify(user, null, 2)}`);
 

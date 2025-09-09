@@ -3,6 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { ProvidersService } from './providers.service';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
@@ -12,6 +13,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 
 @Controller('providers')
+@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class ProvidersController {
   constructor(
     private readonly providersService: ProvidersService,
@@ -19,11 +21,13 @@ export class ProvidersController {
   ) { }
 
   @Get()
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async findAll() {
     return this.providersService.findAll();
   }
 
   @Get('service/:serviceId')
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async getProvidersByService(@Param('serviceId') serviceId: string): Promise<ProvidersByServiceResponseDto> {
     const serviceIdNum = Number(serviceId);
     if (isNaN(serviceIdNum) || serviceIdNum <= 0) {
@@ -33,24 +37,24 @@ export class ProvidersController {
   }
 
   @Get('profile')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER')
   async getProfile(@Request() req) {
     return this.providersService.getProfile(req.user.userId);
   }
 
   @Get(':id')
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async findOne(@Param('id') id: string) {
     return this.providersService.findById(Number(id));
   }
 
   @Get(':id/full-details')
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async getProviderFullDetails(@Param('id', ParseIntPipe) id: number) {
     return this.providersService.getProviderFullDetails(id);
   }
 
   @Get(':id/status')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async getStatus(@Param('id') id: string, @Request() req) {
     // Providers can only access their own status, admins can access any
@@ -63,6 +67,7 @@ export class ProvidersController {
 
 
   @Post('register')
+  @Roles('USER', 'ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads/images/providers',
@@ -103,6 +108,7 @@ export class ProvidersController {
   }
 
   @Post()
+  @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads/images/providers',
@@ -133,7 +139,6 @@ export class ProvidersController {
   }
 
   @Put(':id')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
@@ -170,7 +175,6 @@ export class ProvidersController {
   }
 
   @Put(':id/status')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async updateStatus(
     @Param('id') id: string,
@@ -185,14 +189,12 @@ export class ProvidersController {
   }
 
   @Delete(':id')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('ADMIN')
   async remove(@Param('id') id: string) {
     return this.providersService.remove(Number(id));
   }
 
   @Get(':id/services')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async getProviderServices(@Param('id') id: string, @Request() req) {
     // Providers can only access their own services, admins can access any
@@ -203,6 +205,7 @@ export class ProvidersController {
   }
 
   @Get(':id/categories/:categoryId/services')
+  @Roles('PROVIDER', 'ADMIN')
   async getCategoryServicesByProviderId(
     @Param('id', ParseIntPipe) providerId: number,
     @Param('categoryId', ParseIntPipe) categoryId: number
@@ -211,7 +214,6 @@ export class ProvidersController {
   }
 
   @Post(':id/services')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async addServices(
     @Param('id') id: string,
@@ -226,7 +228,6 @@ export class ProvidersController {
   }
 
   @Delete(':id/services')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async removeServices(
     @Param('id') id: string,
@@ -241,7 +242,6 @@ export class ProvidersController {
   }
 
   @Get(':id/orders')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async getProviderOrders(@Param('id') id: string, @Request() req) {
     // Providers can only access their own orders, admins can access any
@@ -252,7 +252,6 @@ export class ProvidersController {
   }
 
   @Get(':id/orders/pending')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async getProviderPendingOrders(@Param('id') id: string, @Request() req) {
     // Providers can only access their own orders, admins can access any
@@ -263,7 +262,6 @@ export class ProvidersController {
   }
 
   @Get(':id/orders/pending/count')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async getProviderPendingOrdersCount(@Param('id') id: string, @Request() req) {
     // Providers can only access their own orders, admins can access any
@@ -274,7 +272,6 @@ export class ProvidersController {
   }
 
   @Get(':id/orders/:status')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async getProviderOrdersByStatus(
     @Param('id') id: string,
@@ -289,7 +286,6 @@ export class ProvidersController {
   }
 
   @Get(':id/ratings')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async getProviderRatings(@Param('id') id: string, @Request() req) {
     // Providers can only access their own ratings, admins can access any
@@ -300,7 +296,6 @@ export class ProvidersController {
   }
 
   @Get(':id/documents')
-  @UseGuards(ComprehensiveAuthGuard)
   @Roles('PROVIDER', 'ADMIN')
   async getProviderDocuments(@Param('id') id: string, @Request() req) {
     // Providers can only access their own documents, admins can access any

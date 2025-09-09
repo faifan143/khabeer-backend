@@ -13,10 +13,11 @@ import {
 } from '@nestjs/common';
 import { OffersService, CreateOfferDto, UpdateOfferDto } from './offers.service';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('offers')
-@UseGuards(ComprehensiveAuthGuard)
+@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class OffersController {
     constructor(private readonly offersService: OffersService) { }
 

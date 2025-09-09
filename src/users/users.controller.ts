@@ -3,6 +3,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { UsersService } from './users.service';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserLocationDto } from './dto/create-user-location.dto';
@@ -11,6 +13,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 
 @Controller('users')
+@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
@@ -18,19 +21,19 @@ export class UsersController {
   ) { }
 
   @Get()
+  @Roles('ADMIN')
   async findAll() {
     return this.usersService.findAll();
   }
 
   @Get('profile')
-  @UseGuards(ComprehensiveAuthGuard)
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async getProfile(@Request() req) {
     return this.usersService.getProfile(req.user.userId);
   }
 
-
-
   @Post()
+  @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads/images/users',
@@ -61,7 +64,7 @@ export class UsersController {
   }
 
   @Put(':id')
-  @UseGuards(ComprehensiveAuthGuard)
+  @Roles('USER', 'ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads/images/users',
@@ -96,7 +99,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @UseGuards(ComprehensiveAuthGuard)
+  @Roles('USER', 'ADMIN')
   async remove(@Param('id') id: string, @Request() req) {
     if (req.user.userId !== Number(id) && req.user.role !== 'ADMIN') {
       return { error: 'Unauthorized' };
@@ -106,19 +109,19 @@ export class UsersController {
 
   // User Location Management Endpoints
   @Get('locations')
-  @UseGuards(ComprehensiveAuthGuard)
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async getUserLocations(@Request() req) {
     return this.usersService.getUserLocations(req.user.userId);
   }
 
   @Post('locations')
-  @UseGuards(ComprehensiveAuthGuard)
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async createUserLocation(@Body() createLocationDto: CreateUserLocationDto, @Request() req) {
     return this.usersService.createUserLocation(req.user.userId, createLocationDto);
   }
 
   @Put('locations/:id')
-  @UseGuards(ComprehensiveAuthGuard)
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async updateUserLocation(
     @Param('id') id: string,
     @Body() updateLocationDto: UpdateUserLocationDto,
@@ -128,19 +131,20 @@ export class UsersController {
   }
 
   @Delete('locations/:id')
-  @UseGuards(ComprehensiveAuthGuard)
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async deleteUserLocation(@Param('id') id: string, @Request() req) {
     return this.usersService.deleteUserLocation(req.user.userId, Number(id));
   }
 
   @Put('locations/:id/set-default')
-  @UseGuards(ComprehensiveAuthGuard)
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async setDefaultLocation(@Param('id') id: string, @Request() req) {
     return this.usersService.setDefaultLocation(req.user.userId, Number(id));
   }
 
   // Parameterized route - must come after all specific routes
   @Get(':id')
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async findOne(@Param('id') id: string) {
     return this.usersService.findById(Number(id));
   }

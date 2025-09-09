@@ -6,8 +6,12 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('categories')
+@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class CategoriesController {
   constructor(
     private readonly categoriesService: CategoriesService,
@@ -15,16 +19,19 @@ export class CategoriesController {
   ) { }
 
   @Get()
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async findAll() {
     return this.categoriesService.findAll();
   }
 
   @Get(':id')
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async findOne(@Param('id') id: string) {
     return this.categoriesService.findById(Number(id));
   }
 
   @Post()
+  @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads',
@@ -48,6 +55,7 @@ export class CategoriesController {
   }
 
   @Put(':id')
+  @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads',
@@ -73,6 +81,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   async remove(@Param('id') id: string) {
     return this.categoriesService.remove(Number(id));
   }

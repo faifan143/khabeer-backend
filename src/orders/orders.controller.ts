@@ -16,10 +16,11 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateOrderMultipleServicesDto } from './dto/create-order-multiple-services.dto';
 import { UpdateOrderStatusDto, OrderStatus } from './dto/order-status.dto';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('orders')
-@UseGuards(ComprehensiveAuthGuard)
+@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 

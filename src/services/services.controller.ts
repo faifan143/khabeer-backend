@@ -1,13 +1,17 @@
-import { Controller, Get, Param, Body, Post, Put, Delete, UploadedFile, UseInterceptors, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { FilesService } from '../files/files.service';
-import { ServicesService } from './services.service';
-import { CreateServiceDto } from './dto/create-service.dto';
-import { UpdateServiceDto } from './dto/update-service.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { Roles } from 'src/auth/roles.decorator';
+import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { FilesService } from '../files/files.service';
+import { CreateServiceDto } from './dto/create-service.dto';
+import { UpdateServiceDto } from './dto/update-service.dto';
+import { ServicesService } from './services.service';
 
 @Controller('services')
+@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class ServicesController {
   constructor(
     private readonly servicesService: ServicesService,
@@ -15,31 +19,37 @@ export class ServicesController {
   ) { }
 
   @Get()
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async findAll(@Query('serviceType') serviceType?: string) {
     return this.servicesService.findAll(serviceType);
   }
 
   @Get('normal')
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async findNormalServices() {
     return this.servicesService.findNormalServices();
   }
 
   @Get('khabeer')
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async findKhabeerServices() {
     return this.servicesService.findKhabeerServices();
   }
 
   @Get('category/:categoryId')
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async findByCategory(@Param('categoryId') categoryId: string) {
     return this.servicesService.findByCategory(Number(categoryId));
   }
 
   @Get(':id')
+  @Roles('USER', 'PROVIDER', 'ADMIN')
   async findOne(@Param('id') id: string) {
     return this.servicesService.findById(Number(id));
   }
 
   @Post()
+  @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads',
@@ -63,6 +73,7 @@ export class ServicesController {
   }
 
   @Put(':id')
+  @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads',
@@ -88,6 +99,7 @@ export class ServicesController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   async remove(@Param('id') id: string) {
     return this.servicesService.remove(Number(id));
   }

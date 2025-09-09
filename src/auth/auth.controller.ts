@@ -10,6 +10,7 @@ import { FileInterceptor } from '@nestjs/platform-express/multer';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { FilesService } from 'src/files/files.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -260,7 +261,7 @@ export class AuthController {
   }
 
   @Post('me')
-  @UseGuards(ComprehensiveAuthGuard)
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @ApiOperation({ summary: 'Get current user information' })
   @ApiResponse({ status: 200, description: 'User information retrieved' })
   async me(@Request() req) {

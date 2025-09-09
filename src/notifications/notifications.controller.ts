@@ -15,6 +15,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('notifications')
@@ -25,7 +26,7 @@ export class NotificationsController {
     ) { }
 
     @Post()
-    @UseGuards(ComprehensiveAuthGuard)
+    @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
     @Roles('ADMIN')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new notification' })

@@ -14,13 +14,14 @@ import {
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { FilesService, FileUploadResult, FileValidationOptions } from './files.service';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
 @Controller('files')
-@UseGuards(ComprehensiveAuthGuard)
+@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class FilesController {
   constructor(private readonly filesService: FilesService) { }
 

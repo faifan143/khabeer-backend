@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { FCMService } from './fcm.service';
 import { SimpleFCMService } from './simple-fcm.service';
@@ -16,7 +17,7 @@ import { SimplifiedChannelService } from './simplified-channel.service';
 
 @ApiTags('notification-testing')
 @Controller('notification-test')
-@UseGuards(ComprehensiveAuthGuard)
+@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 @Roles('ADMIN')
 @ApiBearerAuth()
 export class NotificationTestController {

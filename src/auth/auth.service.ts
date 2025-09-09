@@ -92,8 +92,9 @@ export class AuthService {
         };
       }
 
-      // Provider login - by email (required)
+      // Provider login - by email or phone
       if (email && !phone) {
+        // Try provider login by email first
         const provider = await this.providersService.findByEmailWithPassword(email);
 
         if (provider && provider.password) {
@@ -108,10 +109,37 @@ export class AuthService {
             return { ...result, role: 'PROVIDER' };
           }
         }
+
+        // Also check for user by email (if provider login failed)
+        const user = await this.usersService.findByEmailWithPassword(email);
+        if (user && user.password) {
+          const isPasswordValid = await bcrypt.compare(password, user.password);
+          if (isPasswordValid) {
+            const { password: _, ...result } = user;
+            return { ...result, role: user.role };
+          }
+        }
       }
 
-      // User login - by phone (required)
+      // Provider login - by phone
       if (phone && !email) {
+        // Try provider login by phone first
+        const provider = await this.providersService.findByPhoneWithPassword(phone);
+
+        if (provider && provider.password) {
+          const isPasswordValid = await bcrypt.compare(password, provider.password);
+
+          if (isPasswordValid) {
+            // Check if provider is verified
+            if (!provider.isVerified) {
+              throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
+            }
+            const { password: _, ...result } = provider;
+            return { ...result, role: 'PROVIDER' };
+          }
+        }
+
+        // Also check for user by phone (if provider login failed)
         const user = await this.usersService.findByPhoneWithPassword(phone);
         if (user && await bcrypt.compare(password, user.password)) {
           const { password: _, ...result } = user;

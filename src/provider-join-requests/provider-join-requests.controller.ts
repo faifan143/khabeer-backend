@@ -13,10 +13,11 @@ import {
 } from '@nestjs/common';
 import { ProviderJoinRequestsService, CreateJoinRequestDto, UpdateJoinRequestDto } from './provider-join-requests.service';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('provider-join-requests')
-@UseGuards(ComprehensiveAuthGuard)
+@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class ProviderJoinRequestsController {
     constructor(private readonly providerJoinRequestsService: ProviderJoinRequestsService) { }
 
