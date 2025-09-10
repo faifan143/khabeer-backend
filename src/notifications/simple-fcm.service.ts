@@ -8,6 +8,7 @@ export interface FCMNotificationPayload {
     body: string;
     imageUrl?: string;
     data?: Record<string, string>;
+    type?: string;
 }
 
 export interface FCMResult {
@@ -77,26 +78,9 @@ export class SimpleFCMService {
 
             const message: admin.messaging.Message = {
                 token: user.fcm,
-                notification: {
-                    title: payload.title,
-                    body: payload.body,
-                    imageUrl: payload.imageUrl,
-                },
+
                 data: payload.data,
-                android: {
-                    notification: {
-                        sound: 'default',
-                        priority: 'high',
-                    },
-                },
-                apns: {
-                    payload: {
-                        aps: {
-                            sound: 'default',
-                            badge: 1,
-                        },
-                    },
-                },
+
             };
 
             const response = await this.firebaseApp.messaging().send(message);

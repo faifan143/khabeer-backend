@@ -216,6 +216,27 @@ services:
     profiles:
       - monitoring
 
+  # Prisma Studio
+  prisma-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: khabeer-prisma-studio
+    restart: unless-stopped
+    ports:
+      - '5555:5555'
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-khabeer_user}:${POSTGRES_PASSWORD:-khabeer_password}@postgres:5432/${POSTGRES_DB:-khabeer}
+    command: npx prisma studio --hostname 0.0.0.0 --port 5555
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - khabeer-network
+    profiles:
+      - studio # Optional: use profile to start it only when needed
+
 volumes:
   postgres_data:
     driver: local
