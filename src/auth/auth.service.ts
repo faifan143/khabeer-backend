@@ -160,10 +160,16 @@ export class AuthService {
     }
   }
 
-  async login(user: { id: number; email?: string; phone?: string; role: string }) {
+  async login(user: { id: number; email?: string; phone?: string; role: string; state?: string }) {
     try {
       const username = user.email || user.phone;
-      const payload = { username, sub: user.id, role: user.role, phone: user.phone };
+      const payload = {
+        username,
+        sub: user.id,
+        role: user.role,
+        phone: user.phone,
+        state: user.state
+      };
 
       const result = {
         access_token: this.jwtService.sign(payload),
@@ -171,7 +177,8 @@ export class AuthService {
           id: user.id,
           email: user.email,
           phone: user.phone,
-          role: user.role
+          role: user.role,
+          state: user.state
         }
       };
       return result;
@@ -180,7 +187,7 @@ export class AuthService {
     }
   }
 
-  async loginWithFCM(user: { id: number; email?: string; phone?: string; role: string }, fcmToken?: string) {
+  async loginWithFCM(user: { id: number; email?: string; phone?: string; role: string; state?: string }, fcmToken?: string) {
     try {
       // Update FCM token if provided
       if (fcmToken) {
@@ -192,14 +199,21 @@ export class AuthService {
       }
 
       const username = user.email || user.phone;
-      const payload = { username, sub: user.id, role: user.role, phone: user.phone };
+      const payload = {
+        username,
+        sub: user.id,
+        role: user.role,
+        phone: user.phone,
+        state: user.state
+      };
       return {
         access_token: this.jwtService.sign(payload),
         user: {
           id: user.id,
           email: user.email,
           phone: user.phone,
-          role: user.role
+          role: user.role,
+          state: user.state
         }
       };
     } catch (error) {
@@ -282,7 +296,7 @@ export class AuthService {
           isVerified: false,
           location: null,
           officialDocuments: data.officialDocuments || undefined,
-          serviceIds: data.serviceIds || [], // Include service IDs for linking
+          services: (data as any).services || [], // Include services with prices for linking
           fcm: data.fcm || undefined // Include FCM token
         };
 
@@ -600,7 +614,8 @@ export class AuthService {
           username: 'admin@khabeer.com',
           sub: 0,
           role: 'ADMIN',
-          phone: phoneNumber
+          phone: phoneNumber,
+          state: 'Muscat' // Admin state
         };
 
         const access_token = this.jwtService.sign(payload);
@@ -612,8 +627,9 @@ export class AuthService {
           user: {
             id: 0,
             phone: phoneNumber,
-            role: 'ADMIN'
-          }
+            role: 'ADMIN',
+            state: 'Muscat'
+          } as any
         };
       }
 
@@ -669,7 +685,8 @@ export class AuthService {
         username: userData.email || phoneNumber,
         sub: userData.id,
         role: role,
-        phone: phoneNumber
+        phone: phoneNumber,
+        state: userData.state
       };
 
       const access_token = this.jwtService.sign(payload);
@@ -681,8 +698,9 @@ export class AuthService {
         user: {
           id: userData.id,
           phone: phoneNumber,
-          role: role
-        }
+          role: role,
+          state: userData.state
+        } as any
       };
 
     } catch (error) {
@@ -951,7 +969,7 @@ export class AuthService {
           isVerified: false,
           location: null,
           officialDocuments: registerData.officialDocuments || undefined,
-          serviceIds: registerData.serviceIds || []
+          services: (registerData as any).services || []
         };
 
         const provider = await this.providersService.registerProviderWithServices(providerData);
@@ -966,7 +984,13 @@ export class AuthService {
       } else {
         // Create regular user
         const user = await this.usersService.create(userData);
-        const payload = { username: user.name, sub: user.id, role: user.role, phone: phoneNumber };
+        const payload = {
+          username: user.name,
+          sub: user.id,
+          role: user.role,
+          phone: phoneNumber,
+          state: user.state
+        };
         // User is already returned without password from the service
         return {
           user: {
@@ -1068,8 +1092,14 @@ export class AuthService {
           isVerified: false,
           location: null,
           officialDocuments: registerData.officialDocuments || undefined,
-          serviceIds: registerData.serviceIds || []
+          services: (registerData as any).services || []
         };
+
+        console.log('🔍 Provider registration data:', {
+          name: providerData.name,
+          services: providerData.services,
+          servicesCount: providerData.services?.length || 0
+        });
 
         const provider = await this.providersService.registerProviderWithServices(providerData);
 

@@ -31,19 +31,24 @@ export class OffersController {
     async findAll(
         @Query('providerId') providerId?: string,
         @Query('serviceId') serviceId?: string,
-        @Query('activeOnly') activeOnly?: string
+        @Query('activeOnly') activeOnly?: string,
+        @Request() req?: any
     ) {
         const providerIdNum = providerId ? parseInt(providerId, 10) : undefined;
         const serviceIdNum = serviceId ? parseInt(serviceId, 10) : undefined;
         const activeOnlyBool = activeOnly !== 'false'; // Default to true
+        const userState = req?.user?.state;
+        const userRole = req?.user?.role;
 
-        return this.offersService.findAll(providerIdNum, serviceIdNum, activeOnlyBool);
+        return this.offersService.findAll(providerIdNum, serviceIdNum, activeOnlyBool, userState, userRole);
     }
 
     @Get('active')
-    async getActiveOffers(@Query('limit') limit?: string) {
+    async getActiveOffers(@Query('limit') limit?: string, @Request() req?: any) {
         const limitNum = limit ? parseInt(limit, 10) : 20;
-        return this.offersService.getActiveOffers(limitNum);
+        const userState = req?.user?.state;
+        const userRole = req?.user?.role;
+        return this.offersService.getActiveOffers(limitNum, userState, userRole);
     }
 
     @Get('available')

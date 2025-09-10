@@ -41,6 +41,7 @@ model Provider {
   state             String
   phone             String                @unique
   isActive          Boolean               @default(false)
+  onlineStatus      Boolean               @default(true)
   officialDocuments String?
   isVerified        Boolean               @default(false)
   location          Json?
@@ -113,6 +114,7 @@ model Order {
   location           String?
   locationDetails    String?
   providerAmount     Float
+  providerNetAmount  Float              // What provider actually receives after commission deduction
   providerLocation   Json?
   quantity           Int                @default(1)
   scheduledDate      DateTime?

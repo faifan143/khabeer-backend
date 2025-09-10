@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors, Request } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -11,7 +11,6 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 import { ServicesService } from './services.service';
 
 @Controller('services')
-@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class ServicesController {
   constructor(
     private readonly servicesService: ServicesService,
@@ -19,36 +18,59 @@ export class ServicesController {
   ) { }
 
   @Get()
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('USER', 'PROVIDER', 'ADMIN')
-  async findAll(@Query('serviceType') serviceType?: string) {
-    return this.servicesService.findAll(serviceType);
+  async findAll(@Query('serviceType') serviceType?: string, @Request() req?: any) {
+    const userState = req?.user?.state;
+    const userRole = req?.user?.role;
+    return this.servicesService.findAll(serviceType, userState, userRole);
+  }
+
+  @Get('public')
+  // Public endpoint - no authentication required
+  async findAllPublic() {
+    return this.servicesService.findAllPublic();
   }
 
   @Get('normal')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('USER', 'PROVIDER', 'ADMIN')
-  async findNormalServices() {
-    return this.servicesService.findNormalServices();
+  async findNormalServices(@Request() req) {
+    const userState = req.user.state;
+    const userRole = req.user.role;
+    return this.servicesService.findNormalServices(userState, userRole);
   }
 
   @Get('khabeer')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('USER', 'PROVIDER', 'ADMIN')
-  async findKhabeerServices() {
-    return this.servicesService.findKhabeerServices();
+  async findKhabeerServices(@Request() req) {
+    const userState = req.user.state;
+    const userRole = req.user.role;
+
+    return this.servicesService.findKhabeerServices(userState, userRole);
   }
 
+
+
   @Get('category/:categoryId')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('USER', 'PROVIDER', 'ADMIN')
-  async findByCategory(@Param('categoryId') categoryId: string) {
-    return this.servicesService.findByCategory(Number(categoryId));
+  async findByCategory(@Param('categoryId') categoryId: string, @Request() req) {
+    const userState = req.user.state;
+    const userRole = req.user.role;
+    return this.servicesService.findByCategory(Number(categoryId), userState, userRole);
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('USER', 'PROVIDER', 'ADMIN')
   async findOne(@Param('id') id: string) {
     return this.servicesService.findById(Number(id));
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
@@ -73,6 +95,7 @@ export class ServicesController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
@@ -99,6 +122,7 @@ export class ServicesController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('ADMIN')
   async remove(@Param('id') id: string) {
     return this.servicesService.remove(Number(id));

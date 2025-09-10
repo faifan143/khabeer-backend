@@ -7,8 +7,12 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 export class CategoriesService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findAll() {
-    return this.prisma.category.findMany();
+  async findAll(userState?: string) {
+    const where: any = {};
+    if (userState) {
+      where.state = userState;
+    }
+    return this.prisma.category.findMany({ where });
   }
 
   async findById(id: number) {

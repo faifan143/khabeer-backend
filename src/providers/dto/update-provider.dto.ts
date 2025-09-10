@@ -26,6 +26,10 @@ export class UpdateProviderDto {
   isActive?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  onlineStatus?: boolean;
+
+  @IsOptional()
   @IsString()
   officialDocuments?: string;
 

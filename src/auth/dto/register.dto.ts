@@ -1,5 +1,7 @@
-import { IsEmail, IsString, IsOptional, MinLength, IsArray, IsBoolean, IsNumber, IsEnum } from 'class-validator';
+import { IsEmail, IsString, IsOptional, MinLength, IsArray, IsBoolean, IsNumber, IsEnum, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { ServiceWithPriceDto } from '../../providers/dto/service-with-price.dto';
 
 export enum RegisterType {
   USER = 'user',
@@ -60,6 +62,12 @@ export class RegisterDto {
 
   @IsOptional()
   @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ServiceWithPriceDto)
+  services?: ServiceWithPriceDto[]; // Services with prices for provider registration
+
+  @IsOptional()
+  @IsArray()
   @IsNumber({}, { each: true })
-  serviceIds?: number[]; // For provider service linking
+  serviceIds?: number[]; // For backward compatibility - deprecated, use services instead
 }

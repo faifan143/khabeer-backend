@@ -20,8 +20,9 @@ export class CategoriesController {
 
   @Get()
   @Roles('USER', 'PROVIDER', 'ADMIN')
-  async findAll() {
-    return this.categoriesService.findAll();
+  async findAll(@Request() req) {
+    const userState = req.user.state;
+    return this.categoriesService.findAll(userState);
   }
 
   @Get(':id')

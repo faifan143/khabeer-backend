@@ -20,7 +20,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userId: payload.sub,
       email: payload.username,
       role: payload.role,
-      phone: payload.phone // Include phone if available
+      phone: payload.phone, // Include phone if available
+      state: payload.state // Include state for filtering
     };
 
     return result;

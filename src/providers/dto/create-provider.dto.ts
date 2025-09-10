@@ -1,4 +1,6 @@
-import { IsString, IsBoolean, IsOptional, IsNotEmpty, IsArray, IsNumber } from 'class-validator';
+import { IsString, IsBoolean, IsOptional, IsNotEmpty, IsArray, IsNumber, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ServiceWithPriceDto } from './service-with-price.dto';
 
 export class CreateProviderDto {
   @IsString()
@@ -35,6 +37,10 @@ export class CreateProviderDto {
 
   @IsOptional()
   @IsBoolean()
+  onlineStatus?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   isVerified?: boolean;
 
   @IsOptional()
@@ -46,8 +52,15 @@ export class CreateProviderDto {
 
   @IsOptional()
   @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ServiceWithPriceDto)
+  services?: ServiceWithPriceDto[]; // Services with prices the provider offers (optional for registration)
+
+  // Keep serviceIds for backward compatibility
+  @IsOptional()
+  @IsArray()
   @IsNumber({}, { each: true })
-  serviceIds?: number[]; // IDs of services the provider offers (optional for registration)
+  serviceIds?: number[]; // IDs of services the provider offers (deprecated - use services instead)
 
   @IsOptional()
   @IsString()

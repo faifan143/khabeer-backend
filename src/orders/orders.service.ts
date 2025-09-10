@@ -82,7 +82,7 @@ export class OrdersService {
       }
     });
 
-    // Calculate amounts
+    // Calculate amounts - FIXED: User only pays provider price, commission is deducted from provider earnings
     const providerPrice = providerService.price;
     const commission = service.commission || 0; // Default to 0 if null
     const quantity = createOrderDto.quantity || 1;
@@ -92,9 +92,10 @@ export class OrdersService {
     const originalPrice = providerPrice;
     const discount = validOffer ? (originalPrice - finalProviderPrice) * quantity : 0;
 
-    const providerAmount = finalProviderPrice * quantity;
-    const commissionAmount = commission * quantity;
-    const totalAmount = providerAmount + commissionAmount;
+    const providerAmount = finalProviderPrice * quantity; // What provider charges
+    const commissionAmount = commission * quantity; // Fixed commission per service
+    const totalAmount = providerAmount; // User only pays provider price (NO commission added)
+    const providerNetAmount = providerAmount - commissionAmount; // What provider actually receives
 
     // Create order
     const order = await this.prisma.order.create({
@@ -109,6 +110,7 @@ export class OrdersService {
         quantity,
         totalAmount,
         providerAmount,
+        providerNetAmount,
         commissionAmount,
         status: OrderStatus.PENDING,
         isMultipleServices: false
@@ -1066,7 +1068,7 @@ export class OrdersService {
       }
     });
 
-    // Calculate totals for each service
+    // Calculate totals for each service - FIXED: User only pays provider prices, commission deducted from provider earnings
     let subtotal = 0;
     let totalCommission = 0;
     const serviceBreakdown: any[] = [];
@@ -1113,7 +1115,8 @@ export class OrdersService {
       }
     }
 
-    const totalAmount = subtotal + totalCommission;
+    const totalAmount = subtotal; // User only pays provider prices (NO commission added)
+    const providerNetAmount = subtotal - totalCommission; // What provider actually receives after commission deduction
 
     // Create the order using a transaction
     const result = await this.prisma.$transaction(async (tx) => {
@@ -1157,6 +1160,7 @@ export class OrdersService {
           quantity: serviceBreakdown.reduce((sum: number, s: any) => sum + s.quantity, 0),
           totalAmount,
           providerAmount: subtotal,
+          providerNetAmount,
           commissionAmount: totalCommission,
           status: OrderStatus.PENDING,
           isMultipleServices: true,

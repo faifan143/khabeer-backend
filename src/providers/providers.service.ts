@@ -12,9 +12,18 @@ import { ProviderPendingCountResponseDto } from './dto/provider-pending-count.dt
 export class ProvidersService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findAll() {
+  async findAll(userRole?: string) {
     try {
+      const where: any = {};
+
+      // Skip provider filtering for admins
+      if (userRole !== 'ADMIN') {
+        where.isActive = true;
+        where.onlineStatus = true;
+      }
+
       const providers = await this.prisma.provider.findMany({
+        where,
         select: {
           id: true,
           name: true,
@@ -24,6 +33,7 @@ export class ProvidersService {
           phone: true,
           location: true,
           isActive: true,
+          onlineStatus: true,
           isVerified: true,
           createdAt: true,
           providerServices: {
@@ -117,6 +127,7 @@ export class ProvidersService {
           state: true,
           phone: true,
           isActive: true,
+          onlineStatus: true,
           isVerified: true,
           location: true,
           officialDocuments: true,
@@ -143,6 +154,7 @@ export class ProvidersService {
           state: true,
           phone: true,
           isActive: true,
+          onlineStatus: true,
           isVerified: true,
           location: true,
           officialDocuments: true,
@@ -314,15 +326,61 @@ export class ProvidersService {
 
   async registerProviderWithServices(data: CreateProviderDto) {
     try {
-      const { serviceIds, ...providerData } = data;
+      const { serviceIds, services, ...providerData } = data;
+
+      console.log('🔍 registerProviderWithServices received:', {
+        services: services,
+        serviceIds: serviceIds,
+        servicesLength: services?.length || 0,
+        serviceIdsLength: serviceIds?.length || 0
+      });
+
+      // Prepare provider services data
+      let providerServicesData: Array<{
+        serviceId: number;
+        price: number;
+        isActive: boolean;
+      }> = [];
+
+      // Handle new services with pricing approach
+      if (services && services.length > 0) {
+        console.log('🔍 Processing services with prices:', services);
+        providerServicesData = services.map(service => ({
+          serviceId: service.serviceId,
+          price: service.price,
+          isActive: true
+        }));
+        console.log('🔍 Mapped provider services data:', providerServicesData);
+      }
+      // Fallback to legacy serviceIds approach for backward compatibility
+      else if (serviceIds && serviceIds.length > 0) {
+        providerServicesData = serviceIds.map(serviceId => ({
+          serviceId: serviceId,
+          price: 0, // Default price for legacy approach
+          isActive: true
+        }));
+      }
+
       const provider = await this.prisma.provider.create({
         data: {
           ...providerData,
           providerServices: {
-            create: (serviceIds || []).map(serviceId => ({ serviceId }))
+            create: providerServicesData
           }
         },
-        include: { providerServices: true }
+        include: {
+          providerServices: {
+            include: {
+              service: {
+                select: {
+                  id: true,
+                  title: true,
+                  description: true
+                }
+              }
+            }
+          }
+        }
       });
 
       // Return provider without password
@@ -418,6 +476,53 @@ export class ProvidersService {
         }
       }
       throw new InternalServerErrorException('Error updating provider status');
+    }
+  }
+
+  async getOnlineStatus(id: number) {
+    try {
+      const provider = await this.prisma.provider.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          onlineStatus: true
+        }
+      });
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${id} not found`);
+      }
+
+      return provider;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error getting provider online status');
+    }
+  }
+
+  async updateOnlineStatus(id: number, onlineStatus: boolean) {
+    try {
+      const provider = await this.prisma.provider.update({
+        where: { id },
+        data: { onlineStatus },
+        include: { providerServices: true }
+      });
+
+      // Return provider without password
+      const { password, ...providerWithoutPassword } = provider;
+      return providerWithoutPassword;
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        switch (error.code) {
+          case 'P2025':
+            throw new NotFoundException(`Provider with ID ${id} not found`);
+          default:
+            throw new InternalServerErrorException('Database operation failed');
+        }
+      }
+      throw new InternalServerErrorException('Error updating provider online status');
     }
   }
 
@@ -542,7 +647,7 @@ export class ProvidersService {
 
   private buildServicesArray(order: any): any[] {
     if (order.quantity === 1) {
-      // For single service orders, return a single-item array
+      // For single service orders, return a single-item array - FIXED: Show correct amounts
       const service = order.service;
       return [
         {
@@ -553,15 +658,17 @@ export class ProvidersService {
           quantity: 1,
           unitPrice: order.providerAmount,
           totalPrice: order.providerAmount,
+          netAmount: order.providerNetAmount, // What provider actually receives
           commission: service.commission || 0,
-          commissionAmount: order.commissionAmount
+          commissionAmount: order.commissionAmount,
+          commissionDeduction: order.providerAmount - order.providerNetAmount // Commission deducted from provider
         }
       ];
     } else {
-      // For multiple services orders, create a logical breakdown
-      // Instead of repeating the same service, we'll create a breakdown based on quantity
+      // For multiple services orders, create a logical breakdown - FIXED: Show correct amounts
       const service = order.service;
       const unitPrice = order.providerAmount / order.quantity;
+      const unitNetPrice = order.providerNetAmount / order.quantity;
       const unitCommission = order.commissionAmount / order.quantity;
 
       // Create a single service entry with the total quantity
@@ -574,8 +681,10 @@ export class ProvidersService {
           quantity: order.quantity,
           unitPrice: unitPrice,
           totalPrice: order.providerAmount,
+          netAmount: order.providerNetAmount, // What provider actually receives
           commission: service.commission || 0,
-          commissionAmount: order.commissionAmount
+          commissionAmount: order.commissionAmount,
+          commissionDeduction: order.providerAmount - order.providerNetAmount // Commission deducted from provider
         }
       ];
     }
@@ -910,6 +1019,41 @@ export class ProvidersService {
     }
   }
 
+  async getProviderStats(providerId: number) {
+    try {
+      const [pendingOrdersCount, servicesCount, whatsappSupport] = await Promise.all([
+        this.prisma.order.count({
+          where: {
+            providerId,
+            status: 'pending'
+          }
+        }),
+        this.prisma.providerService.count({
+          where: {
+            providerId,
+            isActive: true
+          }
+        }),
+        this.prisma.systemSettings.findUnique({
+          where: {
+            key: 'whatsapp_support'
+          },
+          select: {
+            value: true
+          }
+        })
+      ]);
+
+      return {
+        pendingOrdersCount,
+        servicesCount,
+        support: whatsappSupport?.value || null
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Error fetching provider stats');
+    }
+  }
+
   async getProviderRatings(providerId: number) {
     try {
       return await this.prisma.providerRating.findMany({
@@ -1005,7 +1149,7 @@ export class ProvidersService {
     }
   }
 
-  async findProvidersByServiceId(serviceId: number): Promise<ProvidersByServiceResponseDto> {
+  async findProvidersByServiceId(serviceId: number, userRole?: string): Promise<ProvidersByServiceResponseDto> {
     try {
       // First check if the service exists
       const service = await this.prisma.service.findUnique({
@@ -1016,17 +1160,24 @@ export class ProvidersService {
         throw new NotFoundException(`Service with ID ${serviceId} not found`);
       }
 
-      const providers = await this.prisma.provider.findMany({
-        where: {
-          providerServices: {
-            some: {
-              serviceId: serviceId,
-              isActive: true
-            }
-          },
-          isActive: true,
-          isVerified: true
+      const where: any = {
+        providerServices: {
+          some: {
+            serviceId: serviceId,
+            isActive: true
+          }
         },
+        isVerified: true
+      };
+
+      // Skip provider filtering for admins
+      if (userRole !== 'ADMIN') {
+        where.isActive = true;
+        where.onlineStatus = true;
+      }
+
+      const providers = await this.prisma.provider.findMany({
+        where,
         select: {
           id: true,
           name: true,
@@ -1036,6 +1187,7 @@ export class ProvidersService {
           phone: true,
           location: true,
           isActive: true,
+          onlineStatus: true,
           isVerified: true,
           createdAt: true,
           providerServices: {

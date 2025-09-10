@@ -11,6 +11,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { FilesService } from 'src/files/files.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { ServiceWithPriceDto } from '../providers/dto/service-with-price.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -202,15 +203,27 @@ export class AuthController {
       },
     }),
   }))
-  @ApiOperation({ summary: 'Step 1: Initiate registration and send OTP - User provides all data including password' })
+  @ApiOperation({ summary: 'Step 1: Initiate registration and send OTP - User/Provider provides all data including password and services with prices' })
   @ApiResponse({ status: 200, description: 'Registration initiated, OTP sent' })
   @ApiResponse({ status: 400, description: 'Invalid data or user already exists' })
   async initiateRegistration(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
 
 
+    console.log('body', body);
+
+
     // Validate required fields
     if (!body.password || !body.name || !body.phoneNumber) {
       throw new BadRequestException('Password, name, and phone number are required');
+    }
+
+    // Validate services if provided (for provider registration)
+    if (body.services && Array.isArray(body.services)) {
+      for (const service of body.services) {
+        if (!service.serviceId || service.price === undefined || service.price < 0) {
+          throw new BadRequestException('Each service must have a valid serviceId and non-negative price');
+        }
+      }
     }
 
     // Normalize data
@@ -227,7 +240,7 @@ export class AuthController {
       isActive: body.isActive === 'true' || body.isActive === true,
       officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
       description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-      serviceIds: this.parseServiceIds(body.serviceIds)
+      services: this.parseServices(body.services)
     };
 
     // Handle file upload
@@ -321,23 +334,28 @@ export class AuthController {
   //   return this.authService.clearRegistrationData(body.phoneNumber);
   // }
 
-  private parseServiceIds(serviceIds: any): number[] {
-    if (!serviceIds) return [];
+  private parseServices(services: any): ServiceWithPriceDto[] {
+    if (!services) return [];
 
     // If it's a string, try to parse it as JSON
-    if (typeof serviceIds === 'string') {
+    if (typeof services === 'string') {
       try {
-        const parsed = JSON.parse(serviceIds);
-        return Array.isArray(parsed) ? parsed.map(id => Number(id)) : [];
+        const parsed = JSON.parse(services);
+        return Array.isArray(parsed) ? parsed.map(service => ({
+          serviceId: Number(service.serviceId || service.id),
+          price: Number(service.price || 0)
+        })) : [];
       } catch {
-        // If it's not JSON, treat it as a single ID
-        return [Number(serviceIds)];
+        return [];
       }
     }
 
     // If it's already an array
-    if (Array.isArray(serviceIds)) {
-      return serviceIds.map(id => Number(id));
+    if (Array.isArray(services)) {
+      return services.map(service => ({
+        serviceId: Number(service.serviceId || service.id),
+        price: Number(service.price || 0)
+      }));
     }
 
     return [];

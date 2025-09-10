@@ -8,6 +8,7 @@ import { Roles } from '../auth/roles.decorator';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { UpdateOnlineStatusDto } from './dto/update-online-status.dto';
 import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -22,18 +23,20 @@ export class ProvidersController {
 
   @Get()
   @Roles('USER', 'PROVIDER', 'ADMIN')
-  async findAll() {
-    return this.providersService.findAll();
+  async findAll(@Request() req) {
+    const userRole = req.user.role;
+    return this.providersService.findAll(userRole);
   }
 
   @Get('service/:serviceId')
   @Roles('USER', 'PROVIDER', 'ADMIN')
-  async getProvidersByService(@Param('serviceId') serviceId: string): Promise<ProvidersByServiceResponseDto> {
+  async getProvidersByService(@Param('serviceId') serviceId: string, @Request() req): Promise<ProvidersByServiceResponseDto> {
     const serviceIdNum = Number(serviceId);
     if (isNaN(serviceIdNum) || serviceIdNum <= 0) {
       throw new BadRequestException('Invalid service ID. Must be a positive number.');
     }
-    return this.providersService.findProvidersByServiceId(serviceIdNum);
+    const userRole = req.user.role;
+    return this.providersService.findProvidersByServiceId(serviceIdNum, userRole);
   }
 
   @Get('profile')
@@ -93,12 +96,26 @@ export class ProvidersController {
     } else {
       data.image = '';
     }
-    // Parse serviceIds if it's a string or array of strings
-    if (typeof data.serviceIds === 'string') {
-      data.serviceIds = [parseInt(data.serviceIds, 10)];
-    } else if (Array.isArray(data.serviceIds)) {
-      data.serviceIds = data.serviceIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id);
+    // Handle services with pricing (new approach)
+    if (data.services && data.services.length > 0) {
+      // Validate that all services have valid prices
+      data.services = data.services.map(service => ({
+        serviceId: typeof service.serviceId === 'string' ? parseInt(service.serviceId, 10) : service.serviceId,
+        price: typeof service.price === 'string' ? parseFloat(service.price) : service.price
+      }));
     }
+
+    // Handle legacy serviceIds for backward compatibility
+    if (data.serviceIds && data.serviceIds.length > 0) {
+      if (typeof data.serviceIds === 'string') {
+        data.serviceIds = [parseInt(data.serviceIds, 10)];
+      } else if (Array.isArray(data.serviceIds)) {
+        data.serviceIds = data.serviceIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id);
+      }
+    }
+
+    // If no services provided, default to empty array
+    if (!data.services) data.services = [];
     if (!data.serviceIds) data.serviceIds = [];
     data.name = data.name || '';
     data.description = data.description || '';
@@ -136,6 +153,26 @@ export class ProvidersController {
       data.image = '';
     }
     return this.providersService.create(data);
+  }
+
+  @Get('online-status')
+  @Roles('PROVIDER', 'ADMIN')
+  async getOnlineStatus(@Request() req) {
+    // Get provider ID from JWT token
+    const providerId = req.user.userId;
+    const provider = await this.providersService.getOnlineStatus(providerId);
+    return { onlineStatus: provider.onlineStatus };
+  }
+
+  @Put('online-status')
+  @Roles('PROVIDER', 'ADMIN')
+  async updateOnlineStatus(
+    @Body() data: UpdateOnlineStatusDto,
+    @Request() req
+  ) {
+    // Get provider ID from JWT token
+    const providerId = req.user.userId;
+    return this.providersService.updateOnlineStatus(providerId, data.onlineStatus);
   }
 
   @Put(':id')
@@ -263,12 +300,12 @@ export class ProvidersController {
 
   @Get(':id/orders/pending/count')
   @Roles('PROVIDER', 'ADMIN')
-  async getProviderPendingOrdersCount(@Param('id') id: string, @Request() req) {
-    // Providers can only access their own orders, admins can access any
+  async getProviderStats(@Param('id') id: string, @Request() req) {
+    // Providers can only access their own stats, admins can access any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
-      throw new BadRequestException('You can only access your own orders');
+      throw new BadRequestException('You can only access your own stats');
     }
-    return this.providersService.getProviderPendingOrdersCount(Number(id));
+    return this.providersService.getProviderStats(Number(id));
   }
 
   @Get(':id/orders/:status')

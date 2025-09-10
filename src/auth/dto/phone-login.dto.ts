@@ -39,5 +39,6 @@ export class PhoneLoginResponseDto {
     id: number;
     phone: string;
     role: string;
+    state?: string;
   };
 } 

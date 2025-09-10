@@ -534,19 +534,21 @@ export class InvoicesService {
   /**
    * CRITICAL: Commit payment to company when admin marks invoice as paid
    * This represents the actual moment when money is committed
+   * FIXED: Now properly handles provider pays commission flow
    */
   private async commitPaymentToCompany(order: any, invoice: any): Promise<void> {
     console.log(`🚨 PAYMENT COMMITTED TO COMPANY 🚨`);
     console.log(`Order: ${order.id}`);
-    console.log(`Total Amount: ${invoice.totalAmount} SAR`);
-    console.log(`Commission: ${order.commissionAmount} SAR`);
-    console.log(`Provider Amount: ${order.providerAmount} SAR`);
+    console.log(`User Payment: ${invoice.totalAmount} OMR (provider price only)`);
+    console.log(`Provider Gross: ${order.providerAmount} OMR`);
+    console.log(`Commission to Admin: ${order.commissionAmount} OMR`);
+    console.log(`Provider Net: ${order.providerNetAmount} OMR (after commission deduction)`);
     console.log(`Commitment Time: ${new Date().toISOString()}`);
 
     // Here you would typically:
     // 1. Create financial transaction records
-    // 2. Update company revenue
-    // 3. Schedule provider payout
+    // 2. Update company revenue (admin gets commission)
+    // 3. Schedule provider payout (provider gets net amount)
     // 4. Send notifications
     // 5. Update accounting systems
 
@@ -555,7 +557,7 @@ export class InvoicesService {
   }
 
   /**
-   * Log payment commitment for audit purposes
+   * Log payment commitment for audit purposes - FIXED: Now logs correct financial flow
    */
   private async logPaymentCommitment(order: any, invoice: any): Promise<void> {
     // This would typically create a financial commitment record
@@ -564,41 +566,55 @@ export class InvoicesService {
     const commitmentData = {
       orderId: order.id,
       invoiceId: invoice.id,
-      totalAmount: invoice.totalAmount,
-      commissionAmount: order.commissionAmount,
-      providerAmount: order.providerAmount,
+      userPayment: invoice.totalAmount, // What user actually paid
+      providerGrossAmount: order.providerAmount, // What provider charged
+      providerNetAmount: order.providerNetAmount, // What provider receives
+      adminCommission: order.commissionAmount, // What admin gets
       commitmentTime: new Date(),
       status: 'committed',
-      type: 'admin_payment_commitment'
+      type: 'admin_payment_commitment',
+      financialFlow: 'provider_pays_commission'
     };
 
     console.log('📊 PAYMENT COMMITMENT LOGGED:', commitmentData);
 
     // In a real system, you would:
     // - Create a financial commitment record
-    // - Update company revenue tracking
+    // - Update company revenue tracking (admin commission)
+    // - Schedule provider payout (provider net amount)
     // - Trigger accounting system updates
     // - Send notifications to stakeholders
   }
 
   /**
-   * Validate commission calculation
+   * Validate commission calculation - FIXED: Now validates fixed commission per service
    */
   private validateCommissionCalculation(order: any, invoice: any): void {
     const commissionAmount = order.commissionAmount;
     const providerAmount = order.providerAmount;
     const totalAmount = invoice.totalAmount;
+    const providerNetAmount = order.providerNetAmount;
 
-    // Validate that commission + provider amount equals total (with small tolerance for rounding)
-    if (Math.abs((commissionAmount + providerAmount) - totalAmount) > 0.01) {
-      console.warn(`Commission calculation mismatch for order ${order.id}: commission=${commissionAmount}, provider=${providerAmount}, total=${totalAmount}`);
+    // Validate that user pays only provider amount (no commission added)
+    if (Math.abs(providerAmount - totalAmount) > 0.01) {
+      console.warn(`User payment mismatch for order ${order.id}: providerAmount=${providerAmount}, totalAmount=${totalAmount}`);
     }
 
-    // Validate commission percentage
-    const expectedCommission = (order.service.commission / 100) * totalAmount;
+    // Validate that provider net amount is correct (provider amount minus commission)
+    if (Math.abs(providerNetAmount - (providerAmount - commissionAmount)) > 0.01) {
+      console.warn(`Provider net amount mismatch for order ${order.id}: expected=${providerAmount - commissionAmount}, actual=${providerNetAmount}`);
+    }
+
+    // Validate fixed commission per service (not percentage-based)
+    const expectedCommission = (order.service.commission || 0) * order.quantity;
     if (Math.abs(commissionAmount - expectedCommission) > 0.01) {
-      console.warn(`Commission percentage mismatch for order ${order.id}: expected=${expectedCommission}, actual=${commissionAmount}`);
+      console.warn(`Fixed commission mismatch for order ${order.id}: expected=${expectedCommission}, actual=${commissionAmount}`);
     }
+
+    console.log(`✅ Financial flow validation for order ${order.id}:`);
+    console.log(`   User pays: ${totalAmount} OMR`);
+    console.log(`   Provider gets: ${providerNetAmount} OMR (${providerAmount} - ${commissionAmount})`);
+    console.log(`   Admin gets: ${commissionAmount} OMR`);
   }
 
   /**
@@ -1030,17 +1046,17 @@ export class InvoicesService {
         id,
         isDeleted: true
       },
-              include: {
-          order: {
-            select: {
-              id: true,
-              status: true,
-              commissionAmount: true,
-              providerAmount: true,
-              totalAmount: true
-            }
+      include: {
+        order: {
+          select: {
+            id: true,
+            status: true,
+            commissionAmount: true,
+            providerAmount: true,
+            totalAmount: true
           }
         }
+      }
     });
 
     if (!invoice) {

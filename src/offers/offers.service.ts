@@ -165,7 +165,7 @@ export class OffersService {
     return offer;
   }
 
-  async findAll(providerId?: number, serviceId?: number, activeOnly: boolean = true) {
+  async findAll(providerId?: number, serviceId?: number, activeOnly: boolean = true, userState?: string, userRole?: string) {
     const where: any = {};
 
     if (providerId) {
@@ -182,6 +182,54 @@ export class OffersService {
       where.endDate = { gt: this.getCurrentDateOnly() };
     }
 
+    // Skip provider filtering for admins
+    if (userRole !== 'ADMIN') {
+      // Always filter out offers from inactive/offline providers
+      where.provider = {
+        isActive: true,
+        onlineStatus: true
+      };
+    }
+
+    // Add state filtering through provider and service relations
+    if (userState && userState !== 'undefined' && userRole !== 'ADMIN') {
+      where.AND = [
+        {
+          provider: {
+            isActive: true,
+            onlineStatus: true
+          }
+        },
+        {
+          OR: [
+            {
+              provider: {
+                state: userState
+              }
+            },
+            {
+              service: {
+                OR: [
+                  {
+                    // For Khabeer services, check service's direct state
+                    serviceType: 'KHABEER',
+                    state: userState
+                  },
+                  {
+                    // For normal services, check category's state
+                    serviceType: 'NORMAL',
+                    category: {
+                      state: userState
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ];
+    }
+
     const offers = await this.prisma.offer.findMany({
       where,
       include: {
@@ -190,7 +238,8 @@ export class OffersService {
             id: true,
             name: true,
             image: true,
-            isVerified: true
+            isVerified: true,
+            state: true
           }
         },
         service: {
@@ -198,7 +247,8 @@ export class OffersService {
             id: true,
             title: true,
             description: true,
-            image: true
+            image: true,
+            state: true
           }
         }
       },
@@ -333,7 +383,7 @@ export class OffersService {
     return { message: 'Offer deleted successfully' };
   }
 
-  async getActiveOffers(limit: number = 20) {
+  async getActiveOffers(limit: number = 20, userState?: string, userRole?: string) {
     console.log('🔍 Getting active offers with limit:', limit);
     const now = this.getCurrentDateOnly();
     console.log('📅 Current date (UTC):', now.toISOString());
@@ -341,8 +391,53 @@ export class OffersService {
     console.log('🌍 Timezone offset (minutes):', now.getTimezoneOffset());
     console.log('🕐 Current time (local):', now.toLocaleString());
 
-    // First, let's get all offers to debug
-    const allOffers = await this.prisma.offer.findMany({
+    const where: any = {
+      isActive: true,
+      startDate: { lte: now },
+      endDate: { gt: now }
+    };
+
+    // Skip provider filtering for admins
+    if (userRole !== 'ADMIN') {
+      where.provider = {
+        isVerified: true,
+        isActive: true,
+        onlineStatus: true
+      };
+    }
+
+    // Add state filtering
+    if (userState && userState !== 'undefined' && userRole !== 'ADMIN') {
+      where.OR = [
+        {
+          provider: {
+            ...where.provider,
+            state: userState
+          }
+        },
+        {
+          service: {
+            OR: [
+              {
+                // For Khabeer services, check service's direct state
+                serviceType: 'KHABEER',
+                state: userState
+              },
+              {
+                // For normal services, check category's state
+                serviceType: 'NORMAL',
+                category: {
+                  state: userState
+                }
+              }
+            ]
+          }
+        }
+      ];
+    }
+
+    const offers = await this.prisma.offer.findMany({
+      where,
       include: {
         provider: {
           select: {
@@ -350,7 +445,7 @@ export class OffersService {
             name: true,
             image: true,
             isVerified: true,
-            isActive: true
+            state: true
           }
         },
         service: {
@@ -358,56 +453,8 @@ export class OffersService {
             id: true,
             title: true,
             description: true,
-            image: true
-          }
-        }
-      }
-    });
-
-    console.log('📊 Total offers in database:', allOffers.length);
-    console.log('📋 All offers:', allOffers.map(o => ({
-      id: o.id,
-      providerId: o.providerId,
-      serviceId: o.serviceId,
-      isActive: o.isActive,
-      startDate: o.startDate,
-      endDate: o.endDate,
-      startDateLocal: o.startDate.toString(),
-      endDateLocal: o.endDate.toString(),
-      startDateISO: o.startDate.toISOString(),
-      endDateISO: o.endDate.toISOString(),
-      providerVerified: o.provider.isVerified,
-      providerActive: o.provider.isActive,
-      // Check each filter
-      startDateCheck: o.startDate <= now,
-      endDateCheck: o.endDate > now
-    })));
-
-    const offers = await this.prisma.offer.findMany({
-      where: {
-        isActive: true,
-        startDate: { lte: now },
-        endDate: { gt: now },
-        provider: {
-          isVerified: true,
-          isActive: true
-        }
-      },
-      include: {
-        provider: {
-          select: {
-            id: true,
-            name: true,
             image: true,
-            isVerified: true
-          }
-        },
-        service: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            image: true
+            state: true
           }
         }
       },
