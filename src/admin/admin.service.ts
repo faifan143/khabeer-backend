@@ -494,6 +494,7 @@ export class AdminService {
                 isVerified: true,
                 createdAt: true,
                 updatedAt: true,
+                fcm: true,
                 providerServices: {
                     include: {
                         service: {
