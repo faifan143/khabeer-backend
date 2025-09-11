@@ -27,7 +27,7 @@ export class BusinessFlowNotificationsService {
     /**
      * New order created - notify provider
      */
-    async notifyNewOrder(orderId: number, providerId: number, serviceName: string, customerName: string) {
+    async notifyNewOrder(orderId: number, providerId: number, serviceName: string, customerName: string, serviceImage?: string) {
         try {
             // Get provider details
             const provider = await this.prisma.provider.findUnique({
@@ -43,6 +43,7 @@ export class BusinessFlowNotificationsService {
             const notificationData: NotificationData = {
                 title: '🆕 New Order Received',
                 body: `You have a new order for ${serviceName} from ${customerName}`,
+                imageUrl: serviceImage, // Add service image
                 data: {
                     type: 'new_order',
                     orderId: orderId.toString(),
@@ -62,7 +63,8 @@ export class BusinessFlowNotificationsService {
             await this.simplifiedChannelService.sendToProviders(
                 notificationData.title,
                 notificationData.body,
-                notificationData.data
+                notificationData.data,
+                serviceImage // Add service image to topic notification
             );
 
             return { success: true, providerId, orderId };
@@ -75,7 +77,7 @@ export class BusinessFlowNotificationsService {
     /**
      * Order status updated - notify customer
      */
-    async notifyOrderStatusUpdate(orderId: number, customerId: number, status: string, providerName: string) {
+    async notifyOrderStatusUpdate(orderId: number, customerId: number, status: string, providerName: string, providerImage?: string) {
         try {
             // Get customer details
             const customer = await this.prisma.user.findUnique({
@@ -99,6 +101,7 @@ export class BusinessFlowNotificationsService {
             const notificationData: NotificationData = {
                 title: `📋 Order ${status}`,
                 body: `${statusMessages[status] || 'Order status updated'} by ${providerName}`,
+                imageUrl: providerImage, // Add provider image
                 data: {
                     type: 'order_status_update',
                     orderId: orderId.toString(),
@@ -118,7 +121,8 @@ export class BusinessFlowNotificationsService {
             await this.simplifiedChannelService.sendToUsers(
                 notificationData.title,
                 notificationData.body,
-                notificationData.data
+                notificationData.data,
+                providerImage // Add provider image to topic notification
             );
 
             return { success: true, customerId, orderId, status };

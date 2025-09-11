@@ -129,7 +129,8 @@ export class OrdersService {
         order.id,
         order.providerId,
         order.service.title,
-        order.user.name
+        order.user.name,
+        order.service.image // Pass service image
       );
     } catch (error) {
       console.error('Failed to send new order notification:', error);
@@ -427,7 +428,8 @@ export class OrdersService {
         updatedOrder.id,
         updatedOrder.userId,
         updatedOrder.status,
-        updatedOrder.provider.name
+        updatedOrder.provider.name,
+        updatedOrder.provider.image // Pass provider image
       );
     } catch (error) {
       console.error('Failed to send order status notification:', error);
@@ -1186,11 +1188,14 @@ export class OrdersService {
     try {
       const serviceNames = serviceBreakdown.map((s: any) => `${s.serviceTitle} (${s.quantity})`).join(', ');
       if (result.user) {
+        // Use the first service image for multiple services notification
+        const firstServiceImage = serviceBreakdown[0]?.serviceImage;
         await this.notificationsService.notifyNewOrder(
           result.order.id,
           result.order.providerId,
           serviceNames,
-          result.user.name
+          result.user.name,
+          firstServiceImage // Pass first service image
         );
       }
     } catch (error) {

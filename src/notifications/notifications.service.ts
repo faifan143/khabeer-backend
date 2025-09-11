@@ -46,6 +46,10 @@ export class NotificationsService {
 
                 const topics = this.mapTargetAudienceToTopics(targetAudienceArray);
 
+
+
+
+
                 const result = await this.simplifiedChannelService.sendNotificationToTopics(
                     topics,
                     notification.title,
@@ -65,6 +69,7 @@ export class NotificationsService {
                 });
 
                 this.logger.log(`Notification ${notification.id} sent to topics: ${topics.join(', ')}`);
+
 
                 return {
                     ...notification,

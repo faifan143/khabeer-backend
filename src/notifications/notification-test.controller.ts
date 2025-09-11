@@ -339,6 +339,61 @@ export class NotificationTestController {
         return results;
     }
 
+    // ===== IMAGE TESTING =====
+
+    @Post('test-image')
+    @ApiOperation({ summary: 'Test notification with image' })
+    @ApiResponse({ status: 200, description: 'Image notification test sent' })
+    async testImageNotification(
+        @Body() body: {
+            title?: string;
+            message?: string;
+            imageUrl?: string;
+            targetAudience: 'users' | 'providers' | 'both';
+        }
+    ) {
+        const payload = {
+            title: body.title || '🖼️ Image Test Notification',
+            body: body.message || 'Testing notification with image display',
+            imageUrl: body.imageUrl || '/uploads/test-image.png', // Default test image
+        };
+
+        console.log("[DEBUG][ImageTest] Testing with imageUrl:", payload.imageUrl);
+
+        const results: any = {};
+
+        if (body.targetAudience === 'users' || body.targetAudience === 'both') {
+            const userResult = await this.simplifiedChannelService.sendToUsers(
+                payload.title,
+                payload.body,
+                { type: 'image_test', action: 'view_test' },
+                payload.imageUrl
+            );
+            results.users = { success: userResult, method: 'topic-based' };
+        }
+
+        if (body.targetAudience === 'providers' || body.targetAudience === 'both') {
+            const providerResult = await this.simplifiedChannelService.sendToProviders(
+                payload.title,
+                payload.body,
+                { type: 'image_test', action: 'view_test' },
+                payload.imageUrl
+            );
+            results.providers = { success: providerResult, method: 'topic-based' };
+        }
+
+        return {
+            message: 'Image notification test sent',
+            payload,
+            results,
+            debugInfo: {
+                originalImageUrl: body.imageUrl,
+                processedImageUrl: payload.imageUrl,
+                baseUrl: process.env.APP_URL || 'http://localhost:3001'
+            }
+        };
+    }
+
     // ===== SYSTEM STATUS =====
 
     @Get('status')

@@ -273,9 +273,9 @@ export class FCMService {
             // Note: Firebase Admin SDK doesn't provide direct topic info
             // This is a placeholder for future implementation
             // You can implement this by tracking topic usage in your database
-            
+
             this.logger.log(`📊 Topic info requested for: ${topic}`);
-            
+
             return {
                 topic,
                 exists: true,
@@ -307,7 +307,7 @@ export class FCMService {
     async logTopicStats(): Promise<void> {
         const topics = this.getAllTopics();
         this.logger.log(`📊 Available FCM Topics: ${topics.join(', ')}`);
-        
+
         for (const topic of topics) {
             const info = await this.getTopicInfo(topic);
             this.logger.log(`📱 Topic: ${topic} | Exists: ${info.exists} | Last Message: ${info.lastMessageSent || 'Never'}`);

@@ -30,7 +30,7 @@ export class SimplifiedChannelService {
         const baseUrl = this.configService.get<string>('APP_URL') ||
           (this.configService.get<string>('NODE_ENV') == 'production' // 🔥 CRITICAL FIX: Use ConfigService
             ? 'http://31.97.71.187:3000'
-            : 'http://localhost:3001');
+            : 'http://192.168.74.2:3069');
         absoluteImageUrl = `${baseUrl}${imageUrl}`;
       }
 
@@ -68,6 +68,7 @@ export class SimplifiedChannelService {
         this.sendNotificationToTopic(topic, title, message, data, imageUrl),
       ),
     );
+
 
     return {
       success: results.every((r) => r),
