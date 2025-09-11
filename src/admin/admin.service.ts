@@ -1091,7 +1091,11 @@ export class AdminService {
                         title: true,
                         description: true,
                         commission: true,
-                        state: true
+                        category: {
+                            select: {
+                                state: true
+                            }
+                        }
                     }
                 },
                 invoice: true
@@ -1563,6 +1567,7 @@ export class AdminService {
                 include: {
                     order: {
                         include: {
+
                             user: {
                                 select: {
                                     id: true,
@@ -1600,8 +1605,8 @@ export class AdminService {
                 netAmount: invoice.totalAmount - invoice.discount,
                 paymentStatus: invoice.paymentStatus,
                 paymentMethod: invoice.paymentMethod,
+                order: invoice.order,
                 paymentDate: invoice.paymentDate,
-                order: invoice.order
             }));
         } catch (error) {
             throw error;

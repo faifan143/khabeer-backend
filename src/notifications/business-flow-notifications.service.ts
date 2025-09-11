@@ -102,14 +102,6 @@ export class BusinessFlowNotificationsService {
                 this.logger.log(`FCM notification sent to customer ${customerId} for order ${orderId}`);
             }
 
-            // Also send to users topic for general awareness
-            await this.simplifiedChannelService.sendToUsers(
-                notificationData.title,
-                notificationData.body,
-                notificationData.data,
-                providerImage
-            );
-
             return { success: true, customerId, orderId, status };
         } catch (error) {
             this.logger.error(`Failed to send order status notification: ${error.message}`);

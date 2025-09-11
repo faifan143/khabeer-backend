@@ -294,7 +294,14 @@ export class ServicesService {
       where: {
         serviceType: 'NORMAL' // Only normal services, exclude Khabeer services
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        image: true,
+        commission: true,
+        serviceType: true,
+        state: true,
         category: {
           select: {
             id: true,
