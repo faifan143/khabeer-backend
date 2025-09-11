@@ -171,6 +171,8 @@ export class ProviderServiceService {
       where.isActive = true;
     }
 
+    console.log('where => ', where);
+
     const providerServices = await this.prisma.providerService.findMany({
       where,
       include: {

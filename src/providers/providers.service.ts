@@ -217,6 +217,7 @@ export class ProvidersService {
           phone: true,
           isActive: true,
           isVerified: true,
+          onlineStatus: true,
           location: true,
           officialDocuments: true,
           createdAt: true,
@@ -1649,14 +1650,25 @@ export class ProvidersService {
     limit: number = 10,
     minRating: number = 0,
     minOrders: number = 0,
-    includeUnrated: boolean = true
+    includeUnrated: boolean = true,
+    userId?: number
   ) {
     try {
+      let user;
+      let where: any = {
+        isActive: true,
+        onlineStatus: true
+      };
+      if (userId) {
+        user = await this.prisma.user.findUnique({
+          where: { id: userId }
+        });
+        where.state = user.state;
+      }
+
       // Get all active providers with comprehensive data
       const providers = await this.prisma.provider.findMany({
-        where: {
-          isActive: true
-        },
+        where,
         include: {
           ratings: {
             select: {

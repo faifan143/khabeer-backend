@@ -237,7 +237,7 @@ export class AuthController {
       address: Array.isArray(body.address) ? body.address[0] : body.address || '',
       phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
       state: Array.isArray(body.state) ? body.state[0] : body.state || '',
-      isActive: body.isActive === 'true' || body.isActive === true,
+      isActive: true,
       officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
       description: Array.isArray(body.description) ? body.description[0] : body.description || '',
       services: this.parseServices(body.services)
@@ -279,6 +279,15 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User information retrieved' })
   async me(@Request() req) {
     return req.user;
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
+  @ApiOperation({ summary: 'Logout user and clear FCM token' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async logout(@Request() req) {
+    return this.authService.logout(req.user.userId, req.user.role);
   }
 
   @Post('upgrade-to-provider')

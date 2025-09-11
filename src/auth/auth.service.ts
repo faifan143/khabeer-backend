@@ -105,6 +105,10 @@ export class AuthService {
             if (!provider.isVerified) {
               throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
             }
+            // Check if provider is active
+            if (!provider.isActive) {
+              throw new UnauthorizedException('Your account is not active. Please contact support to activate your account.');
+            }
             const { password: _, ...result } = provider;
             return { ...result, role: 'PROVIDER' };
           }
@@ -115,6 +119,10 @@ export class AuthService {
         if (user && user.password) {
           const isPasswordValid = await bcrypt.compare(password, user.password);
           if (isPasswordValid) {
+            // Check if user is active
+            if (!user.isActive) {
+              throw new UnauthorizedException('Your account is not active. Please contact support to activate your account.');
+            }
             const { password: _, ...result } = user;
             return { ...result, role: user.role };
           }
@@ -134,6 +142,10 @@ export class AuthService {
             if (!provider.isVerified) {
               throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
             }
+            // Check if provider is active
+            if (!provider.isActive) {
+              throw new UnauthorizedException('Your account is not active. Please contact support to activate your account.');
+            }
             const { password: _, ...result } = provider;
             return { ...result, role: 'PROVIDER' };
           }
@@ -142,6 +154,10 @@ export class AuthService {
         // Also check for user by phone (if provider login failed)
         const user = await this.usersService.findByPhoneWithPassword(phone);
         if (user && await bcrypt.compare(password, user.password)) {
+          // Check if user is active
+          if (!user.isActive) {
+            throw new UnauthorizedException('Your account is not active. Please contact support to activate your account.');
+          }
           const { password: _, ...result } = user;
           return { ...result, role: user.role };
         }
@@ -292,7 +308,7 @@ export class AuthService {
           description: data.description || '',
           state: data.state || '',
           phone: data.phone || '',
-          isActive: data.isActive ?? false, // Providers start as inactive
+          isActive: data.isActive ?? true, // Providers start as inactive
           isVerified: false,
           location: null,
           officialDocuments: data.officialDocuments || undefined,
@@ -380,7 +396,7 @@ export class AuthService {
         description: providerData.description || '',
         state: user.state,
         phone: user.phone,
-        isActive: false, // Start as inactive
+        isActive: true, // Start as inactive
         isVerified: false,
         location: null,
         officialDocuments: providerData.officialDocuments || null
@@ -652,7 +668,7 @@ export class AuthService {
         if (!user.isActive && user.role !== 'ADMIN') {
           return {
             success: false,
-            message: 'Account is not active'
+            message: 'Account is not active. Please contact support to activate your account.'
           };
         }
         userData = user;
@@ -662,7 +678,14 @@ export class AuthService {
         if (!provider.isVerified) {
           return {
             success: false,
-            message: 'Provider account is not verified'
+            message: 'Provider account is not verified. Please wait for admin verification.'
+          };
+        }
+        // Check if provider is active
+        if (!provider.isActive) {
+          return {
+            success: false,
+            message: 'Provider account is not active. Please contact support to activate your account.'
           };
         }
         userData = provider;
@@ -965,7 +988,7 @@ export class AuthService {
           description: registerData.description || '',
           state: registerData.state || '',
           phone: phoneNumber,
-          isActive: registerData.isActive ?? false,
+          isActive: registerData.isActive ?? true,
           isVerified: false,
           location: null,
           officialDocuments: registerData.officialDocuments || undefined,
@@ -1088,7 +1111,7 @@ export class AuthService {
           description: registerData.description || '',
           state: registerData.state || '',
           phone: phoneNumber,
-          isActive: registerData.isActive ?? false, // Providers start as inactive
+          isActive: registerData.isActive ?? true, // Providers start as inactive
           isVerified: false,
           location: null,
           officialDocuments: registerData.officialDocuments || undefined,
@@ -1177,6 +1200,30 @@ export class AuthService {
       return {
         success: false,
         message: 'Error clearing registration data'
+      };
+    }
+  }
+
+  /**
+   * Logout user by clearing FCM token
+   */
+  async logout(userId: number, userRole: string): Promise<{ success: boolean; message: string }> {
+    try {
+      if (userRole === 'PROVIDER') {
+        await this.providersService.updateFCMToken(userId, "");
+      } else if (userRole === 'USER') {
+        await this.usersService.updateFCMToken(userId, "");
+      }
+
+      return {
+        success: true,
+        message: 'Logged out successfully'
+      };
+    } catch (error) {
+      console.error('Logout error:', error);
+      return {
+        success: false,
+        message: 'Logout failed'
       };
     }
   }

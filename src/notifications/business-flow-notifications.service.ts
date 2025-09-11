@@ -40,32 +40,17 @@ export class BusinessFlowNotificationsService {
                 return;
             }
 
-            const notificationData: NotificationData = {
-                title: '🆕 New Order Received',
-                body: `You have a new order for ${serviceName} from ${customerName}`,
-                imageUrl: serviceImage, // Add service image
-                data: {
-                    type: 'new_order',
-                    orderId: orderId.toString(),
-                    serviceName,
-                    customerName,
-                    action: 'view_order'
-                }
-            };
-
-            // Send to specific provider via FCM token (if available)
+            // Send data-only notification to specific provider via FCM token (if available)
             if (provider.fcm) {
-                await this.simpleFCMService.sendToProvider(providerId, notificationData);
-                this.logger.log(`FCM notification sent to provider ${providerId} for order ${orderId}`);
+                await this.simpleFCMService.sendNewOrderRequestToProvider(
+                    providerId,
+                    orderId.toString(),
+                    customerName,
+                    '123456789', // You may want to get actual phone from order data
+                    serviceName
+                );
+                this.logger.log(`FCM new order request sent to provider ${providerId} for order ${orderId}`);
             }
-
-            // Also send to providers topic for general awareness
-            await this.simplifiedChannelService.sendToProviders(
-                notificationData.title,
-                notificationData.body,
-                notificationData.data,
-                serviceImage // Add service image to topic notification
-            );
 
             return { success: true, providerId, orderId };
         } catch (error) {
@@ -91,17 +76,17 @@ export class BusinessFlowNotificationsService {
             }
 
             const statusMessages = {
-                'ACCEPTED': 'Your order has been accepted',
-                'IN_PROGRESS': 'Your order is now in progress',
-                'COMPLETED': 'Your order has been completed',
-                'CANCELLED': 'Your order has been cancelled',
-                'REJECTED': 'Your order has been rejected'
+                'ACCEPTED': 'تم قبول طلبك',
+                'IN_PROGRESS': 'طلبك قيد التنفيذ',
+                'COMPLETED': 'تم إنجاز طلبك',
+                'CANCELLED': 'تم إلغاء طلبك',
+                'REJECTED': 'تم رفض طلبك'
             };
 
             const notificationData: NotificationData = {
-                title: `📋 Order ${status}`,
-                body: `${statusMessages[status] || 'Order status updated'} by ${providerName}`,
-                imageUrl: providerImage, // Add provider image
+                title: `تحديث حالة الطلب`,
+                body: `${statusMessages[status] || 'تم تحديث حالة الطلب'} من ${providerName}`,
+                imageUrl: providerImage,
                 data: {
                     type: 'order_status_update',
                     orderId: orderId.toString(),
@@ -122,7 +107,7 @@ export class BusinessFlowNotificationsService {
                 notificationData.title,
                 notificationData.body,
                 notificationData.data,
-                providerImage // Add provider image to topic notification
+                providerImage
             );
 
             return { success: true, customerId, orderId, status };

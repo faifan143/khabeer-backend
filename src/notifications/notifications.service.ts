@@ -55,7 +55,6 @@ export class NotificationsService {
                     notification.title,
                     notification.message,
                     notification.data as Record<string, string>,
-                    notification.imageUrl || undefined
                 );
 
                 // Update notification status based on sending result
@@ -136,7 +135,6 @@ export class NotificationsService {
                 notification.title,
                 notification.message,
                 notification.data as Record<string, string>,
-                notification.imageUrl || undefined
             );
 
             // Update notification status

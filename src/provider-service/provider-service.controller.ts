@@ -35,13 +35,14 @@ export class ProviderServiceController {
 
     @Get()
     async findAll(
+        @Request() req,
         @Query('providerId') providerId?: string,
         @Query('activeOnly') activeOnly?: string
     ) {
         const providerIdNum = providerId ? parseInt(providerId, 10) : undefined;
         const activeOnlyBool = activeOnly === 'true';
 
-        return this.providerServiceService.findAll(providerIdNum, activeOnlyBool);
+        return this.providerServiceService.findAll(req.user.userId, activeOnlyBool);
     }
 
     @Get('provider/:providerId')

@@ -17,9 +17,11 @@ export class SmsService {
    * Generate a random OTP
    */
   private generateOtp(length: number = 6): string {
-    return Math.floor(Math.random() * Math.pow(10, length))
+    const otp = Math.floor(Math.random() * Math.pow(10, length))
       .toString()
       .padStart(length, '0');
+    console.log('otp => ', otp);
+    return otp;
   }
 
   /**

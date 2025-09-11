@@ -4,11 +4,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as admin from 'firebase-admin';
 
 export interface FCMNotificationPayload {
-    title: string;
-    body: string;
+    title?: string;
+    body?: string;
     imageUrl?: string;
     data?: Record<string, string>;
     type?: string;
+    isDataOnly?: boolean; // For new order requests - data only, no notification
 }
 
 export interface FCMResult {
@@ -122,27 +123,31 @@ export class SimpleFCMService {
 
             const message: admin.messaging.Message = {
                 token: provider.fcm,
-                notification: {
+                data: payload.data,
+            };
+
+            // Add notification only if not data-only
+            if (!payload.isDataOnly && payload.title && payload.body) {
+                message.notification = {
                     title: payload.title,
                     body: payload.body,
                     imageUrl: payload.imageUrl,
-                },
-                data: payload.data,
-                android: {
+                };
+                message.android = {
                     notification: {
                         sound: 'default',
                         priority: 'high',
                     },
-                },
-                apns: {
+                };
+                message.apns = {
                     payload: {
                         aps: {
                             sound: 'default',
                             badge: 1,
                         },
                     },
-                },
-            };
+                };
+            }
 
             const response = await this.firebaseApp.messaging().send(message);
 
@@ -154,6 +159,57 @@ export class SimpleFCMService {
             };
         } catch (error) {
             this.logger.error(`Failed to send message to provider ${providerId}:`, error);
+
+            return {
+                success: false,
+                error: error.message,
+            };
+        }
+    }
+
+    /**
+     * Send new order request notification to provider (data-only)
+     */
+    async sendNewOrderRequestToProvider(providerId: number, orderId: string, callerName: string, callerPhone: string, serviceType: string): Promise<FCMResult> {
+        try {
+            if (!this.firebaseApp) {
+                throw new Error('Firebase Admin SDK not initialized');
+            }
+
+            // Get provider's FCM token
+            const provider = await this.prisma.provider.findUnique({
+                where: { id: providerId },
+                select: { fcm: true, name: true }
+            });
+
+            if (!provider || !provider.fcm) {
+                return {
+                    success: false,
+                    error: 'Provider not found or no FCM token available'
+                };
+            }
+
+            const message: admin.messaging.Message = {
+                token: provider.fcm,
+                data: {
+                    type: 'call',
+                    caller_name: callerName,
+                    caller_phone: callerPhone,
+                    order_id: orderId,
+                    service_type: serviceType
+                }
+            };
+
+            const response = await this.firebaseApp.messaging().send(message);
+
+            this.logger.log(`New order request sent to provider ${provider.name} (ID: ${providerId}), Message ID: ${response}`);
+
+            return {
+                success: true,
+                messageId: response,
+            };
+        } catch (error) {
+            this.logger.error(`Failed to send new order request to provider ${providerId}:`, error);
 
             return {
                 success: false,

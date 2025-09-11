@@ -58,7 +58,7 @@ export class ProvidersController {
   }
 
   @Get(':id/status')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async getStatus(@Param('id') id: string, @Request() req) {
     // Providers can only access their own status, admins can access any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -156,7 +156,7 @@ export class ProvidersController {
   }
 
   @Get('online-status')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async getOnlineStatus(@Request() req) {
     // Get provider ID from JWT token
     const providerId = req.user.userId;
@@ -165,7 +165,7 @@ export class ProvidersController {
   }
 
   @Put('online-status')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async updateOnlineStatus(
     @Body() data: UpdateOnlineStatusDto,
     @Request() req
@@ -176,7 +176,7 @@ export class ProvidersController {
   }
 
   @Put(':id')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './uploads',
@@ -212,7 +212,7 @@ export class ProvidersController {
   }
 
   @Put(':id/status')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async updateStatus(
     @Param('id') id: string,
     @Body() data: UpdateStatusDto,
@@ -232,7 +232,7 @@ export class ProvidersController {
   }
 
   @Get(':id/services')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async getProviderServices(@Param('id') id: string, @Request() req) {
     // Providers can only access their own services, admins can access any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -242,7 +242,7 @@ export class ProvidersController {
   }
 
   @Get(':id/categories/:categoryId/services')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async getCategoryServicesByProviderId(
     @Param('id', ParseIntPipe) providerId: number,
     @Param('categoryId', ParseIntPipe) categoryId: number
@@ -251,7 +251,7 @@ export class ProvidersController {
   }
 
   @Post(':id/services')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async addServices(
     @Param('id') id: string,
     @Body() body: { serviceIds: number[] },
@@ -265,7 +265,7 @@ export class ProvidersController {
   }
 
   @Delete(':id/services')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async removeServices(
     @Param('id') id: string,
     @Body() body: { serviceIds: number[] },
@@ -279,7 +279,7 @@ export class ProvidersController {
   }
 
   @Get(':id/orders')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async getProviderOrders(@Param('id') id: string, @Request() req) {
     // Providers can only access their own orders, admins can access any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -289,7 +289,7 @@ export class ProvidersController {
   }
 
   @Get(':id/orders/pending')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async getProviderPendingOrders(@Param('id') id: string, @Request() req) {
     // Providers can only access their own orders, admins can access any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -299,7 +299,7 @@ export class ProvidersController {
   }
 
   @Get(':id/orders/pending/count')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async getProviderStats(@Param('id') id: string, @Request() req) {
     // Providers can only access their own stats, admins can access any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -309,7 +309,7 @@ export class ProvidersController {
   }
 
   @Get(':id/orders/:status')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async getProviderOrdersByStatus(
     @Param('id') id: string,
     @Param('status') status: string,
@@ -323,7 +323,7 @@ export class ProvidersController {
   }
 
   @Get(':id/ratings')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async getProviderRatings(@Param('id') id: string, @Request() req) {
     // Providers can only access their own ratings, admins can access any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -333,7 +333,7 @@ export class ProvidersController {
   }
 
   @Get(':id/documents')
-  @Roles('PROVIDER', 'ADMIN')
+  @Roles('PROVIDER', 'ADMIN', 'USER')
   async getProviderDocuments(@Param('id') id: string, @Request() req) {
     // Providers can only access their own documents, admins can access any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -344,6 +344,7 @@ export class ProvidersController {
 
   @Get('top/comprehensive')
   async getTopProviders(
+    @Request() req,
     @Query('limit') limit?: string,
     @Query('minRating') minRating?: string,
     @Query('minOrders') minOrders?: string,
@@ -371,7 +372,8 @@ export class ProvidersController {
       limitNum,
       minRatingNum,
       minOrdersNum,
-      includeUnratedBool
+      includeUnratedBool,
+      req.user.userId
     );
   }
 }

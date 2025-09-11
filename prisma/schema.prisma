@@ -40,7 +40,7 @@ model Provider {
   description       String
   state             String
   phone             String                @unique
-  isActive          Boolean               @default(false)
+  isActive          Boolean               @default(true)
   onlineStatus      Boolean               @default(true)
   officialDocuments String?
   isVerified        Boolean               @default(false)
@@ -68,7 +68,7 @@ model User {
   address           String
   phone             String           @unique
   state             String
-  isActive          Boolean          @default(false)
+  isActive          Boolean          @default(true)
   officialDocuments String?
   email             String?          @unique
   password          String
