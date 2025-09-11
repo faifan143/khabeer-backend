@@ -300,6 +300,15 @@ model AdBanner {
   updatedAt    DateTime @updatedAt
 }
 
+model UpdateAudit {
+  id                Int      @id @default(autoincrement())
+  version           String   @unique
+  requiresUpdate    Boolean  @default(false)
+  description       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
 model Notification {
   id               Int       @id @default(autoincrement())
   title            String

@@ -22,6 +22,7 @@ import { AdminModule } from './admin/admin.module';
 import { LocationTrackingModule } from './location-tracking/location-tracking.module';
 import { SmsModule } from './sms/sms.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { UpdateAuditModule } from './update-audit/update-audit.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     LocationTrackingModule,
     SmsModule,
     NotificationsModule,
+    UpdateAuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],
