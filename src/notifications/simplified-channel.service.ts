@@ -28,7 +28,7 @@ export class SimplifiedChannelService {
       if (imageUrl && !imageUrl.startsWith('http')) {
         // Get base URL from config or use default
         const baseUrl = this.configService.get<string>('APP_URL') ||
-          (this.configService.get<string>('NODE_ENV') === 'production' // 🔥 CRITICAL FIX: Use ConfigService
+          (this.configService.get<string>('NODE_ENV') == 'production' // 🔥 CRITICAL FIX: Use ConfigService
             ? 'http://31.97.71.187:3000'
             : 'http://localhost:3001');
         absoluteImageUrl = `${baseUrl}${imageUrl}`;
