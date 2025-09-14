@@ -128,7 +128,7 @@ export class OrdersService {
       await this.notificationsService.notifyNewOrder(
         order.id,
         order.providerId,
-        order.service.title,
+        order.service.titleEn,
         order.user.name,
         order.service.image // Pass service image
       );
@@ -183,7 +183,8 @@ export class OrdersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
             commission: true,
@@ -221,7 +222,7 @@ export class OrdersService {
         services = [
           {
             serviceId: service.id,
-            serviceTitle: service.title,
+            serviceTitle: service.titleEn,
             serviceDescription: service.description,
             serviceImage: service.image,
             quantity: order.quantity,
@@ -279,7 +280,8 @@ export class OrdersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
             commission: true,
@@ -317,7 +319,7 @@ export class OrdersService {
       services = [
         {
           serviceId: service.id,
-          serviceTitle: service.title,
+          serviceTitle: service.titleEn,
           serviceDescription: service.description,
           serviceImage: service.image,
           quantity: order.quantity,
@@ -413,7 +415,8 @@ export class OrdersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true
           }
@@ -486,7 +489,8 @@ export class OrdersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true
           }
@@ -874,7 +878,7 @@ export class OrdersService {
     const serviceData = {};
 
     orders.forEach(order => {
-      const serviceName = order.service.title;
+      const serviceName = order.service.titleEn;
       if (!serviceData[serviceName]) {
         serviceData[serviceName] = {
           service: serviceName,
@@ -975,7 +979,7 @@ export class OrdersService {
       return [
         {
           serviceId: service.id,
-          serviceTitle: service.title,
+          serviceTitle: service.titleEn,
           serviceDescription: service.description,
           serviceImage: service.image,
           quantity: 1,
@@ -996,7 +1000,7 @@ export class OrdersService {
       return [
         {
           serviceId: service.id,
-          serviceTitle: service.title,
+          serviceTitle: service.titleEn,
           serviceDescription: service.description,
           serviceImage: service.image,
           quantity: order.quantity,
@@ -1030,7 +1034,8 @@ export class OrdersService {
       where: { id: { in: serviceIds } },
       select: {
         id: true,
-        title: true,
+        titleAr: true,
+        titleEn: true,
         description: true,
         image: true,
         commission: true,
@@ -1045,7 +1050,7 @@ export class OrdersService {
     // Check if all services can be ordered (only NORMAL services can be ordered)
     for (const service of services) {
       if (service.serviceType !== 'NORMAL') {
-        throw new BadRequestException(`Service "${service.title}" cannot be ordered directly. Please contact via WhatsApp.`);
+        throw new BadRequestException(`Service "${service.titleEn}" cannot be ordered directly. Please contact via WhatsApp.`);
       }
     }
 
@@ -1096,7 +1101,7 @@ export class OrdersService {
 
       serviceBreakdown.push({
         serviceId: service.id,
-        serviceTitle: service.title,
+        serviceTitle: service.titleEn,
         serviceDescription: service.description,
         serviceImage: service.image,
         quantity,

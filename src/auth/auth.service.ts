@@ -7,6 +7,7 @@ import { SmsService } from '../sms/sms.service';
 import { UsersService } from '../users/users.service';
 import { DirectPhoneLoginDto, PhoneLoginDto, PhoneLoginResponseDto } from './dto/phone-login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 // Simple in-memory cache for registration data (in production, use Redis or database)
 interface RegistrationCache {
@@ -19,13 +20,26 @@ interface RegistrationCache {
 @Injectable()
 export class AuthService {
   private registrationCache: RegistrationCache = {};
-
   constructor(
     private readonly usersService: UsersService,
     private readonly providersService: ProvidersService,
     private readonly smsService: SmsService,
     private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService
   ) { }
+
+  async getTermsAndConditions() {
+
+    const terms = await this.prisma.systemSettings.findUnique({
+      where: {
+        key: 'terms_and_conditions'
+      }
+    });
+    return {
+      terms: terms?.value,
+      privacy: terms?.value
+    };
+  }
 
   /**
    * Store registration data in cache with expiration
@@ -250,21 +264,21 @@ export class AuthService {
       }
 
       if (data.registerType === 'provider') {
-        // Provider registration - email is required
-        if (!data.email) {
-          throw new BadRequestException('Email is required for provider registration');
+        // Email is optional for providers
+        // Validate email format only if email is provided
+        if (data.email) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(data.email)) {
+            throw new BadRequestException('Invalid email format');
+          }
         }
 
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(data.email)) {
-          throw new BadRequestException('Invalid email format');
-        }
-
-        // Check if provider already exists
-        const existingProvider = await this.providersService.findByEmail(data.email);
-        if (existingProvider) {
-          throw new ConflictException('Provider with this email already exists');
+        // Check if provider already exists (only if email is provided)
+        if (data.email) {
+          const existingProvider = await this.providersService.findByEmail(data.email);
+          if (existingProvider) {
+            throw new ConflictException('Provider with this email already exists');
+          }
         }
       } else {
         // User registration - phone is required
@@ -302,7 +316,7 @@ export class AuthService {
         // Create provider
         const providerData = {
           name: data.name,
-          email: data.email!, // Email is required for providers
+          email: data.email || undefined, // Email is optional for providers
           password: hashedPassword,
           image: data.image || '',
           description: data.description || '',
@@ -312,11 +326,11 @@ export class AuthService {
           isVerified: false,
           location: null,
           officialDocuments: data.officialDocuments || undefined,
-          services: (data as any).services || [], // Include services with prices for linking
+          categoryIds: (data as any).categoryIds?.map((id: any) => Number(id)) || [], // Include categories for linking
           fcm: data.fcm || undefined // Include FCM token
         };
 
-        const provider = await this.providersService.registerProviderWithServices(providerData);
+        const provider = await this.providersService.registerProviderWithCategories(providerData);
 
         // Return provider data without password
         const { password, ...result } = provider as any;
@@ -845,10 +859,7 @@ export class AuthService {
         throw new BadRequestException('Password and name are required');
       }
 
-      // For providers, email is required
-      if (registerData.registerType === 'provider' && !registerData.email) {
-        throw new BadRequestException('Email is required for provider registration');
-      }
+      // Email is optional for providers
 
       // Validate email format (only if email is provided)
       if (registerData.email) {
@@ -992,10 +1003,10 @@ export class AuthService {
           isVerified: false,
           location: null,
           officialDocuments: registerData.officialDocuments || undefined,
-          services: (registerData as any).services || []
+          categoryIds: (registerData as any).categoryIds?.map((id: any) => Number(id)) || []
         };
 
-        const provider = await this.providersService.registerProviderWithServices(providerData);
+        const provider = await this.providersService.registerProviderWithCategories(providerData);
 
         // Return provider data without password
         const { password, ...result } = provider as any;
@@ -1060,10 +1071,7 @@ export class AuthService {
         throw new BadRequestException('Password and name are required');
       }
 
-      // For providers, email is required
-      if (registerData.registerType === 'provider' && !registerData.email) {
-        throw new BadRequestException('Email is required for provider registration');
-      }
+      // Email is optional for providers
 
       // Check if user already exists (double-check, only if email is provided)
       if (registerData.email) {
@@ -1115,16 +1123,16 @@ export class AuthService {
           isVerified: false,
           location: null,
           officialDocuments: registerData.officialDocuments || undefined,
-          services: (registerData as any).services || []
+          categoryIds: (registerData as any).categoryIds?.map((id: any) => Number(id)) || []
         };
 
         console.log('🔍 Provider registration data:', {
           name: providerData.name,
-          services: providerData.services,
-          servicesCount: providerData.services?.length || 0
+          categoryIds: providerData.categoryIds,
+          categoryIdsCount: providerData.categoryIds?.length || 0
         });
 
-        const provider = await this.providersService.registerProviderWithServices(providerData);
+        const provider = await this.providersService.registerProviderWithCategories(providerData);
 
         // Return provider data without password
         const { password, ...result } = provider as any;

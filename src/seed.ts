@@ -30,7 +30,8 @@ async function bootstrap() {
   // Seed a service
   const service = await servicesService.create({
     image: 'http://localhost:3000/uploads/service.png',
-    title: 'Test Service',
+    titleAr: 'خدمة تجريبية',
+    titleEn: 'Test Service',
     description: 'Service Desc',
     commission: 10,
     whatsapp: '123456789',
@@ -49,14 +50,14 @@ async function bootstrap() {
     state: 'active',
   });
 
-  // Seed a provider with services
-  await providersService.registerProviderWithServices({
+  // Seed a provider with categories
+  await providersService.registerProviderWithCategories({
     name: 'Seed Provider',
     image: 'http://localhost:3000/uploads/provider.png',
     description: 'Seed Provider Desc',
     state: 'active',
     phone: '0987654321',
-    serviceIds: [service.id],
+    categoryIds: [category.id],
   });
 
   await app.close();

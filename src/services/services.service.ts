@@ -7,90 +7,46 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 export class ServicesService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findAll(serviceType?: string, userState?: string, userRole?: string) {
+  async findAll(userState?: string, userRole?: string, userId?: number) {
     const where: any = {};
-    if (serviceType) {
-      where.serviceType = serviceType;
+
+    // For providers, filter by their registered categories
+    if (userRole === 'PROVIDER' && userId) {
+      const providerCategories = await this.prisma.providerCategory.findMany({
+        where: {
+          providerId: userId,
+          isActive: true
+        },
+        select: { categoryId: true }
+      });
+
+      const categoryIds = providerCategories.map(pc => pc.categoryId);
+
+      if (categoryIds.length > 0) {
+        where.categoryId = { in: categoryIds };
+      } else {
+        // If provider has no categories, return empty array
+        where.id = { in: [] };
+      }
     }
 
-    // For state filtering, we need different logic based on service type
+    // For state filtering, check category's state
     if (userState && userState !== 'undefined' && userRole !== 'ADMIN') {
-      if (serviceType === 'KHABEER') {
-        // For Khabeer services, check service's direct state (no provider filtering needed)
-        where.state = userState;
-      } else if (serviceType === 'NORMAL') {
-        // For normal services, check category's state and provider status
-        where.category = {
-          state: userState
-        };
-        // Add provider filtering for normal services
-        if (userRole !== 'ADMIN') {
-          where.providerServices = {
-            some: {
-              provider: {
-                isActive: true,
-                onlineStatus: true
-              }
-            }
-          };
-        }
-      } else {
-        // When no serviceType specified, use OR condition for both types
-        where.OR = [
-          {
-            // Normal services: check category's state and provider status
-            serviceType: 'NORMAL',
-            category: {
-              state: userState
-            },
-            providerServices: {
-              some: {
-                provider: {
-                  isActive: true,
-                  onlineStatus: true
-                }
-              }
-            }
-          },
-          {
-            // Khabeer services: check service's direct state (no provider filtering)
-            serviceType: 'KHABEER',
-            state: userState
+      where.category = {
+        state: userState
+      };
+    }
+
+    // For non-providers, filter out services from inactive/offline providers
+    if (userRole !== 'ADMIN' && userRole !== 'PROVIDER') {
+      where.providerServices = {
+        some: {
+          provider: {
+            isActive: true,
+            onlineStatus: true
           }
-        ];
-      }
-    } else {
-      // When no state filtering, still apply provider filtering for normal services
-      if (userRole !== 'ADMIN') {
-        if (serviceType === 'NORMAL') {
-          where.providerServices = {
-            some: {
-              provider: {
-                isActive: true,
-                onlineStatus: true
-              }
-            }
-          };
-        } else if (!serviceType) {
-          // When no serviceType specified, only apply provider filtering to normal services
-          where.OR = [
-            {
-              serviceType: 'NORMAL',
-              providerServices: {
-                some: {
-                  provider: {
-                    isActive: true,
-                    onlineStatus: true
-                  }
-                }
-              }
-            },
-            {
-              serviceType: 'KHABEER'
-            }
-          ];
         }
-      }
+      };
     }
 
     return this.prisma.service.findMany({
@@ -103,8 +59,7 @@ export class ServicesService {
 
   async findByCategory(categoryId: number, userState?: string, userRole?: string) {
     const where: any = {
-      categoryId,
-      serviceType: 'NORMAL' // Only normal services can be in categories
+      categoryId
     };
 
     // Skip provider filtering for admins
@@ -127,6 +82,7 @@ export class ServicesService {
         state: userState
       };
     }
+
     return this.prisma.service.findMany({
       where,
       include: {
@@ -135,38 +91,38 @@ export class ServicesService {
     });
   }
 
-
-  async findByKhabeer(userState?: string, userRole?: string) {
-    const where: any = {
-      serviceType: 'KHABEER'
-    };
-
-    // Khabeer services don't need provider filtering - they are direct services
-    // For Khabeer services, check service's direct state
-    if (userState && userState !== 'undefined' && userRole !== 'ADMIN') {
-      where.state = userState;
-    }
-    return this.prisma.service.findMany({
-      where,
-    });
-  }
-
   async findById(id: number) {
-    return this.prisma.service.findUnique({ where: { id } });
+    return this.prisma.service.findUnique({
+      where: { id },
+      include: {
+        category: true
+      }
+    });
   }
 
   async create(data: CreateServiceDto & { image: string }) {
     // Validate service type constraints
     this.validateServiceTypeConstraints(data);
 
-    return this.prisma.service.create({ data });
+    return this.prisma.service.create({
+      data,
+      include: {
+        category: true
+      }
+    });
   }
 
   async update(id: number, data: UpdateServiceDto & { image?: string }) {
     // Validate service type constraints
     this.validateServiceTypeConstraints(data);
 
-    return this.prisma.service.update({ where: { id }, data });
+    return this.prisma.service.update({
+      where: { id },
+      data,
+      include: {
+        category: true
+      }
+    });
   }
 
   async remove(id: number) {
@@ -219,53 +175,38 @@ export class ServicesService {
     }
 
     if (serviceType === 'KHABEER') {
-      if (categoryId !== undefined && categoryId !== null) {
-        throw new BadRequestException('KHABEER services cannot have a categoryId');
+      if (!categoryId) {
+        throw new BadRequestException('KHABEER services require a categoryId');
       }
       // Commission is optional for Khabeer services
     }
   }
 
-  // Get only normal services (for provider assignment)
-  async findNormalServices(userState?: string, userRole?: string) {
-    const where: any = { serviceType: 'NORMAL' };
-
-    // Skip provider filtering for admins
-    if (userRole !== 'ADMIN') {
-      // Always filter out services from inactive/offline providers
-      where.providerServices = {
-        some: {
-          provider: {
-            isActive: true,
-            onlineStatus: true
+  // Get all public services with full details and categories
+  async findAllPublic() {
+    return this.prisma.service.findMany({
+      select: {
+        id: true,
+        titleAr: true,
+        titleEn: true,
+        description: true,
+        image: true,
+        commission: true,
+        serviceType: true,
+        category: {
+          select: {
+            id: true,
+            titleAr: true,
+            titleEn: true,
+            image: true,
+            state: true
           }
         }
-      };
-    }
-
-    // For normal services, check the category's state
-    if (userState && userState !== 'undefined' && userRole !== 'ADMIN') {
-      where.category = {
-        state: userState
-      };
-    }
-    return this.prisma.service.findMany({
-      where,
-      include: {
-        category: true
+      },
+      orderBy: {
+        id: 'asc'
       }
     });
-  }
-
-  // Get only Khabeer services (for direct contact)
-  async findKhabeerServices(userState?: string, userRole?: string) {
-    const where: any = { serviceType: 'KHABEER' };
-
-    // Khabeer services don't need provider filtering - they are direct services
-    if (userState && userState !== 'undefined' && userRole !== 'ADMIN') {
-      where.state = userState;
-    }
-    return this.prisma.service.findMany({ where });
   }
 
   // Check if service can be assigned to providers
@@ -286,35 +227,5 @@ export class ServicesService {
     });
 
     return service?.serviceType === 'NORMAL';
-  }
-
-  // Get all public services with full details and categories (excluding Khabeer services)
-  async findAllPublic() {
-    return this.prisma.service.findMany({
-      where: {
-        serviceType: 'NORMAL' // Only normal services, exclude Khabeer services
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        image: true,
-        commission: true,
-        serviceType: true,
-        state: true,
-        category: {
-          select: {
-            id: true,
-            titleAr: true,
-            titleEn: true,
-            image: true,
-            state: true
-          }
-        }
-      },
-      orderBy: {
-        id: 'asc'
-      }
-    });
   }
 }

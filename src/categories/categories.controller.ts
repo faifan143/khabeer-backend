@@ -9,16 +9,23 @@ import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { Public } from 'src/auth/public.decorator';
 
 @Controller('categories')
-@UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class CategoriesController {
   constructor(
     private readonly categoriesService: CategoriesService,
     private readonly filesService: FilesService
   ) { }
 
+  @Get('public')
+  @Public()
+  async findAllPublic() {
+    return this.categoriesService.findAllPublic();
+  }
+
   @Get()
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('USER', 'PROVIDER', 'ADMIN')
   async findAll(@Request() req) {
     const userState = req.user.state;
@@ -26,12 +33,14 @@ export class CategoriesController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('USER', 'PROVIDER', 'ADMIN')
   async findOne(@Param('id') id: string) {
     return this.categoriesService.findById(Number(id));
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
@@ -56,6 +65,7 @@ export class CategoriesController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
@@ -82,6 +92,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('ADMIN')
   async remove(@Param('id') id: string) {
     return this.categoriesService.remove(Number(id));

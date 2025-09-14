@@ -1,0 +1,610 @@
+{
+  "info": {
+    "name": "Khabeer Category-Based Provider Flow",
+    "description": "Test collection for the new category-based provider registration and service filtering. Note: For auth registration, use /register/initiate first, then /register/complete with OTP.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoryId1",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "categoryId2",
+      "value": "2",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Get Public Categories (No Auth Required)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/categories/public",
+          "host": ["{{baseUrl}}"],
+          "path": ["categories", "public"]
+        }
+      }
+    },
+    {
+      "name": "1. Admin Authentication",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('adminToken', response.access_token);",
+              "    console.log('Admin token saved:', response.access_token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Create Categories (Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titleAr\": \"تنظيف\",\n  \"titleEn\": \"Cleaning\",\n  \"state\": \"Jeddah\",\n  \"image\": \"https://example.com/cleaning.jpg\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/categories",
+          "host": ["{{baseUrl}}"],
+          "path": ["categories"]
+        }
+      }
+    },
+    {
+      "name": "3. Create Second Category (Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titleAr\": \"صيانة\",\n  \"titleEn\": \"Maintenance\",\n  \"state\": \"Jeddah\",\n  \"image\": \"https://example.com/maintenance.jpg\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/categories",
+          "host": ["{{baseUrl}}"],
+          "path": ["categories"]
+        }
+      }
+    },
+    {
+      "name": "4. Create Services in Categories (Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titleAr\": \"تنظيف المنزل\",\n  \"titleEn\": \"House Cleaning\",\n  \"description\": \"Professional house cleaning service\",\n  \"commission\": 10.0,\n  \"whatsapp\": \"+966501234567\",\n  \"categoryId\": 1,\n  \"serviceType\": \"NORMAL\",\n  \"image\": \"https://example.com/house-cleaning.jpg\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/services",
+          "host": ["{{baseUrl}}"],
+          "path": ["services"]
+        }
+      }
+    },
+    {
+      "name": "5. Create Second Service (Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titleAr\": \"خدمة السباكة\",\n  \"titleEn\": \"Plumbing Service\",\n  \"description\": \"Professional plumbing maintenance\",\n  \"commission\": 15.0,\n  \"whatsapp\": \"+966501234568\",\n  \"categoryId\": 2,\n  \"serviceType\": \"NORMAL\",\n  \"image\": \"https://example.com/plumbing.jpg\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/services",
+          "host": ["{{baseUrl}}"],
+          "path": ["services"]
+        }
+      }
+    },
+    {
+      "name": "6. Auth Provider Registration Initiate",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"registerType\": \"provider\",\n  \"name\": \"Auth Provider\",\n  \"email\": \"authprovider@test.com\",\n  \"password\": \"authprovider123\",\n  \"image\": \"https://example.com/auth-provider.jpg\",\n  \"description\": \"Provider registered via auth endpoint\",\n  \"state\": \"Jeddah\",\n  \"phone\": \"+966501234571\",\n  \"categoryIds\": [1, 2]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register/initiate",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register", "initiate"]
+        }
+      }
+    },
+    {
+      "name": "6b. Auth Provider Registration Complete",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phoneNumber\": \"+966501234571\",\n  \"otp\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register/complete",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register", "complete"]
+        }
+      }
+    },
+    {
+      "name": "7. Provider Registration with Categories (Direct)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Provider\",\n  \"email\": \"provider@test.com\",\n  \"password\": \"provider123\",\n  \"image\": \"https://example.com/provider.jpg\",\n  \"description\": \"Professional service provider\",\n  \"state\": \"Jeddah\",\n  \"phone\": \"+966501234569\",\n  \"categoryIds\": [1, 2]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/providers/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["providers", "register"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('providerId', response.id);",
+              "    console.log('Provider ID saved:', response.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Provider Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"provider@test.com\",\n  \"password\": \"provider123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('providerToken', response.access_token);",
+              "    console.log('Provider token saved:', response.access_token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Get Provider's Registered Categories",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{providerToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/providers/{{providerId}}/categories",
+          "host": ["{{baseUrl}}"],
+          "path": ["providers", "{{providerId}}", "categories"]
+        }
+      }
+    },
+    {
+      "name": "10. Get Services by Provider Categories (Provider View)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{providerToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/providers/{{providerId}}/services-by-categories",
+          "host": ["{{baseUrl}}"],
+          "path": ["providers", "{{providerId}}", "services-by-categories"]
+        }
+      }
+    },
+    {
+      "name": "11. Get All Services (Provider View - Should be Filtered)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{providerToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/services",
+          "host": ["{{baseUrl}}"],
+          "path": ["services"]
+        }
+      }
+    },
+    {
+      "name": "12. Get Normal Services (Provider View - Should be Filtered)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{providerToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/services/normal",
+          "host": ["{{baseUrl}}"],
+          "path": ["services", "normal"]
+        }
+      }
+    },
+    {
+      "name": "13. Get Provider Services (Provider View - Should be Filtered)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{providerToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/provider-service",
+          "host": ["{{baseUrl}}"],
+          "path": ["provider-service"]
+        }
+      }
+    },
+    {
+      "name": "14. Get My Services (Provider View - Should be Filtered)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{providerToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/provider-service/my-services",
+          "host": ["{{baseUrl}}"],
+          "path": ["provider-service", "my-services"]
+        }
+      }
+    },
+    {
+      "name": "15. Add Provider to Service (Test Category Validation)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{providerToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"serviceId\": 1,\n  \"price\": 100.0,\n  \"isActive\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/provider-service",
+          "host": ["{{baseUrl}}"],
+          "path": ["provider-service"]
+        }
+      }
+    },
+    {
+      "name": "16. Add Provider to Service from Different Category (Should Fail)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{providerToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"serviceId\": 3,\n  \"price\": 150.0,\n  \"isActive\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/provider-service",
+          "host": ["{{baseUrl}}"],
+          "path": ["provider-service"]
+        }
+      }
+    },
+    {
+      "name": "17. Add New Category to Provider",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{providerToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"categoryIds\": [3]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/providers/{{providerId}}/categories",
+          "host": ["{{baseUrl}}"],
+          "path": ["providers", "{{providerId}}", "categories"]
+        }
+      }
+    },
+    {
+      "name": "18. Remove Category from Provider",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{providerToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"categoryIds\": [2]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/providers/{{providerId}}/categories",
+          "host": ["{{baseUrl}}"],
+          "path": ["providers", "{{providerId}}", "categories"]
+        }
+      }
+    },
+    {
+      "name": "19. User Login (For Comparison)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"+966501234570\",\n  \"password\": \"user123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('userToken', response.access_token);",
+              "    console.log('User token saved:', response.access_token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "20. Get All Services (User View - Should Show All)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/services",
+          "host": ["{{baseUrl}}"],
+          "path": ["services"]
+        }
+      }
+    },
+    {
+      "name": "21. Get Services by Category (User View)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/services/category/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["services", "category", "1"]
+        }
+      }
+    },
+    {
+      "name": "22. Admin View - Get All Services (Should Show All)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/services",
+          "host": ["{{baseUrl}}"],
+          "path": ["services"]
+        }
+      }
+    },
+    {
+      "name": "23. Admin View - Get Provider Services (Should Show All)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/provider-service/provider/{{providerId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["provider-service", "provider", "{{providerId}}"]
+        }
+      }
+    }
+  ]
+}

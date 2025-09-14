@@ -435,11 +435,15 @@ export class SearchService {
         // Service suggestions
         suggestions.services = await this.prisma.service.findMany({
             where: {
-                title: { contains: query, mode: 'insensitive' }
+                OR: [
+                  { titleAr: { contains: query, mode: 'insensitive' } },
+                  { titleEn: { contains: query, mode: 'insensitive' } }
+                ]
             },
             select: {
                 id: true,
-                title: true,
+                titleAr: true,
+                titleEn: true,
                 category: {
                     select: {
                         titleEn: true

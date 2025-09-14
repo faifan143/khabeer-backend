@@ -1,4 +1,5 @@
 import { IsString, IsNotEmpty } from 'class-validator';
+import { IsValidOmanState } from '../../utils/validators';
 
 export class CreateCategoryDto {
   @IsString()
@@ -11,5 +12,8 @@ export class CreateCategoryDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsValidOmanState({
+    message: 'Please select a valid Omani state for the category'
+  })
   state: string;
 }

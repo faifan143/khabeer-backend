@@ -41,24 +41,28 @@ export class ProviderServiceController {
     ) {
         const providerIdNum = providerId ? parseInt(providerId, 10) : undefined;
         const activeOnlyBool = activeOnly === 'true';
+        const userRole = req.user.role;
 
-        return this.providerServiceService.findAll(req.user.userId, activeOnlyBool);
+        return this.providerServiceService.findAll(req.user.userId, activeOnlyBool, userRole);
     }
 
     @Get('provider/:providerId')
     async findByProvider(
+        @Request() req,
         @Param('providerId', ParseIntPipe) providerId: number,
-        @Query('activeOnly') activeOnly?: string
+        @Query('activeOnly') activeOnly?: string,
     ) {
         const activeOnlyBool = activeOnly === 'true';
-        return this.providerServiceService.findByProvider(providerId, activeOnlyBool);
+        const userRole = req.user.role;
+        return this.providerServiceService.findByProvider(providerId, activeOnlyBool, userRole);
     }
 
     @Get('my-services')
     @Roles('PROVIDER')
     async getMyServices(@Request() req, @Query('activeOnly') activeOnly?: string) {
         const activeOnlyBool = activeOnly === 'true';
-        return this.providerServiceService.findByProvider(req.user.userId, activeOnlyBool);
+        const userRole = req.user.role;
+        return this.providerServiceService.findByProvider(req.user.userId, activeOnlyBool, userRole);
     }
 
     @Get('stats')

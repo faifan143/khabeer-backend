@@ -87,7 +87,8 @@ async function main() {
     update: {},
     create: {
       id: 1,
-      title: 'House Cleaning',
+      titleAr: 'تنظيف المنزل',
+      titleEn: 'House Cleaning',
       description: 'Professional house cleaning service',
       commission: 10.0,
       whatsapp: '+966501234567',
@@ -102,7 +103,8 @@ async function main() {
     update: {},
     create: {
       id: 2,
-      title: 'Plumbing Service',
+      titleAr: 'خدمة السباكة',
+      titleEn: 'Plumbing Service',
       description: 'Professional plumbing maintenance',
       commission: 15.0,
       whatsapp: '+966501234568',

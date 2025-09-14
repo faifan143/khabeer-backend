@@ -3,30 +3,30 @@ import { IsString, IsNumber, IsOptional, IsNotEmpty, IsIn } from 'class-validato
 export class CreateServiceDto {
   @IsString()
   @IsNotEmpty()
-  title: string;
+  titleAr: string;
 
   @IsString()
   @IsNotEmpty()
-  description: string;
+  titleEn: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 
   @IsOptional()
   @IsNumber()
   commission?: number;
 
-  @IsString()
-  @IsNotEmpty()
-  whatsapp: string;
-
   @IsOptional()
   @IsString()
-  state?: string;
+  whatsapp?: string;
 
   @IsOptional()
   @IsString()
   @IsIn(['NORMAL', 'KHABEER'])
   serviceType?: string;
 
-  @IsOptional()
   @IsNumber()
-  categoryId?: number;
+  @IsNotEmpty()
+  categoryId: number;
 }

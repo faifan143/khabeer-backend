@@ -1,4 +1,5 @@
 import { IsString, IsBoolean, IsOptional, IsArray, IsNumber } from 'class-validator';
+import { IsValidOmanState } from '../../utils/validators';
 
 export class UpdateProviderDto {
   @IsOptional()
@@ -15,6 +16,9 @@ export class UpdateProviderDto {
 
   @IsOptional()
   @IsString()
+  @IsValidOmanState({
+    message: 'Please select a valid Omani state for the provider'
+  })
   state?: string;
 
   @IsOptional()

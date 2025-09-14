@@ -36,8 +36,9 @@ export interface ProviderServiceWithOfferResponse {
   };
   service?: {
     id: number;
-    title: string;
-    description: string;
+    titleAr: string;
+    titleEn: string;
+    description: string | null;
     image: string;
     commission: number | null;
   };
@@ -142,7 +143,8 @@ export class ProviderServiceService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
             commission: true
@@ -160,7 +162,7 @@ export class ProviderServiceService {
    * @param activeOnly - Whether to return only active services
    * @returns Array of provider services with active offer details if available
    */
-  async findAll(providerId?: number, activeOnly: boolean = false): Promise<ProviderServiceWithOfferResponse[]> {
+  async findAll(providerId?: number, activeOnly: boolean = false, userRole?: string): Promise<ProviderServiceWithOfferResponse[]> {
     const where: any = {};
 
     if (providerId) {
@@ -169,6 +171,28 @@ export class ProviderServiceService {
 
     if (activeOnly) {
       where.isActive = true;
+    }
+
+    // For providers, filter by their registered categories
+    if (userRole === 'PROVIDER' && providerId) {
+      const providerCategories = await this.prisma.providerCategory.findMany({
+        where: {
+          providerId: providerId,
+          isActive: true
+        },
+        select: { categoryId: true }
+      });
+
+      const categoryIds = providerCategories.map(pc => pc.categoryId);
+
+      if (categoryIds.length > 0) {
+        where.service = {
+          categoryId: { in: categoryIds }
+        };
+      } else {
+        // If provider has no categories, return empty array
+        where.id = { in: [] };
+      }
     }
 
     console.log('where => ', where);
@@ -188,16 +212,18 @@ export class ProviderServiceService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
-            commission: true
+            commission: true,
+            categoryId: true
           }
         }
       },
       orderBy: {
         service: {
-          title: 'asc'
+          titleEn: 'asc'
         }
       }
     });
@@ -223,7 +249,7 @@ export class ProviderServiceService {
    * @param activeOnly - Whether to return only active services
    * @returns Array of provider services with active offer details if available
    */
-  async findByProvider(providerId: number, activeOnly: boolean = false): Promise<ProviderServiceWithOfferResponse[]> {
+  async findByProvider(providerId: number, activeOnly: boolean = false, userRole?: string): Promise<ProviderServiceWithOfferResponse[]> {
     const provider = await this.prisma.provider.findUnique({
       where: { id: providerId }
     });
@@ -237,22 +263,46 @@ export class ProviderServiceService {
       where.isActive = true;
     }
 
+    // For providers, filter by their registered categories
+    if (userRole === 'PROVIDER') {
+      const providerCategories = await this.prisma.providerCategory.findMany({
+        where: {
+          providerId: providerId,
+          isActive: true
+        },
+        select: { categoryId: true }
+      });
+
+      const categoryIds = providerCategories.map(pc => pc.categoryId);
+
+      if (categoryIds.length > 0) {
+        where.service = {
+          categoryId: { in: categoryIds }
+        };
+      } else {
+        // If provider has no categories, return empty array
+        where.id = { in: [] };
+      }
+    }
+
     const providerServices = await this.prisma.providerService.findMany({
       where,
       include: {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
-            commission: true
+            commission: true,
+            categoryId: true
           }
         }
       },
       orderBy: {
         service: {
-          title: 'asc'
+          titleEn: 'asc'
         }
       }
     });
@@ -291,7 +341,8 @@ export class ProviderServiceService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
             commission: true
@@ -343,7 +394,8 @@ export class ProviderServiceService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
             commission: true
@@ -420,7 +472,8 @@ export class ProviderServiceService {
       },
       select: {
         id: true,
-        title: true,
+        titleAr: true,
+        titleEn: true,
         serviceType: true
       }
     });
@@ -432,7 +485,7 @@ export class ProviderServiceService {
     // Check if all services can be assigned to providers
     for (const service of existingServices) {
       if (service.serviceType !== 'NORMAL') {
-        throw new BadRequestException(`Service "${service.title}" cannot be assigned to providers`);
+        throw new BadRequestException(`Service "${service.titleEn}" cannot be assigned to providers`);
       }
     }
 
@@ -471,7 +524,8 @@ export class ProviderServiceService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
             commission: true
@@ -563,7 +617,8 @@ export class ProviderServiceService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
             commission: true
@@ -607,7 +662,7 @@ export class ProviderServiceService {
       services: providerServices.map(ps => ({
         id: ps.id,
         serviceId: ps.serviceId,
-        serviceTitle: ps.service.title,
+        serviceTitle: ps.service.titleEn,
         price: ps.price,
         isActive: ps.isActive
       }))

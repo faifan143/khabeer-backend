@@ -325,58 +325,54 @@ export class ProvidersService {
     }
   }
 
-  async registerProviderWithServices(data: CreateProviderDto) {
+  async registerProviderWithCategories(data: CreateProviderDto) {
     try {
-      const { serviceIds, services, ...providerData } = data;
+      const { categoryIds, ...providerData } = data;
 
-      console.log('🔍 registerProviderWithServices received:', {
-        services: services,
-        serviceIds: serviceIds,
-        servicesLength: services?.length || 0,
-        serviceIdsLength: serviceIds?.length || 0
+      console.log('🔍 registerProviderWithCategories received:', {
+        categoryIds: categoryIds,
+        categoryIdsLength: categoryIds?.length || 0
       });
 
-      // Prepare provider services data
-      let providerServicesData: Array<{
-        serviceId: number;
-        price: number;
+      // Prepare provider categories data
+      let providerCategoriesData: Array<{
+        categoryId: number;
         isActive: boolean;
       }> = [];
 
-      // Handle new services with pricing approach
-      if (services && services.length > 0) {
-        console.log('🔍 Processing services with prices:', services);
-        providerServicesData = services.map(service => ({
-          serviceId: service.serviceId,
-          price: service.price,
+      // Handle categoryIds
+      if (categoryIds && categoryIds.length > 0) {
+        console.log('🔍 Processing categories:', categoryIds);
+        providerCategoriesData = categoryIds.map(categoryId => ({
+          categoryId: Number(categoryId), // Convert to number
           isActive: true
         }));
-        console.log('🔍 Mapped provider services data:', providerServicesData);
+        console.log('🔍 Mapped provider categories data:', providerCategoriesData);
       }
-      // Fallback to legacy serviceIds approach for backward compatibility
-      else if (serviceIds && serviceIds.length > 0) {
-        providerServicesData = serviceIds.map(serviceId => ({
-          serviceId: serviceId,
-          price: 0, // Default price for legacy approach
-          isActive: true
-        }));
-      }
+
+      console.log('🔍 About to create provider with data:', {
+        ...providerData,
+        providerCategories: {
+          create: providerCategoriesData
+        }
+      });
 
       const provider = await this.prisma.provider.create({
         data: {
           ...providerData,
-          providerServices: {
-            create: providerServicesData
+          providerCategories: {
+            create: providerCategoriesData
           }
         },
         include: {
-          providerServices: {
+          providerCategories: {
             include: {
-              service: {
+              category: {
                 select: {
                   id: true,
-                  title: true,
-                  description: true
+                  titleAr: true,
+                  titleEn: true,
+                  state: true
                 }
               }
             }
@@ -386,9 +382,23 @@ export class ProvidersService {
 
       // Return provider without password
       const { password, ...providerWithoutPassword } = provider;
+      console.log('🔍 Provider created successfully:', {
+        id: provider.id,
+        name: provider.name,
+        categoryCount: provider.providerCategories?.length || 0
+      });
       return providerWithoutPassword;
     } catch (error) {
+      console.error('🔍 Error in registerProviderWithCategories:', error);
+      console.error('🔍 Error details:', {
+        message: error.message,
+        code: error.code,
+        meta: error.meta,
+        stack: error.stack
+      });
+
       if (error instanceof PrismaClientKnownRequestError) {
+        console.error('🔍 Prisma error code:', error.code);
         switch (error.code) {
           case 'P2002':
             if (error.meta?.target && Array.isArray(error.meta.target) && error.meta.target.includes('email')) {
@@ -396,12 +406,14 @@ export class ProvidersService {
             }
             break;
           case 'P2003':
-            throw new BadRequestException('Invalid service reference provided');
+            throw new BadRequestException('Invalid category reference provided');
           default:
+            console.error('🔍 Unhandled Prisma error:', error.code);
             throw new InternalServerErrorException('Database operation failed');
         }
       }
-      throw new InternalServerErrorException('Error registering provider with services');
+      console.error('🔍 Non-Prisma error:', error);
+      throw new InternalServerErrorException('Error registering provider with categories');
     }
   }
 
@@ -653,7 +665,7 @@ export class ProvidersService {
       return [
         {
           serviceId: service.id,
-          serviceTitle: service.title,
+          serviceTitle: service.titleEn,
           serviceDescription: service.description,
           serviceImage: service.image,
           quantity: 1,
@@ -676,7 +688,7 @@ export class ProvidersService {
       return [
         {
           serviceId: service.id,
-          serviceTitle: service.title,
+          serviceTitle: service.titleEn,
           serviceDescription: service.description,
           serviceImage: service.image,
           quantity: order.quantity,
@@ -711,7 +723,8 @@ export class ProvidersService {
           service: {
             select: {
               id: true,
-              title: true,
+              titleAr: true,
+              titleEn: true,
               description: true,
               image: true,
               commission: true,
@@ -748,7 +761,7 @@ export class ProvidersService {
           services = [
             {
               serviceId: service.id,
-              serviceTitle: service.title,
+              serviceTitle: service.titleEn,
               serviceDescription: service.description,
               serviceImage: service.image,
               quantity: order.quantity,
@@ -812,7 +825,8 @@ export class ProvidersService {
           service: {
             select: {
               id: true,
-              title: true,
+              titleAr: true,
+              titleEn: true,
               description: true,
               image: true,
               commission: true,
@@ -849,7 +863,7 @@ export class ProvidersService {
           services = [
             {
               serviceId: service.id,
-              serviceTitle: service.title,
+              serviceTitle: service.titleEn,
               serviceDescription: service.description,
               serviceImage: service.image,
               quantity: order.quantity,
@@ -913,7 +927,8 @@ export class ProvidersService {
           service: {
             select: {
               id: true,
-              title: true,
+              titleAr: true,
+              titleEn: true,
               description: true,
               image: true,
               commission: true,
@@ -950,7 +965,7 @@ export class ProvidersService {
           services = [
             {
               serviceId: service.id,
-              serviceTitle: service.title,
+              serviceTitle: service.titleEn,
               serviceDescription: service.description,
               serviceImage: service.image,
               quantity: order.quantity,
@@ -1370,7 +1385,8 @@ export class ProvidersService {
               service: {
                 select: {
                   id: true,
-                  title: true,
+                  titleAr: true,
+                  titleEn: true,
                   description: true
                 }
               }
@@ -1416,7 +1432,7 @@ export class ProvidersService {
         isActive: ps.isActive,
         service: {
           id: ps.service.id,
-          title: ps.service.title,
+          title: ps.service.titleEn,
           description: ps.service.description,
           image: ps.service.image,
           commission: ps.service.commission,
@@ -1434,7 +1450,7 @@ export class ProvidersService {
         originalPrice: offer.originalPrice,
         service: {
           id: offer.service.id,
-          title: offer.service.title,
+          title: offer.service.titleEn,
           description: offer.service.description
         }
       }));
@@ -1475,7 +1491,7 @@ export class ProvidersService {
         },
         service: {
           id: order.service.id,
-          title: order.service.title,
+          title: order.service.titleEn,
           description: order.service.description
         }
       }));
@@ -1571,6 +1587,224 @@ export class ProvidersService {
     return activeOffer;
   }
 
+  async getProviderCategories(providerId: number) {
+    try {
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId },
+        select: { id: true, name: true }
+      });
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${providerId} not found`);
+      }
+
+      const providerCategories = await this.prisma.providerCategory.findMany({
+        where: {
+          providerId: providerId,
+          isActive: true
+        },
+        include: {
+          category: {
+            select: {
+              id: true,
+              titleAr: true,
+              titleEn: true,
+              state: true,
+              image: true
+            }
+          }
+        },
+        orderBy: {
+          category: {
+            titleEn: 'asc'
+          }
+        }
+      });
+
+      return {
+        providerId: provider.id,
+        providerName: provider.name,
+        categories: providerCategories.map(pc => pc.category)
+      };
+    } catch (error) {
+      console.error('Error getting provider categories:', error);
+      throw new InternalServerErrorException('Error fetching provider categories');
+    }
+  }
+
+  async addProviderCategories(providerId: number, categoryIds: number[]) {
+    try {
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId }
+      });
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${providerId} not found`);
+      }
+
+      // Check if categories exist
+      const categories = await this.prisma.category.findMany({
+        where: { id: { in: categoryIds } },
+        select: { id: true }
+      });
+
+      if (categories.length !== categoryIds.length) {
+        throw new BadRequestException('One or more categories not found');
+      }
+
+      // Check for existing provider categories
+      const existingCategories = await this.prisma.providerCategory.findMany({
+        where: {
+          providerId: providerId,
+          categoryId: { in: categoryIds }
+        },
+        select: { categoryId: true }
+      });
+
+      const existingCategoryIds = existingCategories.map(ec => ec.categoryId);
+      const newCategoryIds = categoryIds.filter(id => !existingCategoryIds.includes(id));
+
+      if (newCategoryIds.length === 0) {
+        throw new BadRequestException('Provider is already registered for all specified categories');
+      }
+
+      // Create new provider categories
+      const providerCategories = await this.prisma.providerCategory.createMany({
+        data: newCategoryIds.map(categoryId => ({
+          providerId: providerId,
+          categoryId: categoryId,
+          isActive: true
+        }))
+      });
+
+      return {
+        message: `Added ${providerCategories.count} new categories`,
+        addedCategoryIds: newCategoryIds
+      };
+    } catch (error) {
+      console.error('Error adding provider categories:', error);
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error adding provider categories');
+    }
+  }
+
+  async removeProviderCategories(providerId: number, categoryIds: number[]) {
+    try {
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId }
+      });
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${providerId} not found`);
+      }
+
+      // Remove provider categories
+      const result = await this.prisma.providerCategory.deleteMany({
+        where: {
+          providerId: providerId,
+          categoryId: { in: categoryIds }
+        }
+      });
+
+      return {
+        message: `Removed ${result.count} categories`,
+        removedCategoryIds: categoryIds
+      };
+    } catch (error) {
+      console.error('Error removing provider categories:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error removing provider categories');
+    }
+  }
+
+  async getServicesByProviderCategories(providerId: number) {
+    try {
+      // First, verify that provider exists
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId },
+        select: { id: true, name: true }
+      });
+
+      if (!provider) {
+        throw new NotFoundException(`Provider with ID ${providerId} not found`);
+      }
+
+      // Get provider's registered categories
+      const providerCategories = await this.prisma.providerCategory.findMany({
+        where: {
+          providerId: providerId,
+          isActive: true
+        },
+        include: {
+          category: {
+            select: {
+              id: true,
+              titleAr: true,
+              titleEn: true,
+              state: true
+            }
+          }
+        }
+      });
+
+      if (providerCategories.length === 0) {
+        return {
+          providerId: provider.id,
+          providerName: provider.name,
+          categories: [],
+          services: []
+        };
+      }
+
+      const categoryIds = providerCategories.map(pc => pc.categoryId);
+
+      // Get all services from provider's registered categories
+      const services = await this.prisma.service.findMany({
+        where: {
+          categoryId: { in: categoryIds },
+          serviceType: 'NORMAL'
+        },
+        include: {
+          category: {
+            select: {
+              id: true,
+              titleAr: true,
+              titleEn: true,
+              state: true
+            }
+          }
+        },
+        orderBy: {
+          titleEn: 'asc'
+        }
+      });
+
+      return {
+        providerId: provider.id,
+        providerName: provider.name,
+        categories: providerCategories.map(pc => pc.category),
+        services: services.map(service => ({
+          id: service.id,
+          titleAr: service.titleAr,
+          titleEn: service.titleEn,
+          description: service.description,
+          image: service.image,
+          commission: service.commission,
+          whatsapp: service.whatsapp,
+          categoryId: service.categoryId,
+          category: service.category
+        }))
+      };
+    } catch (error) {
+      console.error('Error getting services by provider categories:', error);
+      throw new InternalServerErrorException('Error fetching services by provider categories');
+    }
+  }
+
   async getCategoryServicesByProviderId(providerId: number, categoryId: number) {
     try {
       // First, verify that both provider and category exist
@@ -1593,50 +1827,57 @@ export class ProvidersService {
         throw new NotFoundException(`Category with ID ${categoryId} not found`);
       }
 
-      // Get all services in the specified category that the provider offers
-      const providerServices = await this.prisma.providerService.findMany({
-        where: { providerId: providerId },
-        include: {
-          service: {
-            include: {
-              category: true
-            }
-          }
+      // Check if provider is registered for this category
+      const providerCategory = await this.prisma.providerCategory.findFirst({
+        where: {
+          providerId: providerId,
+          categoryId: categoryId,
+          isActive: true
         }
       });
 
-      // Filter by category in JavaScript for better reliability
-      const filteredServices = providerServices.filter(ps => ps.service.categoryId === categoryId);
+      if (!providerCategory) {
+        throw new BadRequestException(`Provider is not registered for category ${categoryId}`);
+      }
 
-      // Get active offers for each provider service
-      const servicesWithOffers = await Promise.all(
-        filteredServices.map(async (ps) => {
-          const activeOffer = await this.getActiveOffer(ps.providerId, ps.serviceId);
-
-          return {
-            id: ps.service.id,
-            title: ps.service.title,
-            description: ps.service.description,
-            image: ps.service.image,
-            commission: ps.service.commission,
-            categoryId: ps.service.categoryId || 0,
-            providerService: {
-              id: ps.id,
-              price: ps.price,
-              isActive: ps.isActive
-            },
-            activeOffer: activeOffer || null
-          };
-        })
-      );
+      // Get all services in the specified category
+      const services = await this.prisma.service.findMany({
+        where: {
+          categoryId: categoryId,
+          serviceType: 'NORMAL'
+        },
+        include: {
+          category: {
+            select: {
+              id: true,
+              titleAr: true,
+              titleEn: true,
+              state: true
+            }
+          }
+        },
+        orderBy: {
+          titleEn: 'asc'
+        }
+      });
 
       return {
         categoryId: category.id,
         categoryName: category.titleEn || category.titleAr, // Prefer English, fallback to Arabic
         providerId: provider.id,
         providerName: provider.name,
-        services: servicesWithOffers,
-        total: filteredServices.length
+        services: services.map(service => ({
+          id: service.id,
+          titleAr: service.titleAr,
+          titleEn: service.titleEn,
+          description: service.description,
+          image: service.image,
+          commission: service.commission,
+          whatsapp: service.whatsapp,
+          categoryId: service.categoryId,
+          category: service.category
+        })),
+        total: services.length
       };
     } catch (error) {
       if (error instanceof NotFoundException) {

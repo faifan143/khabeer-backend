@@ -22,6 +22,7 @@ import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { Public } from '../auth/public.decorator';
 import { FilesService } from '../files/files.service';
 import { CreateAdBannerDto, UpdateAdBannerDto, AdBannerResponseDto } from './dto/ad-banner.dto';
 import { AdminProvidersResponseDto } from './dto/admin-provider-response.dto';
@@ -261,6 +262,14 @@ export class AdminController {
         return this.adminService.getSystemSettings(category);
     }
 
+
+
+    @Get('settings/terms-and-conditions')
+    @Public()
+    async getTermsAndConditions() {
+        return this.adminService.getTermsAndConditions();
+    }
+
     @Post('settings')
     async updateSystemSetting(@Body() body: { key: string; value: string; description?: string; category?: string }) {
         return this.adminService.updateSystemSetting(body.key, body.value, body.description, body.category);
@@ -300,6 +309,58 @@ export class AdminController {
         return {
             message: `Successfully uploaded ${results.length} legal documents`,
             documents: updatedResults
+        };
+    }
+
+    @Post('settings/upload-terms')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: './uploads/documents/legal',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const ext = extname(file.originalname);
+                cb(null, `terms-${uniqueSuffix}${ext}`);
+            },
+        }),
+    }))
+    async uploadTermsFile(
+        @UploadedFile() file: Express.Multer.File,
+        @Body() body: { language: 'en' | 'ar' }
+    ) {
+        if (!file) {
+            throw new BadRequestException('No file uploaded');
+        }
+
+        if (!body.language || !['en', 'ar'].includes(body.language)) {
+            throw new BadRequestException('Language must be either "en" or "ar"');
+        }
+
+        const options = {
+            maxSize: 10 * 1024 * 1024, // 10MB
+            allowedMimeTypes: [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'text/plain'
+            ],
+            allowedExtensions: ['.pdf', '.doc', '.docx', '.txt']
+        };
+
+        const result = await this.filesService.handleUploadedFile(file, options);
+        const fileUrl = this.filesService.getPublicUrl(result.filename, 'documents/legal');
+
+        // Update system settings with the file URL
+        const setting = await this.adminService.uploadTermsFile(body.language, fileUrl);
+
+        return {
+            message: `Successfully uploaded terms file for ${body.language === 'en' ? 'English' : 'Arabic'}`,
+            file: {
+                filename: result.filename,
+                url: fileUrl,
+                size: result.size,
+                mimetype: result.mimetype
+            },
+            setting
         };
     }
 

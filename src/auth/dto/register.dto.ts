@@ -1,7 +1,6 @@
-import { IsEmail, IsString, IsOptional, MinLength, IsArray, IsBoolean, IsNumber, IsEnum, ValidateNested } from 'class-validator';
+import { IsEmail, IsString, IsOptional, MinLength, IsArray, IsBoolean, IsNumber, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { ServiceWithPriceDto } from '../../providers/dto/service-with-price.dto';
+import { IsValidOmanState } from '../../utils/validators';
 
 export enum RegisterType {
   USER = 'user',
@@ -18,7 +17,7 @@ export class RegisterDto {
 
   @IsOptional()
   @IsEmail()
-  email?: string; // Optional for users, required for providers
+  email?: string; // Optional for both users and providers
 
   @IsString()
   @MinLength(6)
@@ -42,6 +41,9 @@ export class RegisterDto {
 
   @IsOptional()
   @IsString()
+  @IsValidOmanState({
+    message: 'Please select a valid Omani state'
+  })
   state?: string;
 
   @IsOptional()
@@ -62,12 +64,6 @@ export class RegisterDto {
 
   @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ServiceWithPriceDto)
-  services?: ServiceWithPriceDto[]; // Services with prices for provider registration
-
-  @IsOptional()
-  @IsArray()
   @IsNumber({}, { each: true })
-  serviceIds?: number[]; // For backward compatibility - deprecated, use services instead
+  categoryIds?: number[]; // IDs of categories the provider wants to offer services in
 }

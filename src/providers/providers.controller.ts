@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, UploadedFile, UseInterceptors, BadRequestException, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, UploadedFile, UseInterceptors, BadRequestException, ParseIntPipe, Query, ForbiddenException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { ProvidersService } from './providers.service';
@@ -96,32 +96,22 @@ export class ProvidersController {
     } else {
       data.image = '';
     }
-    // Handle services with pricing (new approach)
-    if (data.services && data.services.length > 0) {
-      // Validate that all services have valid prices
-      data.services = data.services.map(service => ({
-        serviceId: typeof service.serviceId === 'string' ? parseInt(service.serviceId, 10) : service.serviceId,
-        price: typeof service.price === 'string' ? parseFloat(service.price) : service.price
-      }));
-    }
-
-    // Handle legacy serviceIds for backward compatibility
-    if (data.serviceIds && data.serviceIds.length > 0) {
-      if (typeof data.serviceIds === 'string') {
-        data.serviceIds = [parseInt(data.serviceIds, 10)];
-      } else if (Array.isArray(data.serviceIds)) {
-        data.serviceIds = data.serviceIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id);
+    // Handle categoryIds
+    if (data.categoryIds && data.categoryIds.length > 0) {
+      if (typeof data.categoryIds === 'string') {
+        data.categoryIds = [parseInt(data.categoryIds, 10)];
+      } else if (Array.isArray(data.categoryIds)) {
+        data.categoryIds = data.categoryIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id);
       }
     }
 
-    // If no services provided, default to empty array
-    if (!data.services) data.services = [];
-    if (!data.serviceIds) data.serviceIds = [];
+    // If no categories provided, default to empty array
+    if (!data.categoryIds) data.categoryIds = [];
     data.name = data.name || '';
     data.description = data.description || '';
     data.state = data.state || '';
     data.phone = data.phone || '';
-    return this.providersService.registerProviderWithServices(data);
+    return this.providersService.registerProviderWithCategories(data);
   }
 
   @Post()
@@ -239,6 +229,64 @@ export class ProvidersController {
       throw new BadRequestException('You can only access your own services');
     }
     return this.providersService.getProviderServices(Number(id));
+  }
+
+  @Get(':id/categories')
+  @Roles('PROVIDER', 'ADMIN')
+  async getProviderCategories(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req
+  ) {
+    // Check if user is the provider or admin
+    if (req.user.role !== 'ADMIN' && req.user.userId !== id) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.providersService.getProviderCategories(id);
+  }
+
+  @Post(':id/categories')
+  @Roles('PROVIDER', 'ADMIN')
+  async addProviderCategories(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { categoryIds: number[] },
+    @Request() req
+  ) {
+    // Check if user is the provider or admin
+    if (req.user.role !== 'ADMIN' && req.user.userId !== id) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.providersService.addProviderCategories(id, body.categoryIds);
+  }
+
+  @Delete(':id/categories')
+  @Roles('PROVIDER', 'ADMIN')
+  async removeProviderCategories(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { categoryIds: number[] },
+    @Request() req
+  ) {
+    // Check if user is the provider or admin
+    if (req.user.role !== 'ADMIN' && req.user.userId !== id) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.providersService.removeProviderCategories(id, body.categoryIds);
+  }
+
+  @Get(':id/services-by-categories')
+  @Roles('PROVIDER', 'ADMIN')
+  async getServicesByProviderCategories(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req
+  ) {
+    // Check if user is the provider or admin
+    if (req.user.role !== 'ADMIN' && req.user.userId !== id) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.providersService.getServicesByProviderCategories(id);
   }
 
   @Get(':id/categories/:categoryId/services')

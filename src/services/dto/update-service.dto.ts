@@ -3,7 +3,11 @@ import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
 export class UpdateServiceDto {
   @IsOptional()
   @IsString()
-  title?: string;
+  titleAr?: string;
+
+  @IsOptional()
+  @IsString()
+  titleEn?: string;
 
   @IsOptional()
   @IsString()
@@ -16,10 +20,6 @@ export class UpdateServiceDto {
   @IsOptional()
   @IsString()
   whatsapp?: string;
-
-  @IsOptional()
-  @IsString()
-  state?: string;
 
   @IsOptional()
   @IsString()

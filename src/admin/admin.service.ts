@@ -27,7 +27,10 @@ export class AdminService {
                 // Additional data for dashboard
                 popularServices,
                 topProviders,
-                orderStats
+                orderStats,
+                // State-specific data
+                stateProvidersData,
+                stateServicesData
             ] = await Promise.all([
                 this.prisma.user.count(),
                 this.prisma.provider.count(),
@@ -89,13 +92,17 @@ export class AdminService {
                     take: 10
                 }),
                 // Get order statistics
-                this.getOrderStats()
+                this.getOrderStats(),
+                // Get state-specific providers data
+                this.getStateSpecificProviders(),
+                // Get state-specific services data
+                this.getStateSpecificServices()
             ]);
 
             // Process popular services
             const processedPopularServices = popularServices.map(service => ({
                 id: service.id,
-                name: service.title,
+                name: service.titleEn,
                 description: service.description,
                 price: service.commission,
                 category: service.category ? {
@@ -146,7 +153,12 @@ export class AdminService {
                 // Include all the additional data
                 popularServices: processedPopularServices,
                 topProviders: processedTopProviders,
-                orderStats
+                orderStats,
+                // State-specific data
+                stateBreakdown: {
+                    providers: stateProvidersData,
+                    services: stateServicesData
+                }
             };
         } catch (error) {
             console.error('Error fetching dashboard stats:', error);
@@ -177,6 +189,10 @@ export class AdminService {
                     thisWeek: 0,
                     thisMonth: 0,
                     byStatus: []
+                },
+                stateBreakdown: {
+                    providers: [],
+                    services: []
                 }
             };
         }
@@ -771,7 +787,8 @@ export class AdminService {
                             service: {
                                 select: {
                                     id: true,
-                                    title: true,
+                                    titleAr: true,
+                                    titleEn: true,
                                     category: {
                                         select: {
                                             id: true,
@@ -911,7 +928,7 @@ export class AdminService {
                     select: { id: true, name: true, phone: true }
                 },
                 service: {
-                    select: { id: true, title: true, commission: true }
+                    select: { id: true, titleAr: true, titleEn: true, commission: true }
                 },
                 invoice: true
             },
@@ -947,7 +964,7 @@ export class AdminService {
                     include: {
                         user: { select: { name: true, email: true } },
                         provider: { select: { name: true, phone: true } },
-                        service: { select: { title: true, commission: true } }
+                        service: { select: { titleAr: true, titleEn: true, commission: true } }
                     }
                 }
             },
@@ -987,7 +1004,7 @@ export class AdminService {
                 createdAt: true,
                 providerServices: {
                     include: {
-                        service: { select: { title: true } }
+                        service: { select: { titleAr: true, titleEn: true } }
                     }
                 },
                 orders: {
@@ -1088,7 +1105,8 @@ export class AdminService {
                 service: {
                     select: {
                         id: true,
-                        title: true,
+                        titleAr: true,
+                        titleEn: true,
                         description: true,
                         commission: true,
                         category: {
@@ -1123,7 +1141,7 @@ export class AdminService {
             include: {
                 user: { select: { name: true, email: true } },
                 provider: { select: { name: true, email: true } },
-                service: { select: { title: true } }
+                service: { select: { titleAr: true, titleEn: true } }
             }
         });
 
@@ -1140,7 +1158,7 @@ export class AdminService {
             include: {
                 user: { select: { name: true, email: true } },
                 provider: { select: { name: true, email: true } },
-                service: { select: { title: true } }
+                service: { select: { titleAr: true, titleEn: true } }
             }
         });
 
@@ -1154,7 +1172,7 @@ export class AdminService {
             include: {
                 user: { select: { name: true, email: true } },
                 provider: { select: { name: true, email: true } },
-                service: { select: { title: true } }
+                service: { select: { titleAr: true, titleEn: true } }
             }
         });
 
@@ -1171,7 +1189,7 @@ export class AdminService {
             include: {
                 user: { select: { name: true, email: true } },
                 provider: { select: { name: true, email: true } },
-                service: { select: { title: true } }
+                service: { select: { titleAr: true, titleEn: true } }
             }
         });
 
@@ -1188,7 +1206,7 @@ export class AdminService {
             include: {
                 user: { select: { name: true, email: true } },
                 provider: { select: { name: true, email: true } },
-                service: { select: { title: true } }
+                service: { select: { titleAr: true, titleEn: true } }
             }
         });
 
@@ -1218,6 +1236,32 @@ export class AdminService {
             throw error;
         }
     }
+
+
+    async getTermsAndConditions() {
+        const terms = await this.prisma.systemSettings.findMany({
+            where: { key: { in: ['terms_en', 'terms_ar'] } }
+        });
+
+        // Convert to object format for easier access
+        const termsObject: { [key: string]: string } = {};
+        terms.forEach(term => {
+            termsObject[term.key] = term.value;
+        });
+
+        return {
+            terms_en: termsObject.terms_en || null,
+            terms_ar: termsObject.terms_ar || null
+        };
+    }
+
+    async uploadTermsFile(language: 'en' | 'ar', fileUrl: string) {
+        const key = `terms_${language}`;
+        const description = `Terms and Conditions - ${language === 'en' ? 'English' : 'Arabic'} Version`;
+
+        return this.updateSystemSetting(key, fileUrl, description, 'legal');
+    }
+
 
     async updateSystemSetting(key: string, value: string, description?: string, category: string = 'general') {
         try {
@@ -1587,7 +1631,8 @@ export class AdminService {
                             service: {
                                 select: {
                                     id: true,
-                                    title: true,
+                                    titleAr: true,
+                                    titleEn: true,
                                     description: true
                                 }
                             }
@@ -1639,7 +1684,8 @@ export class AdminService {
                             service: {
                                 select: {
                                     id: true,
-                                    title: true,
+                                    titleAr: true,
+                                    titleEn: true,
                                     description: true
                                 }
                             }
@@ -1741,6 +1787,145 @@ export class AdminService {
             return updatedInvoice;
         } catch (error) {
             throw error;
+        }
+    }
+
+    /**
+     * Get top 5 providers for each state
+     */
+    async getStateSpecificProviders() {
+        try {
+            // Get all unique states from providers
+            const states = await this.prisma.provider.findMany({
+                select: { state: true },
+                distinct: ['state'],
+                where: { isActive: true }
+            });
+
+            const stateProvidersData: any[] = [];
+
+            for (const { state } of states) {
+                const providers = await this.prisma.provider.findMany({
+                    where: {
+                        state,
+                        isActive: true
+                    },
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true,
+                        description: true,
+                        image: true,
+                        state: true,
+                        isActive: true,
+                        isVerified: true,
+                        orders: {
+                            where: { status: 'completed' },
+                            select: { id: true }
+                        },
+                        ratings: {
+                            select: { rating: true }
+                        }
+                    },
+                    orderBy: {
+                        orders: {
+                            _count: 'desc'
+                        }
+                    },
+                    take: 5
+                });
+
+                const processedProviders = providers.map(provider => {
+                    const avgRating = provider.ratings.length > 0
+                        ? provider.ratings.reduce((sum, r) => sum + r.rating, 0) / provider.ratings.length
+                        : 0;
+
+                    return {
+                        id: provider.id,
+                        name: provider.name,
+                        email: provider.email || '',
+                        phone: provider.phone,
+                        description: provider.description,
+                        image: provider.image,
+                        state: provider.state,
+                        isActive: provider.isActive,
+                        isVerified: provider.isVerified,
+                        orderCount: provider.orders.length,
+                        rating: avgRating
+                    };
+                });
+
+                stateProvidersData.push({
+                    state,
+                    providers: processedProviders
+                });
+            }
+
+            return stateProvidersData;
+        } catch (error) {
+            console.error('Error fetching state-specific providers:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get top 5 popular services for each state
+     */
+    async getStateSpecificServices() {
+        try {
+            // Get all unique states from services (through categories)
+            const states = await this.prisma.category.findMany({
+                select: { state: true },
+                distinct: ['state']
+            });
+
+            const stateServicesData: any[] = [];
+
+            for (const { state } of states) {
+                const services = await this.prisma.service.findMany({
+                    where: {
+                        category: {
+                            state
+                        }
+                    },
+                    include: {
+                        category: true,
+                        orders: {
+                            where: { status: 'completed' },
+                            select: { id: true }
+                        }
+                    },
+                    orderBy: {
+                        orders: {
+                            _count: 'desc'
+                        }
+                    },
+                    take: 5
+                });
+
+                const processedServices = services.map(service => ({
+                    id: service.id,
+                    name: service.titleEn,
+                    description: service.description,
+                    price: service.commission,
+                    category: service.category ? {
+                        id: service.category.id,
+                        name: service.category.titleEn
+                    } : null,
+                    orderCount: service.orders.length
+                }));
+
+                stateServicesData.push({
+                    state,
+                    services: processedServices
+                });
+            }
+
+            return stateServicesData;
+        } catch (error) {
+            console.error('Error fetching state-specific services:', error);
+            return [];
         }
     }
 } 

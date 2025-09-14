@@ -20,10 +20,11 @@ export class ServicesController {
   @Get()
   @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('USER', 'PROVIDER', 'ADMIN')
-  async findAll(@Query('serviceType') serviceType?: string, @Request() req?: any) {
+  async findAll(@Request() req?: any) {
     const userState = req?.user?.state;
     const userRole = req?.user?.role;
-    return this.servicesService.findAll(serviceType, userState, userRole);
+    const userId = req?.user?.userId;
+    return this.servicesService.findAll(userState, userRole, userId);
   }
 
   @Get('public')
@@ -31,27 +32,6 @@ export class ServicesController {
   async findAllPublic() {
     return this.servicesService.findAllPublic();
   }
-
-  @Get('normal')
-  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
-  @Roles('USER', 'PROVIDER', 'ADMIN')
-  async findNormalServices(@Request() req) {
-    const userState = req.user.state;
-    const userRole = req.user.role;
-    return this.servicesService.findNormalServices(userState, userRole);
-  }
-
-  @Get('khabeer')
-  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
-  @Roles('USER', 'PROVIDER', 'ADMIN')
-  async findKhabeerServices(@Request() req) {
-    const userState = req.user.state;
-    const userRole = req.user.role;
-
-    return this.servicesService.findKhabeerServices(userState, userRole);
-  }
-
-
 
   @Get('category/:categoryId')
   @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
@@ -128,4 +108,3 @@ export class ServicesController {
     return this.servicesService.remove(Number(id));
   }
 }
-

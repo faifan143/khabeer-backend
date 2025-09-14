@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Request, UseGuards, UploadedFile, UseInterceptors, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Request, UseGuards, UploadedFile, UseInterceptors, BadRequestException, UnauthorizedException, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { ComprehensiveAuthGuard } from './comprehensive-auth.guard';
@@ -11,7 +11,6 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { FilesService } from 'src/files/files.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { ServiceWithPriceDto } from '../providers/dto/service-with-price.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -20,6 +19,19 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly filesService: FilesService
   ) { }
+
+
+
+  @Get('terms')
+  @ApiOperation({ summary: 'Get terms and conditions' })
+  @ApiResponse({ status: 200, description: 'Terms and conditions retrieved' })
+  async getTermsAndConditions() {
+    return this.authService.getTermsAndConditions();
+  }
+
+
+
+
 
   @Post('login')
   @ApiOperation({ summary: 'Login with email (providers) or phone (users) and password' })
@@ -217,11 +229,11 @@ export class AuthController {
       throw new BadRequestException('Password, name, and phone number are required');
     }
 
-    // Validate services if provided (for provider registration)
-    if (body.services && Array.isArray(body.services)) {
-      for (const service of body.services) {
-        if (!service.serviceId || service.price === undefined || service.price < 0) {
-          throw new BadRequestException('Each service must have a valid serviceId and non-negative price');
+    // Validate categoryIds if provided (for provider registration)
+    if (body.categoryIds && Array.isArray(body.categoryIds)) {
+      for (const categoryId of body.categoryIds) {
+        if (!categoryId || isNaN(Number(categoryId))) {
+          throw new BadRequestException('Each categoryId must be a valid number');
         }
       }
     }
@@ -240,7 +252,7 @@ export class AuthController {
       isActive: true,
       officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
       description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-      services: this.parseServices(body.services)
+      categoryIds: body.categoryIds || []
     };
 
     // Handle file upload
@@ -343,30 +355,4 @@ export class AuthController {
   //   return this.authService.clearRegistrationData(body.phoneNumber);
   // }
 
-  private parseServices(services: any): ServiceWithPriceDto[] {
-    if (!services) return [];
-
-    // If it's a string, try to parse it as JSON
-    if (typeof services === 'string') {
-      try {
-        const parsed = JSON.parse(services);
-        return Array.isArray(parsed) ? parsed.map(service => ({
-          serviceId: Number(service.serviceId || service.id),
-          price: Number(service.price || 0)
-        })) : [];
-      } catch {
-        return [];
-      }
-    }
-
-    // If it's already an array
-    if (Array.isArray(services)) {
-      return services.map(service => ({
-        serviceId: Number(service.serviceId || service.id),
-        price: Number(service.price || 0)
-      }));
-    }
-
-    return [];
-  }
 }

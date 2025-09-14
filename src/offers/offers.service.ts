@@ -154,7 +154,8 @@ export class OffersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true
           }
@@ -209,20 +210,9 @@ export class OffersService {
             },
             {
               service: {
-                OR: [
-                  {
-                    // For Khabeer services, check service's direct state
-                    serviceType: 'KHABEER',
-                    state: userState
-                  },
-                  {
-                    // For normal services, check category's state
-                    serviceType: 'NORMAL',
-                    category: {
-                      state: userState
-                    }
-                  }
-                ]
+                category: {
+                  state: userState
+                }
               }
             }
           ]
@@ -239,16 +229,20 @@ export class OffersService {
             name: true,
             image: true,
             isVerified: true,
-            state: true
           }
         },
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
-            state: true
+            category: {
+              select: {
+                state: true
+              }
+            }
           }
         }
       },
@@ -275,7 +269,8 @@ export class OffersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true
           }
@@ -352,7 +347,8 @@ export class OffersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true
           }
@@ -417,20 +413,9 @@ export class OffersService {
         },
         {
           service: {
-            OR: [
-              {
-                // For Khabeer services, check service's direct state
-                serviceType: 'KHABEER',
-                state: userState
-              },
-              {
-                // For normal services, check category's state
-                serviceType: 'NORMAL',
-                category: {
-                  state: userState
-                }
-              }
-            ]
+            category: {
+              state: userState
+            }
           }
         }
       ];
@@ -451,10 +436,15 @@ export class OffersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true,
-            state: true
+            category: {
+              select: {
+                state: true
+              }
+            }
           }
         }
       },
@@ -497,7 +487,8 @@ export class OffersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true
           }
@@ -547,7 +538,8 @@ export class OffersService {
         service: {
           select: {
             id: true,
-            title: true
+            titleAr: true,
+            titleEn: true
           }
         }
       },
@@ -574,7 +566,7 @@ export class OffersService {
         },
         service: {
           id: o.service.id,
-          title: o.service.title
+          title: o.service.titleEn
         },
         // Check each filter criteria
         passesIsActive: o.isActive,
@@ -677,7 +669,8 @@ export class OffersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true
           }
@@ -731,7 +724,8 @@ export class OffersService {
         service: {
           select: {
             id: true,
-            title: true,
+            titleAr: true,
+            titleEn: true,
             description: true,
             image: true
           }
@@ -762,7 +756,8 @@ export class OffersService {
         service: {
           select: {
             id: true,
-            title: true
+            titleAr: true,
+            titleEn: true
           }
         }
       }

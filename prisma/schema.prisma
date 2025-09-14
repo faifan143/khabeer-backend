@@ -9,28 +9,29 @@ datasource db {
 }
 
 model Category {
-  id       Int       @id @default(autoincrement())
-  image    String
-  titleAr  String
-  titleEn  String
-  state    String
-  services Service[]
+  id                Int                @id @default(autoincrement())
+  image             String
+  titleAr           String
+  titleEn           String
+  state             String
+  services          Service[]
+  providerCategories ProviderCategory[]
 }
 
 model Service {
   id               Int               @id @default(autoincrement())
   image            String
-  title            String
-  description      String
+  titleAr          String
+  titleEn          String
+  description      String?
   commission       Float?
-  whatsapp         String
-  state            String?
+  whatsapp         String?
   serviceType      String            @default("NORMAL")
-  categoryId       Int?
+  categoryId       Int
   offers           Offer[]
   orders           Order[]
   providerServices ProviderService[]
-  category         Category?         @relation(fields: [categoryId], references: [id])
+  category         Category          @relation(fields: [categoryId], references: [id])
 }
 
 model Provider {
@@ -56,6 +57,7 @@ model Provider {
   joinRequests      ProviderJoinRequest[]
   ratings           ProviderRating[]
   providerServices  ProviderService[]
+  providerCategories ProviderCategory[]
   verification      ProviderVerification?
 
   @@unique([email, phone])
@@ -173,6 +175,18 @@ model ProviderService {
   price      Float    @default(0)
   provider   Provider @relation(fields: [providerId], references: [id])
   service    Service  @relation(fields: [serviceId], references: [id])
+}
+
+model ProviderCategory {
+  id         Int      @id @default(autoincrement())
+  providerId Int
+  categoryId Int
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  provider   Provider @relation(fields: [providerId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([providerId, categoryId])
 }
 
 model Offer {

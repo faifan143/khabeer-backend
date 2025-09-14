@@ -7,6 +7,20 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 export class CategoriesService {
   constructor(private readonly prisma: PrismaService) { }
 
+  async findAllPublic() {
+    return this.prisma.category.findMany({
+      select: {
+        id: true,
+        titleAr: true,
+        titleEn: true,
+        state: true
+      },
+      orderBy: {
+        id: 'asc'
+      }
+    });
+  }
+
   async findAll(userState?: string) {
     const where: any = {};
     if (userState) {
@@ -67,6 +81,11 @@ export class CategoriesService {
 
       // Delete all services in this category
       await tx.service.deleteMany({
+        where: { categoryId: id }
+      });
+
+      // Delete all provider category associations
+      await tx.providerCategory.deleteMany({
         where: { categoryId: id }
       });
 

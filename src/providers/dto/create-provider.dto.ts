@@ -1,6 +1,5 @@
-import { IsString, IsBoolean, IsOptional, IsNotEmpty, IsArray, IsNumber, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ServiceWithPriceDto } from './service-with-price.dto';
+import { IsString, IsBoolean, IsOptional, IsNotEmpty, IsArray, IsNumber } from 'class-validator';
+import { IsValidOmanState } from '../../utils/validators';
 
 export class CreateProviderDto {
   @IsString()
@@ -25,6 +24,9 @@ export class CreateProviderDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsValidOmanState({
+    message: 'Please select a valid Omani state for the provider'
+  })
   state: string;
 
   @IsString()
@@ -52,15 +54,8 @@ export class CreateProviderDto {
 
   @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ServiceWithPriceDto)
-  services?: ServiceWithPriceDto[]; // Services with prices the provider offers (optional for registration)
-
-  // Keep serviceIds for backward compatibility
-  @IsOptional()
-  @IsArray()
   @IsNumber({}, { each: true })
-  serviceIds?: number[]; // IDs of services the provider offers (deprecated - use services instead)
+  categoryIds?: number[]; // IDs of categories the provider wants to offer services in
 
   @IsOptional()
   @IsString()

@@ -68,7 +68,8 @@ export class InvoicesService {
             service: {
               select: {
                 id: true,
-                title: true,
+                titleAr: true,
+                titleEn: true,
                 description: true
               }
             }
@@ -135,7 +136,8 @@ export class InvoicesService {
             service: {
               select: {
                 id: true,
-                title: true,
+                titleAr: true,
+                titleEn: true,
                 description: true,
                 commission: true,
                 category: {
@@ -175,7 +177,7 @@ export class InvoicesService {
         services = [
           {
             serviceId: service.id,
-            serviceTitle: service.title,
+            serviceTitle: service.titleEn,
             serviceDescription: service.description,
             quantity: invoice.order.quantity,
             unitPrice: invoice.order.providerAmount / invoice.order.quantity,
@@ -244,7 +246,8 @@ export class InvoicesService {
             service: {
               select: {
                 id: true,
-                title: true,
+                titleAr: true,
+                titleEn: true,
                 description: true,
                 commission: true,
                 category: {
@@ -282,7 +285,7 @@ export class InvoicesService {
       services = [
         {
           serviceId: service.id,
-          serviceTitle: service.title,
+          serviceTitle: service.titleEn,
           serviceDescription: service.description,
           quantity: foundInvoice.order.quantity,
           unitPrice: foundInvoice.order.providerAmount / foundInvoice.order.quantity,
@@ -393,7 +396,8 @@ export class InvoicesService {
             service: {
               select: {
                 id: true,
-                title: true,
+                titleAr: true,
+                titleEn: true,
                 description: true,
                 commission: true,
                 category: {
@@ -427,7 +431,7 @@ export class InvoicesService {
       services = [
         {
           serviceId: service.id,
-          serviceTitle: service.title,
+          serviceTitle: service.titleEn,
           serviceDescription: service.description,
           quantity: updatedInvoice.order.quantity,
           unitPrice: updatedInvoice.order.providerAmount / updatedInvoice.order.quantity,
@@ -715,7 +719,8 @@ export class InvoicesService {
             servicesBreakdown: true,
             service: {
               select: {
-                title: true,
+                titleAr: true,
+                titleEn: true,
                 commission: true
               }
             }
@@ -731,7 +736,7 @@ export class InvoicesService {
 
     return invoices.map(invoice => {
       // Handle multiple services for reporting
-      let serviceTitle = invoice.order.service.title;
+      let serviceTitle = invoice.order.service.titleEn;
       let totalQuantity = invoice.order.quantity;
 
       if (invoice.order.isMultipleServices && invoice.order.servicesBreakdown) {
@@ -788,7 +793,8 @@ export class InvoicesService {
             service: {
               select: {
                 id: true,
-                title: true,
+                titleAr: true,
+                titleEn: true,
                 description: true,
                 commission: true,
                 category: {
@@ -828,7 +834,7 @@ export class InvoicesService {
         services = [
           {
             serviceId: service.id,
-            serviceTitle: service.title,
+            serviceTitle: service.titleEn,
             serviceDescription: service.description,
             quantity: invoice.order.quantity,
             unitPrice: invoice.order.providerAmount / invoice.order.quantity,
@@ -1405,7 +1411,8 @@ export class InvoicesService {
             service: {
               select: {
                 id: true,
-                title: true,
+                titleAr: true,
+                titleEn: true,
                 description: true
               }
             }

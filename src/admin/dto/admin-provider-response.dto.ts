@@ -4,8 +4,9 @@ export class AdminProviderServiceDto {
     isActive: boolean;
     service: {
         id: number;
-        title: string;
-        description: string;
+        titleAr: string;
+        titleEn: string;
+        description: string | null;
         image: string;
         commission: number | null;
         category: {
