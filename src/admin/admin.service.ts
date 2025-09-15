@@ -430,9 +430,21 @@ export class AdminService {
     }
 
     async getPendingJoinRequests() {
-        // Return all unverified providers instead of just pending join requests
+        // Return unverified providers that are not rejected
         return this.prisma.provider.findMany({
-            where: { isVerified: false },
+            where: {
+                isVerified: false,
+                OR: [
+                    {
+                        verification: {
+                            status: 'pending'
+                        }
+                    },
+                    {
+                        verification: null // Providers without verification record
+                    }
+                ]
+            },
             include: {
                 providerServices: {
                     include: {
@@ -449,6 +461,15 @@ export class AdminService {
                         id: true,
                         status: true,
                         requestDate: true,
+                        adminNotes: true
+                    }
+                },
+                verification: {
+                    select: {
+                        id: true,
+                        status: true,
+                        createdAt: true,
+                        updatedAt: true,
                         adminNotes: true
                     }
                 },
@@ -521,9 +542,19 @@ export class AdminService {
                     }
                 },
                 orders: {
-                    where: { status: 'completed' },
+                    where: {
+                        status: {
+                            in: ['pending', 'accepted', 'in_progress', 'completed']
+                        }
+                    },
                     select: {
-                        commissionAmount: true
+                        id: true,
+                        status: true,
+                        orderDate: true,
+                        commissionAmount: true,
+                        providerAmount: true,
+                        providerNetAmount: true,
+                        totalAmount: true
                     }
                 },
                 offers: {
@@ -545,13 +576,27 @@ export class AdminService {
             orderBy: { createdAt: 'desc' }
         });
 
-        // Calculate only the total commission sum for each provider
+        // Calculate commission and order statistics for each provider
         const providersWithCommission = providers.map(provider => {
-            const totalCommission = provider.orders.reduce((sum, order) => sum + order.commissionAmount, 0);
+            const completedOrders = provider.orders.filter(order => order.status === 'completed');
+            const pendingOrders = provider.orders.filter(order => order.status === 'pending');
+            const acceptedOrders = provider.orders.filter(order => order.status === 'accepted');
+            const inProgressOrders = provider.orders.filter(order => order.status === 'in_progress');
+
+            const totalCommission = completedOrders.reduce((sum, order) => sum + order.commissionAmount, 0);
+            const totalEarnings = completedOrders.reduce((sum, order) => sum + order.providerAmount, 0);
+            const totalNetEarnings = completedOrders.reduce((sum, order) => sum + order.providerNetAmount, 0);
 
             return {
                 ...provider,
-                totalCommission: Math.round(totalCommission * 100) / 100
+                totalCommission: Math.round(totalCommission * 100) / 100,
+                totalEarnings: Math.round(totalEarnings * 100) / 100,
+                totalNetEarnings: Math.round(totalNetEarnings * 100) / 100,
+                completedOrders: completedOrders.length,
+                pendingOrders: pendingOrders.length,
+                acceptedOrders: acceptedOrders.length,
+                inProgressOrders: inProgressOrders.length,
+                offeredOrders: pendingOrders.length + acceptedOrders.length // Orders that are "offered" (pending + accepted)
             } as AdminProviderResponseDto;
         });
 
@@ -564,7 +609,19 @@ export class AdminService {
 
     async getUnverifiedProviders() {
         return this.prisma.provider.findMany({
-            where: { isVerified: false },
+            where: {
+                isVerified: false,
+                OR: [
+                    {
+                        verification: {
+                            status: 'pending'
+                        }
+                    },
+                    {
+                        verification: null // Providers without verification record
+                    }
+                ]
+            },
             select: {
                 id: true,
                 name: true,
@@ -584,6 +641,15 @@ export class AdminService {
                                 category: true
                             }
                         }
+                    }
+                },
+                verification: {
+                    select: {
+                        id: true,
+                        status: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        adminNotes: true
                     }
                 },
                 _count: {
@@ -902,10 +968,25 @@ export class AdminService {
             throw new NotFoundException('Provider not found');
         }
 
-        await this.prisma.provider.update({
-            where: { id },
-            data: { isVerified: false }
-        });
+        // Update both provider verification status and verification record
+        await this.prisma.$transaction([
+            this.prisma.provider.update({
+                where: { id },
+                data: { isVerified: false }
+            }),
+            this.prisma.providerVerification.upsert({
+                where: { providerId: id },
+                update: {
+                    status: 'rejected',
+                    updatedAt: new Date()
+                },
+                create: {
+                    providerId: id,
+                    status: 'rejected',
+                    documents: []
+                }
+            })
+        ]);
 
         return { message: 'Provider verification removed successfully' };
     }

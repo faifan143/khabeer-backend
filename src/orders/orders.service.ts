@@ -222,7 +222,7 @@ export class OrdersService {
         services = [
           {
             serviceId: service.id,
-            serviceTitle: service.titleEn,
+            serviceTitle: service.titleEn + "-" + service.titleAr,
             serviceDescription: service.description,
             serviceImage: service.image,
             quantity: order.quantity,
@@ -1014,22 +1014,30 @@ export class OrdersService {
   }
 
   async createMultipleServices(createOrderDto: CreateOrderMultipleServicesDto, userId: number) {
+    console.log('🔍 createMultipleServices - Input:', { createOrderDto, userId });
+
     // Validate provider exists and is active
     const provider = await this.prisma.provider.findUnique({
       where: { id: createOrderDto.providerId },
       include: { providerServices: true }
     });
 
+    console.log('🔍 Provider found:', provider ? { id: provider.id, isActive: provider.isActive, isVerified: provider.isVerified } : 'NOT FOUND');
+
     if (!provider) {
+      console.log('❌ Provider not found for ID:', createOrderDto.providerId);
       throw new NotFoundException('Provider not found');
     }
 
     if (!provider.isActive) {
+      console.log('❌ Provider is not active:', provider.id);
       throw new BadRequestException('Provider is not active');
     }
 
     // Validate all services exist and provider offers them
     const serviceIds = createOrderDto.services.map(s => s.serviceId);
+    console.log('🔍 Service IDs requested:', serviceIds);
+
     const services = await this.prisma.service.findMany({
       where: { id: { in: serviceIds } },
       select: {
@@ -1043,13 +1051,17 @@ export class OrdersService {
       }
     });
 
+    console.log('🔍 Services found:', services.map(s => ({ id: s.id, titleEn: s.titleEn, serviceType: s.serviceType })));
+
     if (services.length !== serviceIds.length) {
+      console.log('❌ Services not found. Requested:', serviceIds, 'Found:', services.map(s => s.id));
       throw new BadRequestException('One or more services not found');
     }
 
     // Check if all services can be ordered (only NORMAL services can be ordered)
     for (const service of services) {
       if (service.serviceType !== 'NORMAL') {
+        console.log('❌ Service cannot be ordered:', service.titleEn, 'Type:', service.serviceType);
         throw new BadRequestException(`Service "${service.titleEn}" cannot be ordered directly. Please contact via WhatsApp.`);
       }
     }
@@ -1059,7 +1071,11 @@ export class OrdersService {
       serviceIds.includes(ps.serviceId) && ps.isActive
     );
 
+    console.log('🔍 Provider services:', provider.providerServices.map(ps => ({ serviceId: ps.serviceId, isActive: ps.isActive })));
+    console.log('🔍 Matching provider services:', providerServices.map(ps => ({ serviceId: ps.serviceId, isActive: ps.isActive })));
+
     if (providerServices.length !== serviceIds.length) {
+      console.log('❌ Provider does not offer all services. Requested:', serviceIds, 'Offered:', providerServices.map(ps => ps.serviceId));
       throw new BadRequestException('Provider does not offer one or more of the requested services');
     }
 

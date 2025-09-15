@@ -169,7 +169,8 @@ export class InvoicesService {
         // Use the stored services breakdown from the database and enhance with category data
         services = (invoice.order.servicesBreakdown as any[]).map(serviceItem => ({
           ...serviceItem,
-          category: invoice.order.service.category
+          category: invoice.order.service.category,
+          serviceTitle: serviceItem.serviceTitleEn + "-" + serviceItem.serviceTitleAr,
         }));
       } else {
         // For single service orders, create a single-item array with complete data
@@ -177,7 +178,7 @@ export class InvoicesService {
         services = [
           {
             serviceId: service.id,
-            serviceTitle: service.titleEn,
+            serviceTitle: service.titleEn + "-" + service.titleAr,
             serviceDescription: service.description,
             quantity: invoice.order.quantity,
             unitPrice: invoice.order.providerAmount / invoice.order.quantity,

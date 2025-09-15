@@ -33,6 +33,13 @@ export class OffersService {
   }
 
   /**
+   * Normalizes an end date to the end of the day (23:59:59) to avoid timezone issues
+   */
+  private normalizeEndDateToEndOfDay(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+  }
+
+  /**
    * Gets the current date normalized to date-only (no time components)
    */
   private getCurrentDateOnly(): Date {
@@ -44,7 +51,7 @@ export class OffersService {
 
     // Validate dates - normalize to date-only for comparison
     const start = this.normalizeDateToDateOnly(new Date(startDate));
-    const end = this.normalizeDateToDateOnly(new Date(endDate));
+    const end = this.normalizeEndDateToEndOfDay(new Date(endDate)); // Use end of day for end date
     const now = this.getCurrentDateOnly();
 
     if (start < now) {
@@ -311,7 +318,7 @@ export class OffersService {
     // Validate dates if provided - normalize to date-only for comparison
     if (startDate && endDate) {
       const start = this.normalizeDateToDateOnly(new Date(startDate));
-      const end = this.normalizeDateToDateOnly(new Date(endDate));
+      const end = this.normalizeEndDateToEndOfDay(new Date(endDate)); // Use end of day for end date
       const now = this.getCurrentDateOnly();
 
       if (start < now) {
@@ -338,7 +345,7 @@ export class OffersService {
       where: { id },
       data: {
         ...(startDate && { startDate: this.normalizeDateToDateOnly(new Date(startDate)) }),
-        ...(endDate && { endDate: this.normalizeDateToDateOnly(new Date(endDate)) }),
+        ...(endDate && { endDate: this.normalizeEndDateToEndOfDay(new Date(endDate)) }),
         ...(originalPrice && { originalPrice }),
         ...(offerPrice && { offerPrice }),
         ...(description !== undefined && { description }),

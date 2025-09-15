@@ -183,7 +183,17 @@ export class ProvidersService {
             include: {
               service: {
                 include: {
-                  category: true
+                  category: true,
+                  offers: {
+                    where: {
+                      isActive: true,
+                      providerId: id
+                    },
+                    orderBy: {
+                      startDate: 'desc'
+                    },
+                    take: 1
+                  }
                 }
               }
             }
@@ -193,7 +203,20 @@ export class ProvidersService {
       if (!provider) {
         throw new NotFoundException(`Provider with ID ${id} not found`);
       }
-      return provider;
+
+      // Transform offers array to single object for each service
+      const transformedProvider = {
+        ...provider,
+        providerServices: provider.providerServices.map(ps => ({
+          ...ps,
+          service: {
+            ...ps.service,
+            offerPrice: ps.service.offers.length > 0 ? ps.service.offers[0] : null,
+          }
+        }))
+      };
+
+      return transformedProvider;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;

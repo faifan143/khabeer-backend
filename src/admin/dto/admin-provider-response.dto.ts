@@ -25,6 +25,16 @@ export class AdminProviderOfferDto {
     offerPrice: number;
 }
 
+export class AdminProviderOrderDto {
+    id: number;
+    status: string;
+    orderDate: Date;
+    commissionAmount: number;
+    providerAmount: number;
+    providerNetAmount: number;
+    totalAmount: number;
+}
+
 export class AdminProviderResponseDto {
     // Basic provider information
     id: number;
@@ -39,14 +49,26 @@ export class AdminProviderResponseDto {
     createdAt: Date;
     updatedAt: Date;
 
-    // Commission information
+    // Commission and earnings information
     totalCommission: number;
+    totalEarnings: number;
+    totalNetEarnings: number;
+
+    // Order statistics
+    completedOrders: number;
+    pendingOrders: number;
+    acceptedOrders: number;
+    inProgressOrders: number;
+    offeredOrders: number;
 
     // Related services
     providerServices: AdminProviderServiceDto[];
 
     // Active offers
     offers: AdminProviderOfferDto[];
+
+    // Orders
+    orders: AdminProviderOrderDto[];
 
     // Counts
     _count: {
