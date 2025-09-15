@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as bcrypt from 'bcryptjs';
@@ -117,11 +117,11 @@ export class AuthService {
           if (isPasswordValid) {
             // Check if provider is verified
             if (!provider.isVerified) {
-              throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
+              throw new ForbiddenException('Your account is not verified. Please wait for admin verification.');
             }
             // Check if provider is active
             if (!provider.isActive) {
-              throw new UnauthorizedException('Your account is not active. Please contact support to activate your account.');
+              throw new ForbiddenException('Your account is not active. Please contact support to activate your account.');
             }
             const { password: _, ...result } = provider;
             return { ...result, role: 'PROVIDER' };
@@ -135,7 +135,7 @@ export class AuthService {
           if (isPasswordValid) {
             // Check if user is active
             if (!user.isActive) {
-              throw new UnauthorizedException('Your account is not active. Please contact support to activate your account.');
+              throw new ForbiddenException('Your account is not active. Please contact support to activate your account.');
             }
             const { password: _, ...result } = user;
             return { ...result, role: user.role };
@@ -158,7 +158,7 @@ export class AuthService {
             }
             // Check if provider is active
             if (!provider.isActive) {
-              throw new UnauthorizedException('Your account is not active. Please contact support to activate your account.');
+              throw new ForbiddenException('Your account is not active. Please contact support to activate your account.');
             }
             const { password: _, ...result } = provider;
             return { ...result, role: 'PROVIDER' };
@@ -170,7 +170,7 @@ export class AuthService {
         if (user && await bcrypt.compare(password, user.password)) {
           // Check if user is active
           if (!user.isActive) {
-            throw new UnauthorizedException('Your account is not active. Please contact support to activate your account.');
+            throw new ForbiddenException('Your account is not active. Please contact support to activate your account.');
           }
           const { password: _, ...result } = user;
           return { ...result, role: user.role };
@@ -182,6 +182,9 @@ export class AuthService {
     } catch (error) {
       // Re-throw UnauthorizedException as-is
       if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      if (error instanceof ForbiddenException) {
         throw error;
       }
       // Log other errors and throw a generic error

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Request, UseGuards, UploadedFile, UseInterceptors, BadRequestException, UnauthorizedException, Get } from '@nestjs/common';
+import { Controller, Post, Body, Request, UseGuards, UploadedFile, UseInterceptors, BadRequestException, UnauthorizedException, Get, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { ComprehensiveAuthGuard } from './comprehensive-auth.guard';
@@ -54,6 +54,9 @@ export class AuthController {
       const user = await this.authService.validateUser(body);
       if (!user) {
         throw new BadRequestException('Invalid credentials');
+      }
+      if (user.isActive == false) {
+        throw new ForbiddenException('Your account is not active. Please contact support to activate your account.');
       }
 
       // Use FCM-enabled login if FCM token is provided

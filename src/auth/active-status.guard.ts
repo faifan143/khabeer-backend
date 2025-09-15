@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -32,7 +32,7 @@ export class ActiveStatusGuard implements CanActivate {
                 }
 
                 if (!userRecord.isActive) {
-                    throw new UnauthorizedException('Your account is inactive. Please contact support to reactivate your account.');
+                    throw new ForbiddenException('Your account is inactive. Please contact support to reactivate your account.');
                 }
             }
 
@@ -48,11 +48,11 @@ export class ActiveStatusGuard implements CanActivate {
                 }
 
                 if (!providerRecord.isVerified) {
-                    throw new UnauthorizedException('Your provider account is not verified. Please wait for admin verification.');
+                    throw new ForbiddenException('Your provider account is not verified. Please wait for admin verification.');
                 }
 
                 if (!providerRecord.isActive) {
-                    throw new UnauthorizedException('Your provider account is inactive. Please activate your account to access services.');
+                    throw new ForbiddenException('Your provider account is inactive. Please activate your account to access services.');
                 }
             }
 

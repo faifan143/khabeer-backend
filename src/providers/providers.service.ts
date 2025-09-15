@@ -1898,7 +1898,8 @@ export class ProvidersService {
       let user;
       let where: any = {
         isActive: true,
-        onlineStatus: true
+        onlineStatus: true,
+        isVerified: true,
       };
       if (userId) {
         user = await this.prisma.user.findUnique({

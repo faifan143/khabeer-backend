@@ -1,20 +1,20 @@
 import {
+    Body,
     Controller,
+    Delete,
     Get,
+    Param,
+    ParseIntPipe,
     Post,
     Put,
-    Delete,
-    Body,
-    Param,
     Query,
-    UseGuards,
     Request,
-    ParseIntPipe
+    UseGuards
 } from '@nestjs/common';
-import { OffersService, CreateOfferDto, UpdateOfferDto } from './offers.service';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CreateOfferDto, OffersService, UpdateOfferDto } from './offers.service';
 
 @Controller('offers')
 @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)

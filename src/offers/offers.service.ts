@@ -256,14 +256,22 @@ export class OffersService {
 
   async findOne(id: number) {
     const offer = await this.prisma.offer.findUnique({
-      where: { id },
+      where: {
+        id,
+        // Security: Only allow access to offers from active and verified providers
+        provider: {
+          isActive: true,
+          isVerified: true
+        }
+      },
       include: {
         provider: {
           select: {
             id: true,
             name: true,
             image: true,
-            isVerified: true
+            isVerified: true,
+            isActive: true
           }
         },
         service: {
@@ -279,7 +287,7 @@ export class OffersService {
     });
 
     if (!offer) {
-      throw new NotFoundException('Offer not found');
+      throw new NotFoundException('Offer not found or provider is inactive/unverified');
     }
 
     return offer;
@@ -475,13 +483,27 @@ export class OffersService {
       throw new NotFoundException('Provider not found');
     }
 
+    // Check if provider is active and verified
+    if (!provider.isActive) {
+      throw new BadRequestException('Provider account is inactive');
+    }
+
+    if (!provider.isVerified) {
+      throw new BadRequestException('Provider is not verified');
+    }
+
     const now = this.getCurrentDateOnly();
     const offers = await this.prisma.offer.findMany({
       where: {
         providerId,
         isActive: true,
         startDate: { lte: now },
-        endDate: { gt: now }
+        endDate: { gt: now },
+        // Additional security: ensure provider is still active and verified
+        provider: {
+          isActive: true,
+          isVerified: true
+        }
       },
       include: {
         service: {
@@ -654,7 +676,12 @@ export class OffersService {
       where: {
         isActive: true,
         startDate: { lte: now },
-        endDate: { gt: now }
+        endDate: { gt: now },
+        // Security: Only show offers from active and verified providers
+        provider: {
+          isActive: true,
+          isVerified: true
+        }
       },
       include: {
         provider: {
@@ -708,6 +735,7 @@ export class OffersService {
         startDate: { lte: now },
         endDate: { gt: now },
         provider: {
+          isActive: true,
           isVerified: true // Still require verified provider for safety
         }
       },
