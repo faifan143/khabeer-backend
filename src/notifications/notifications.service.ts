@@ -55,6 +55,7 @@ export class NotificationsService {
                     notification.title,
                     notification.message,
                     notification.data as Record<string, string>,
+                    notification.imageUrl ?? ""
                 );
 
                 // Update notification status based on sending result
