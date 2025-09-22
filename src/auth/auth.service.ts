@@ -291,6 +291,9 @@ export class AuthService {
         permissions: user.permissions || [],
       };
 
+      // Determine if user is super admin
+      const isSuperAdmin = user.email === 'admin@khabeer.com';
+
       const result = {
         access_token: this.jwtService.sign(payload),
         user: {
@@ -302,6 +305,8 @@ export class AuthService {
           permissions: user.permissions || [],
           name: user.name || null,
         },
+        isSuperAdmin: isSuperAdmin,
+        permissions: isSuperAdmin ? [] : user.permissions || [],
       };
       return result;
     } catch (error) {
@@ -343,6 +348,9 @@ export class AuthService {
         state: user.state,
         permissions: user.permissions || [],
       };
+      // Determine if user is super admin
+      const isSuperAdmin = user.email === 'admin@khabeer.com';
+
       return {
         access_token: this.jwtService.sign(payload),
         user: {
@@ -354,6 +362,8 @@ export class AuthService {
           permissions: user.permissions || [],
           name: user.name || null,
         },
+        isSuperAdmin: isSuperAdmin,
+        permissions: isSuperAdmin ? [] : user.permissions || [],
       };
     } catch (error) {
       throw new InternalServerErrorException(

@@ -48,6 +48,39 @@ export class AuthController {
     return this.authService.getTermsAndConditions();
   }
 
+  @Get('check-me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Check current user status and permissions',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User status retrieved successfully',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async checkMe(@Request() req) {
+    try {
+      const user = req.user;
+
+      // Check if user is the main super admin
+      if (user.email === 'admin@khabeer.com') {
+        return {
+          isSuperAdmin: true,
+          permissions: [],
+        };
+      }
+
+      // For subadmins, return their actual permissions
+      return {
+        isSuperAdmin: false,
+        permissions: user.permissions || [],
+      };
+    } catch (error) {
+      console.error('Check me error:', error);
+      throw new UnauthorizedException('Unable to check user status');
+    }
+  }
+
   @Post('login')
   @ApiOperation({
     summary: 'Login with email (providers) or phone (users) and password',
