@@ -4,4 +4,5 @@ export interface JwtPayloadDto {
   role: string;
   phone?: string;
   state?: string;
+  permissions?: string[];
 }

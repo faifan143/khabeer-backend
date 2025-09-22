@@ -288,6 +288,7 @@ export class AuthService {
         role: user.role,
         phone: user.phone,
         state: user.state,
+        permissions: user.permissions || [],
       };
 
       const result = {
@@ -340,6 +341,7 @@ export class AuthService {
         role: user.role,
         phone: user.phone,
         state: user.state,
+        permissions: user.permissions || [],
       };
       return {
         access_token: this.jwtService.sign(payload),
