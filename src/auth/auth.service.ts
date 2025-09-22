@@ -106,6 +106,36 @@ export class AuthService {
         };
       }
 
+      // SubAdmin login - check database
+      if (email && !phone) {
+        const subAdmin = await this.prisma.subAdmin.findUnique({
+          where: { email }
+        });
+
+        if (subAdmin) {
+          // Use bcrypt to compare password
+          const isPasswordValid = await bcrypt.compare(password, subAdmin.password);
+
+          if (isPasswordValid) {
+            // Check if subadmin is active
+            if (!subAdmin.isActive) {
+              throw new ForbiddenException('Your subadmin account is not active. Please contact support to activate your account.');
+            }
+
+            const permissions = JSON.parse(subAdmin.permissions as string);
+            return {
+              id: subAdmin.id,
+              email: subAdmin.email,
+              name: subAdmin.name,
+              role: 'SUBADMIN',
+              permissions: permissions,
+              isActive: subAdmin.isActive,
+              isVerified: true
+            };
+          }
+        }
+      }
+
       // Provider login - by email or phone
       if (email && !phone) {
         // Try provider login by email first
@@ -193,7 +223,7 @@ export class AuthService {
     }
   }
 
-  async login(user: { id: number; email?: string; phone?: string; role: string; state?: string }) {
+  async login(user: { id: number; email?: string; phone?: string; role: string; state?: string; permissions?: string[] }) {
     try {
       const username = user.email || user.phone;
       const payload = {
@@ -211,7 +241,8 @@ export class AuthService {
           email: user.email,
           phone: user.phone,
           role: user.role,
-          state: user.state
+          state: user.state,
+          permissions: user.permissions || []
         }
       };
       return result;
@@ -220,15 +251,16 @@ export class AuthService {
     }
   }
 
-  async loginWithFCM(user: { id: number; email?: string; phone?: string; role: string; state?: string }, fcmToken?: string) {
+  async loginWithFCM(user: { id: number; email?: string; phone?: string; role: string; state?: string; permissions?: string[] }, fcmToken?: string) {
     try {
       // Update FCM token if provided
       if (fcmToken) {
         if (user.role === 'PROVIDER') {
           await this.providersService.updateFCMToken(user.id, fcmToken);
-        } else {
+        } else if (user.role === 'USER') {
           await this.usersService.updateFCMToken(user.id, fcmToken);
         }
+        // Note: SubAdmins don't have FCM token support in the current system
       }
 
       const username = user.email || user.phone;
@@ -246,7 +278,8 @@ export class AuthService {
           email: user.email,
           phone: user.phone,
           role: user.role,
-          state: user.state
+          state: user.state,
+          permissions: user.permissions || []
         }
       };
     } catch (error) {

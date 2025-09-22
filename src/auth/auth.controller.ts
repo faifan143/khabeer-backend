@@ -1,11 +1,32 @@
-import { Controller, Post, Body, Request, UseGuards, UploadedFile, UseInterceptors, BadRequestException, UnauthorizedException, Get, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Request,
+  UseGuards,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+  UnauthorizedException,
+  Get,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { ComprehensiveAuthGuard } from './comprehensive-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto, RegisterType } from './dto/register.dto';
-import { PhoneLoginDto, PhoneRegistrationDto, PhoneLoginResponseDto, DirectPhoneLoginDto } from './dto/phone-login.dto';
-import { SendPasswordResetOtpDto, ResetPasswordDto, PasswordResetResponseDto } from './dto/password-reset.dto';
+import {
+  PhoneLoginDto,
+  PhoneRegistrationDto,
+  PhoneLoginResponseDto,
+  DirectPhoneLoginDto,
+} from './dto/phone-login.dto';
+import {
+  SendPasswordResetOtpDto,
+  ResetPasswordDto,
+  PasswordResetResponseDto,
+} from './dto/password-reset.dto';
 import { FileInterceptor } from '@nestjs/platform-express/multer';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -17,10 +38,8 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly filesService: FilesService
-  ) { }
-
-
+    private readonly filesService: FilesService,
+  ) {}
 
   @Get('terms')
   @ApiOperation({ summary: 'Get terms and conditions' })
@@ -29,34 +48,39 @@ export class AuthController {
     return this.authService.getTermsAndConditions();
   }
 
-
-
-
-
   @Post('login')
-  @ApiOperation({ summary: 'Login with email (providers) or phone (users) and password' })
+  @ApiOperation({
+    summary: 'Login with email (providers) or phone (users) and password',
+  })
   @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 400, description: 'Invalid credentials or missing required fields' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid credentials or missing required fields',
+  })
   async login(@Body() body: LoginDto) {
     try {
       // Validate that either email or phone is provided
       if (!body.email && !body.phone) {
-        throw new BadRequestException('Either email (for providers) or phone (for users) is required');
+        throw new BadRequestException(
+          'Either email (for providers) or phone (for users) is required',
+        );
       }
 
       // Validate that both email and phone are not provided
       if (body.email && body.phone) {
-        throw new BadRequestException('Please provide either email OR phone, not both');
+        throw new BadRequestException(
+          'Please provide either email OR phone, not both',
+        );
       }
-
-
 
       const user = await this.authService.validateUser(body);
       if (!user) {
         throw new BadRequestException('Invalid credentials');
       }
       if (user.isActive == false) {
-        throw new ForbiddenException('Your account is not active. Please contact support to activate your account.');
+        throw new ForbiddenException(
+          'Your account is not active. Please contact support to activate your account.',
+        );
       }
 
       // Use FCM-enabled login if FCM token is provided
@@ -138,20 +162,38 @@ export class AuthController {
 
   @Post('phone/password-reset/send-otp')
   @ApiOperation({ summary: 'Send OTP for password reset' })
-  @ApiResponse({ status: 200, description: 'OTP sent successfully', type: PasswordResetResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid phone number or account not found' })
-  @ApiResponse({ status: 429, description: 'Too many OTP requests, please wait' })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP sent successfully',
+    type: PasswordResetResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid phone number or account not found',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many OTP requests, please wait',
+  })
   async sendPasswordResetOtp(@Body() body: SendPasswordResetOtpDto) {
     return this.authService.sendPasswordResetOtp(body.phoneNumber);
   }
 
   @Post('phone/password-reset')
   @ApiOperation({ summary: 'Reset password with phone verification' })
-  @ApiResponse({ status: 200, description: 'Password reset successful', type: PasswordResetResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successful',
+    type: PasswordResetResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Invalid OTP or data' })
   @ApiResponse({ status: 404, description: 'Account not found' })
   async resetPasswordWithPhone(@Body() body: ResetPasswordDto) {
-    return this.authService.resetPasswordWithPhone(body.phoneNumber, body.otp, body.newPassword);
+    return this.authService.resetPasswordWithPhone(
+      body.phoneNumber,
+      body.otp,
+      body.newPassword,
+    );
   }
 
   // @Post('register')
@@ -208,35 +250,48 @@ export class AuthController {
   // }
 
   @Post('register/initiate')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads/images/users',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `user-${uniqueSuffix}${ext}`);
-      },
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/images/users',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `user-${uniqueSuffix}${ext}`);
+        },
+      }),
     }),
-  }))
-  @ApiOperation({ summary: 'Step 1: Initiate registration and send OTP - User/Provider provides all data including password and services with prices' })
+  )
+  @ApiOperation({
+    summary:
+      'Step 1: Initiate registration and send OTP - User/Provider provides all data including password and services with prices',
+  })
   @ApiResponse({ status: 200, description: 'Registration initiated, OTP sent' })
-  @ApiResponse({ status: 400, description: 'Invalid data or user already exists' })
-  async initiateRegistration(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
-
-
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid data or user already exists',
+  })
+  async initiateRegistration(
+    @Body() body: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     console.log('body', body);
-
 
     // Validate required fields
     if (!body.password || !body.name || !body.phoneNumber) {
-      throw new BadRequestException('Password, name, and phone number are required');
+      throw new BadRequestException(
+        'Password, name, and phone number are required',
+      );
     }
 
     // Validate categoryIds if provided (for provider registration)
     if (body.categoryIds && Array.isArray(body.categoryIds)) {
       for (const categoryId of body.categoryIds) {
         if (!categoryId || isNaN(Number(categoryId))) {
-          throw new BadRequestException('Each categoryId must be a valid number');
+          throw new BadRequestException(
+            'Each categoryId must be a valid number',
+          );
         }
       }
     }
@@ -247,15 +302,23 @@ export class AuthController {
       name: Array.isArray(body.name) ? body.name[0] : body.name,
       email: Array.isArray(body.email) ? body.email[0] : body.email,
       password: Array.isArray(body.password) ? body.password[0] : body.password,
-      phoneNumber: Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber,
+      phoneNumber: Array.isArray(body.phoneNumber)
+        ? body.phoneNumber[0]
+        : body.phoneNumber,
       role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
-      address: Array.isArray(body.address) ? body.address[0] : body.address || '',
+      address: Array.isArray(body.address)
+        ? body.address[0]
+        : body.address || '',
       phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
       state: Array.isArray(body.state) ? body.state[0] : body.state || '',
       isActive: true,
-      officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
-      description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-      categoryIds: body.categoryIds || []
+      officialDocuments: Array.isArray(body.officialDocuments)
+        ? body.officialDocuments[0]
+        : body.officialDocuments,
+      description: Array.isArray(body.description)
+        ? body.description[0]
+        : body.description || '',
+      categoryIds: body.categoryIds || [],
     };
 
     // Handle file upload
@@ -270,19 +333,30 @@ export class AuthController {
   }
 
   @Post('register/complete')
-  @ApiOperation({ summary: 'Step 2: Complete registration with OTP verification - Only phone and OTP required' })
-  @ApiResponse({ status: 200, description: 'Registration completed successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid OTP or registration data expired' })
-  async completeRegistration(@Body() body: { phoneNumber: string; otp: string }) {
-
-
+  @ApiOperation({
+    summary:
+      'Step 2: Complete registration with OTP verification - Only phone and OTP required',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Registration completed successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid OTP or registration data expired',
+  })
+  async completeRegistration(
+    @Body() body: { phoneNumber: string; otp: string },
+  ) {
     // Validate required fields - only phone and OTP are needed
     if (!body.phoneNumber || !body.otp) {
       throw new BadRequestException('Phone number and OTP are required');
     }
 
     // Normalize data
-    const phoneNumber = Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber;
+    const phoneNumber = Array.isArray(body.phoneNumber)
+      ? body.phoneNumber[0]
+      : body.phoneNumber;
     const otp = Array.isArray(body.otp) ? body.otp[0] : body.otp;
 
     return this.authService.completeRegistration(phoneNumber, otp);
@@ -337,7 +411,9 @@ export class AuthController {
   }
 
   @Post('register/check-status')
-  @ApiOperation({ summary: 'Check if registration data exists for a phone number' })
+  @ApiOperation({
+    summary: 'Check if registration data exists for a phone number',
+  })
   @ApiResponse({ status: 200, description: 'Registration status checked' })
   @ApiResponse({ status: 400, description: 'Phone number required' })
   async checkRegistrationStatus(@Body() body: { phoneNumber: string }) {
@@ -357,5 +433,4 @@ export class AuthController {
   //   }
   //   return this.authService.clearRegistrationData(body.phoneNumber);
   // }
-
 }

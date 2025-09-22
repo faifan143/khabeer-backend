@@ -29,14 +29,21 @@ import { PrismaModule } from '../prisma/prisma.module';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET', 'supersecret'),
         signOptions: {
-          expiresIn: configService.get('JWT_EXPIRES_IN', '30d')
+          expiresIn: configService.get('JWT_EXPIRES_IN', '30d'),
         },
       }),
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, JwtStrategy, RolesGuard, ActiveStatusGuard, ComprehensiveAuthGuard, UsersService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RolesGuard,
+    ActiveStatusGuard,
+    ComprehensiveAuthGuard,
+    UsersService,
+  ],
   controllers: [AuthController],
   exports: [AuthService, JwtModule, ActiveStatusGuard, ComprehensiveAuthGuard],
 })
-export class AuthModule { }
+export class AuthModule {}

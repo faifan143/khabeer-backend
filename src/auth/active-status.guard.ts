@@ -14,8 +14,8 @@ export class ActiveStatusGuard implements CanActivate {
             return true;
         }
 
-        // Admin users are always considered active - skip all status checks
-        if (user.role === 'ADMIN') {
+        // Admin and SubAdmin users are always considered active - skip all status checks
+        if (user.role === 'ADMIN' || user.role === 'SUBADMIN') {
             return true;
         }
 

@@ -1,8 +1,21 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors, Request } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+  Request,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { Roles } from 'src/auth/roles.decorator';
+import { Roles } from '../auth/roles.decorator';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FilesService } from '../files/files.service';
@@ -14,8 +27,8 @@ import { ServicesService } from './services.service';
 export class ServicesController {
   constructor(
     private readonly servicesService: ServicesService,
-    private readonly filesService: FilesService
-  ) { }
+    private readonly filesService: FilesService,
+  ) {}
 
   @Get()
   @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
@@ -36,10 +49,17 @@ export class ServicesController {
   @Get('category/:categoryId')
   @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('USER', 'PROVIDER', 'ADMIN')
-  async findByCategory(@Param('categoryId') categoryId: string, @Request() req) {
+  async findByCategory(
+    @Param('categoryId') categoryId: string,
+    @Request() req,
+  ) {
     const userState = req.user.state;
     const userRole = req.user.role;
-    return this.servicesService.findByCategory(Number(categoryId), userState, userRole);
+    return this.servicesService.findByCategory(
+      Number(categoryId),
+      userState,
+      userRole,
+    );
   }
 
   @Get(':id')
@@ -52,19 +72,22 @@ export class ServicesController {
   @Post()
   @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('ADMIN')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `${uniqueSuffix}${ext}`);
-      },
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${uniqueSuffix}${ext}`);
+        },
+      }),
     }),
-  }))
+  )
   async create(
     @Body() createServiceDto: CreateServiceDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
     const data = { ...createServiceDto, image: '' };
     if (file) {
@@ -77,20 +100,23 @@ export class ServicesController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('ADMIN')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `${uniqueSuffix}${ext}`);
-      },
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${uniqueSuffix}${ext}`);
+        },
+      }),
     }),
-  }))
+  )
   async update(
     @Param('id') id: string,
     @Body() data: UpdateServiceDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
     const updateData: any = { ...data };
     if (file) {

@@ -1,4 +1,16 @@
-import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Body,
+  Post,
+  Put,
+  Delete,
+  UseGuards,
+  Request,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { CategoriesService } from './categories.service';
@@ -15,8 +27,8 @@ import { Public } from 'src/auth/public.decorator';
 export class CategoriesController {
   constructor(
     private readonly categoriesService: CategoriesService,
-    private readonly filesService: FilesService
-  ) { }
+    private readonly filesService: FilesService,
+  ) {}
 
   @Get('public')
   @Public()
@@ -42,19 +54,22 @@ export class CategoriesController {
   @Post()
   @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('ADMIN')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `${uniqueSuffix}${ext}`);
-      },
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${uniqueSuffix}${ext}`);
+        },
+      }),
     }),
-  }))
+  )
   async create(
     @Body() createCategoryDto: CreateCategoryDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
     const data = { ...createCategoryDto, image: '' };
     if (file) {
@@ -67,20 +82,23 @@ export class CategoriesController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @Roles('ADMIN')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `${uniqueSuffix}${ext}`);
-      },
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${uniqueSuffix}${ext}`);
+        },
+      }),
     }),
-  }))
+  )
   async update(
     @Param('id') id: string,
     @Body() data: UpdateCategoryDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
     const updateData: any = { ...data };
     if (file) {
@@ -98,4 +116,3 @@ export class CategoriesController {
     return this.categoriesService.remove(Number(id));
   }
 }
-

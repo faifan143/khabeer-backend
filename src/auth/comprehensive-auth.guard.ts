@@ -43,9 +43,9 @@ export class ComprehensiveAuthGuard implements CanActivate {
             throw new UnauthorizedException('User role not found');
         }
 
-        // Admin users are always considered active and verified - skip all status checks
-        if (user.role === 'ADMIN') {
-            console.log('🔍 Admin user detected, skipping all status checks');
+        // Admin and SubAdmin users are always considered active and verified - skip all status checks
+        if (user.role === 'ADMIN' || user.role === 'SUBADMIN') {
+            console.log('🔍 Admin/SubAdmin user detected, skipping all status checks');
             return this.checkRoleAuthorization(context, user);
         }
 
