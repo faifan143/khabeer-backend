@@ -1,11 +1,23 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as bcrypt from 'bcryptjs';
 import { ProvidersService } from '../providers/providers.service';
 import { SmsService } from '../sms/sms.service';
 import { UsersService } from '../users/users.service';
-import { DirectPhoneLoginDto, PhoneLoginDto, PhoneLoginResponseDto } from './dto/phone-login.dto';
+import {
+  DirectPhoneLoginDto,
+  PhoneLoginDto,
+  PhoneLoginResponseDto,
+} from './dto/phone-login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -25,31 +37,34 @@ export class AuthService {
     private readonly providersService: ProvidersService,
     private readonly smsService: SmsService,
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService
-  ) { }
+    private readonly prisma: PrismaService,
+  ) {}
 
   async getTermsAndConditions() {
-
     const terms = await this.prisma.systemSettings.findUnique({
       where: {
-        key: 'terms_and_conditions'
-      }
+        key: 'terms_and_conditions',
+      },
     });
     return {
       terms: terms?.value,
-      privacy: terms?.value
+      privacy: terms?.value,
     };
   }
 
   /**
    * Store registration data in cache with expiration
    */
-  private storeRegistrationData(phoneNumber: string, data: any, expiresInMinutes: number = 10): void {
-    const expiresAt = Date.now() + (expiresInMinutes * 60 * 1000);
+  private storeRegistrationData(
+    phoneNumber: string,
+    data: any,
+    expiresInMinutes: number = 10,
+  ): void {
+    const expiresAt = Date.now() + expiresInMinutes * 60 * 1000;
 
     this.registrationCache[phoneNumber] = {
       data,
-      expiresAt
+      expiresAt,
     };
 
     // Clean up expired entries
@@ -83,14 +98,18 @@ export class AuthService {
    */
   private cleanupExpiredCache(): void {
     const now = Date.now();
-    Object.keys(this.registrationCache).forEach(phoneNumber => {
+    Object.keys(this.registrationCache).forEach((phoneNumber) => {
       if (this.registrationCache[phoneNumber].expiresAt < now) {
         delete this.registrationCache[phoneNumber];
       }
     });
   }
 
-  async validateUser(loginData: { email?: string; phone?: string; password: string }): Promise<any> {
+  async validateUser(loginData: {
+    email?: string;
+    phone?: string;
+    password: string;
+  }): Promise<any> {
     try {
       const { email, phone, password } = loginData;
 
@@ -102,24 +121,29 @@ export class AuthService {
           name: 'System Administrator',
           role: 'ADMIN',
           isActive: true,
-          isVerified: true
+          isVerified: true,
         };
       }
 
       // SubAdmin login - check database
       if (email && !phone) {
         const subAdmin = await this.prisma.subAdmin.findUnique({
-          where: { email }
+          where: { email },
         });
 
         if (subAdmin) {
           // Use bcrypt to compare password
-          const isPasswordValid = await bcrypt.compare(password, subAdmin.password);
+          const isPasswordValid = await bcrypt.compare(
+            password,
+            subAdmin.password,
+          );
 
           if (isPasswordValid) {
             // Check if subadmin is active
             if (!subAdmin.isActive) {
-              throw new ForbiddenException('Your subadmin account is not active. Please contact support to activate your account.');
+              throw new ForbiddenException(
+                'Your subadmin account is not active. Please contact support to activate your account.',
+              );
             }
 
             const permissions = JSON.parse(subAdmin.permissions as string);
@@ -130,7 +154,9 @@ export class AuthService {
               role: 'SUBADMIN',
               permissions: permissions,
               isActive: subAdmin.isActive,
-              isVerified: true
+              isVerified: true,
+              phone: null, // Subadmins don't have phone
+              state: null, // Subadmins don't have state
             };
           }
         }
@@ -139,19 +165,27 @@ export class AuthService {
       // Provider login - by email or phone
       if (email && !phone) {
         // Try provider login by email first
-        const provider = await this.providersService.findByEmailWithPassword(email);
+        const provider =
+          await this.providersService.findByEmailWithPassword(email);
 
         if (provider && provider.password) {
-          const isPasswordValid = await bcrypt.compare(password, provider.password);
+          const isPasswordValid = await bcrypt.compare(
+            password,
+            provider.password,
+          );
 
           if (isPasswordValid) {
             // Check if provider is verified
             if (!provider.isVerified) {
-              throw new ForbiddenException('Your account is not verified. Please wait for admin verification.');
+              throw new ForbiddenException(
+                'Your account is not verified. Please wait for admin verification.',
+              );
             }
             // Check if provider is active
             if (!provider.isActive) {
-              throw new ForbiddenException('Your account is not active. Please contact support to activate your account.');
+              throw new ForbiddenException(
+                'Your account is not active. Please contact support to activate your account.',
+              );
             }
             const { password: _, ...result } = provider;
             return { ...result, role: 'PROVIDER' };
@@ -165,7 +199,9 @@ export class AuthService {
           if (isPasswordValid) {
             // Check if user is active
             if (!user.isActive) {
-              throw new ForbiddenException('Your account is not active. Please contact support to activate your account.');
+              throw new ForbiddenException(
+                'Your account is not active. Please contact support to activate your account.',
+              );
             }
             const { password: _, ...result } = user;
             return { ...result, role: user.role };
@@ -176,19 +212,27 @@ export class AuthService {
       // Provider login - by phone
       if (phone && !email) {
         // Try provider login by phone first
-        const provider = await this.providersService.findByPhoneWithPassword(phone);
+        const provider =
+          await this.providersService.findByPhoneWithPassword(phone);
 
         if (provider && provider.password) {
-          const isPasswordValid = await bcrypt.compare(password, provider.password);
+          const isPasswordValid = await bcrypt.compare(
+            password,
+            provider.password,
+          );
 
           if (isPasswordValid) {
             // Check if provider is verified
             if (!provider.isVerified) {
-              throw new UnauthorizedException('Your account is not verified. Please wait for admin verification.');
+              throw new UnauthorizedException(
+                'Your account is not verified. Please wait for admin verification.',
+              );
             }
             // Check if provider is active
             if (!provider.isActive) {
-              throw new ForbiddenException('Your account is not active. Please contact support to activate your account.');
+              throw new ForbiddenException(
+                'Your account is not active. Please contact support to activate your account.',
+              );
             }
             const { password: _, ...result } = provider;
             return { ...result, role: 'PROVIDER' };
@@ -197,10 +241,12 @@ export class AuthService {
 
         // Also check for user by phone (if provider login failed)
         const user = await this.usersService.findByPhoneWithPassword(phone);
-        if (user && await bcrypt.compare(password, user.password)) {
+        if (user && (await bcrypt.compare(password, user.password))) {
           // Check if user is active
           if (!user.isActive) {
-            throw new ForbiddenException('Your account is not active. Please contact support to activate your account.');
+            throw new ForbiddenException(
+              'Your account is not active. Please contact support to activate your account.',
+            );
           }
           const { password: _, ...result } = user;
           return { ...result, role: user.role };
@@ -219,11 +265,21 @@ export class AuthService {
       }
       // Log other errors and throw a generic error
       console.error('Authentication error:', error);
-      throw new InternalServerErrorException('Error validating user credentials');
+      throw new InternalServerErrorException(
+        'Error validating user credentials',
+      );
     }
   }
 
-  async login(user: { id: number; email?: string; phone?: string; role: string; state?: string; permissions?: string[] }) {
+  async login(user: {
+    id: number;
+    email?: string;
+    phone?: string;
+    role: string;
+    state?: string;
+    permissions?: string[];
+    name?: string;
+  }) {
     try {
       const username = user.email || user.phone;
       const payload = {
@@ -231,7 +287,7 @@ export class AuthService {
         sub: user.id,
         role: user.role,
         phone: user.phone,
-        state: user.state
+        state: user.state,
       };
 
       const result = {
@@ -242,16 +298,30 @@ export class AuthService {
           phone: user.phone,
           role: user.role,
           state: user.state,
-          permissions: user.permissions || []
-        }
+          permissions: user.permissions || [],
+          name: user.name || null,
+        },
       };
       return result;
     } catch (error) {
-      throw new InternalServerErrorException('Error generating authentication token');
+      throw new InternalServerErrorException(
+        'Error generating authentication token',
+      );
     }
   }
 
-  async loginWithFCM(user: { id: number; email?: string; phone?: string; role: string; state?: string; permissions?: string[] }, fcmToken?: string) {
+  async loginWithFCM(
+    user: {
+      id: number;
+      email?: string;
+      phone?: string;
+      role: string;
+      state?: string;
+      permissions?: string[];
+      name?: string;
+    },
+    fcmToken?: string,
+  ) {
     try {
       // Update FCM token if provided
       if (fcmToken) {
@@ -269,7 +339,7 @@ export class AuthService {
         sub: user.id,
         role: user.role,
         phone: user.phone,
-        state: user.state
+        state: user.state,
       };
       return {
         access_token: this.jwtService.sign(payload),
@@ -279,11 +349,14 @@ export class AuthService {
           phone: user.phone,
           role: user.role,
           state: user.state,
-          permissions: user.permissions || []
-        }
+          permissions: user.permissions || [],
+          name: user.name || null,
+        },
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error generating authentication token');
+      throw new InternalServerErrorException(
+        'Error generating authentication token',
+      );
     }
   }
 
@@ -296,7 +369,9 @@ export class AuthService {
 
       // Validate password strength
       if (data.password.length < 6) {
-        throw new BadRequestException('Password must be at least 6 characters long');
+        throw new BadRequestException(
+          'Password must be at least 6 characters long',
+        );
       }
 
       if (data.registerType === 'provider') {
@@ -311,21 +386,29 @@ export class AuthService {
 
         // Check if provider already exists (only if email is provided)
         if (data.email) {
-          const existingProvider = await this.providersService.findByEmail(data.email);
+          const existingProvider = await this.providersService.findByEmail(
+            data.email,
+          );
           if (existingProvider) {
-            throw new ConflictException('Provider with this email already exists');
+            throw new ConflictException(
+              'Provider with this email already exists',
+            );
           }
         }
       } else {
         // User registration - phone is required
         if (!data.phone) {
-          throw new BadRequestException('Phone number is required for user registration');
+          throw new BadRequestException(
+            'Phone number is required for user registration',
+          );
         }
 
         // Check if user already exists with this phone
         const existingUser = await this.usersService.findByPhone(data.phone);
         if (existingUser) {
-          throw new ConflictException('User with this phone number already exists');
+          throw new ConflictException(
+            'User with this phone number already exists',
+          );
         }
       }
 
@@ -344,7 +427,7 @@ export class AuthService {
         role: data.role || 'USER',
         isActive: data.isActive ?? true,
         officialDocuments: data.officialDocuments,
-        fcm: data.fcm || undefined // Include FCM token
+        fcm: data.fcm || undefined, // Include FCM token
       };
 
       // Create user or provider based on role
@@ -362,18 +445,23 @@ export class AuthService {
           isVerified: false,
           location: null,
           officialDocuments: data.officialDocuments || undefined,
-          categoryIds: (data as any).categoryIds?.map((id: any) => Number(id)) || [], // Include categories for linking
-          fcm: data.fcm || undefined // Include FCM token
+          categoryIds:
+            (data as any).categoryIds?.map((id: any) => Number(id)) || [], // Include categories for linking
+          fcm: data.fcm || undefined, // Include FCM token
         };
 
-        const provider = await this.providersService.registerProviderWithCategories(providerData);
+        const provider =
+          await this.providersService.registerProviderWithCategories(
+            providerData,
+          );
 
         // Return provider data without password
         const { password, ...result } = provider as any;
         return {
           ...result,
           role: 'PROVIDER',
-          message: 'Provider registered successfully. Please wait for admin verification to login.'
+          message:
+            'Provider registered successfully. Please wait for admin verification to login.',
         };
       } else {
         // Create regular user
@@ -383,7 +471,7 @@ export class AuthService {
         return {
           ...user,
           role: 'USER',
-          message: 'User registered successfully'
+          message: 'User registered successfully',
         };
       }
     } catch (error) {
@@ -393,9 +481,13 @@ export class AuthService {
           case 'P2002':
             if (error.meta?.target && Array.isArray(error.meta.target)) {
               if (error.meta.target.includes('email')) {
-                throw new ConflictException('Provider with this email already exists');
+                throw new ConflictException(
+                  'Provider with this email already exists',
+                );
               } else if (error.meta.target.includes('phone')) {
-                throw new ConflictException('User with this phone number already exists');
+                throw new ConflictException(
+                  'User with this phone number already exists',
+                );
               }
             }
             break;
@@ -409,15 +501,19 @@ export class AuthService {
       }
 
       // Re-throw our custom exceptions
-      if (error instanceof BadRequestException ||
+      if (
+        error instanceof BadRequestException ||
         error instanceof ConflictException ||
-        error instanceof InternalServerErrorException) {
+        error instanceof InternalServerErrorException
+      ) {
         throw error;
       }
 
       // Handle unexpected errors
       console.error('Registration error:', error);
-      throw new InternalServerErrorException('Registration failed. Please try again.');
+      throw new InternalServerErrorException(
+        'Registration failed. Please try again.',
+      );
     }
   }
 
@@ -431,9 +527,13 @@ export class AuthService {
 
       // Check if provider with this email already exists (if user has email)
       if (user.email) {
-        const existingProvider = await this.providersService.findByEmail(user.email);
+        const existingProvider = await this.providersService.findByEmail(
+          user.email,
+        );
         if (existingProvider) {
-          throw new ConflictException('Provider with this email already exists');
+          throw new ConflictException(
+            'Provider with this email already exists',
+          );
         }
       }
 
@@ -449,7 +549,7 @@ export class AuthService {
         isActive: true, // Start as inactive
         isVerified: false,
         location: null,
-        officialDocuments: providerData.officialDocuments || null
+        officialDocuments: providerData.officialDocuments || null,
       });
 
       // Optionally deactivate the user account
@@ -458,26 +558,38 @@ export class AuthService {
       return {
         ...newProvider,
         role: 'PROVIDER',
-        message: 'Account upgraded to provider successfully. Please wait for admin approval.'
+        message:
+          'Account upgraded to provider successfully. Please wait for admin approval.',
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ConflictException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error upgrading account to provider');
+      throw new InternalServerErrorException(
+        'Error upgrading account to provider',
+      );
     }
   }
 
-  async checkAccountStatus(identifier: string, type: 'email' | 'phone' = 'email') {
+  async checkAccountStatus(
+    identifier: string,
+    type: 'email' | 'phone' = 'email',
+  ) {
     try {
       // Check for admin account first
-      if (identifier === 'admin@khabeer.com' || identifier === '+966500000000') {
+      if (
+        identifier === 'admin@khabeer.com' ||
+        identifier === '+966500000000'
+      ) {
         return {
           exists: true,
           type: 'ADMIN',
           isActive: true, // Admins are always active
           isVerified: true, // Admins are always verified
-          message: 'Admin account is active and verified.'
+          message: 'Admin account is active and verified.',
         };
       }
 
@@ -490,9 +602,11 @@ export class AuthService {
             type: 'PROVIDER',
             isActive: provider.isActive,
             isVerified: provider.isVerified,
-            message: !provider.isVerified ? 'Account is not verified. Please wait for admin verification.' :
-              !provider.isActive ? 'Account is verified but currently inactive. You can activate it to accept orders.' :
-                'Account is verified and active.'
+            message: !provider.isVerified
+              ? 'Account is not verified. Please wait for admin verification.'
+              : !provider.isActive
+                ? 'Account is verified but currently inactive. You can activate it to accept orders.'
+                : 'Account is verified and active.',
           };
         }
 
@@ -505,7 +619,7 @@ export class AuthService {
               type: 'ADMIN',
               isActive: true, // Admins are always active
               isVerified: true, // Admins are always verified
-              message: 'Admin account is active and verified.'
+              message: 'Admin account is active and verified.',
             };
           } else {
             return {
@@ -513,7 +627,8 @@ export class AuthService {
               type: 'USER',
               isActive: user.isActive,
               isVerified: true, // Regular users don't need verification
-              message: 'User account is ready to use. isActive status does not affect login.'
+              message:
+                'User account is ready to use. isActive status does not affect login.',
             };
           }
         }
@@ -527,7 +642,7 @@ export class AuthService {
               type: 'ADMIN',
               isActive: true, // Admins are always active
               isVerified: true, // Admins are always verified
-              message: 'Admin account is active and verified.'
+              message: 'Admin account is active and verified.',
             };
           } else {
             return {
@@ -535,7 +650,8 @@ export class AuthService {
               type: 'USER',
               isActive: user.isActive,
               isVerified: true, // Regular users don't need verification
-              message: 'User account is ready to use. isActive status does not affect login.'
+              message:
+                'User account is ready to use. isActive status does not affect login.',
             };
           }
         }
@@ -543,7 +659,7 @@ export class AuthService {
 
       return {
         exists: false,
-        message: 'Account not found'
+        message: 'Account not found',
       };
     } catch (error) {
       throw new InternalServerErrorException('Error checking account status');
@@ -556,16 +672,23 @@ export class AuthService {
       const provider = await this.providersService.findById(providerId);
 
       if (!provider.isVerified) {
-        throw new BadRequestException('Your account must be verified by admin before you can activate it.');
+        throw new BadRequestException(
+          'Your account must be verified by admin before you can activate it.',
+        );
       }
 
-      const updatedProvider = await this.providersService.update(provider.id, { isActive: true });
+      const updatedProvider = await this.providersService.update(provider.id, {
+        isActive: true,
+      });
       return {
         ...updatedProvider,
-        message: 'Account activated successfully. You can now accept orders.'
+        message: 'Account activated successfully. You can now accept orders.',
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       console.error('Error activating provider account:', error);
@@ -575,15 +698,16 @@ export class AuthService {
 
   async deactivateProviderAccount(providerId: number) {
     try {
-
-
       // Try to find the provider directly by ID
       const provider = await this.providersService.findById(providerId);
 
-      const updatedProvider = await this.providersService.update(provider.id, { isActive: false });
+      const updatedProvider = await this.providersService.update(provider.id, {
+        isActive: false,
+      });
       return {
         ...updatedProvider,
-        message: 'Account deactivated successfully. You will not receive new orders.'
+        message:
+          'Account deactivated successfully. You will not receive new orders.',
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -597,19 +721,22 @@ export class AuthService {
   /**
    * Send OTP for phone-based operations (registration, password reset)
    */
-  async sendPhoneLoginOtp(phoneLoginDto: PhoneLoginDto): Promise<{ success: boolean; message: string; expiresIn?: number }> {
+  async sendPhoneLoginOtp(
+    phoneLoginDto: PhoneLoginDto,
+  ): Promise<{ success: boolean; message: string; expiresIn?: number }> {
     try {
       const { phoneNumber, purpose = 'registration' } = phoneLoginDto;
 
       // Check if phone number is already registered (for registration)
       if (purpose === 'registration') {
         const existingUser = await this.usersService.findByPhone(phoneNumber);
-        const existingProvider = await this.providersService.findByPhone(phoneNumber);
+        const existingProvider =
+          await this.providersService.findByPhone(phoneNumber);
 
         if (existingUser || existingProvider) {
           return {
             success: false,
-            message: 'Phone number is already registered'
+            message: 'Phone number is already registered',
           };
         }
       }
@@ -620,13 +747,12 @@ export class AuthService {
       return {
         success: result.success,
         message: result.message,
-        expiresIn: result.expiresIn
+        expiresIn: result.expiresIn,
       };
-
     } catch (error) {
       return {
         success: false,
-        message: 'Failed to send OTP'
+        message: 'Failed to send OTP',
       };
     }
   }
@@ -634,7 +760,9 @@ export class AuthService {
   /**
    * Send OTP specifically for password reset
    */
-  async sendPasswordResetOtp(phoneNumber: string): Promise<{ success: boolean; message: string; expiresIn?: number }> {
+  async sendPasswordResetOtp(
+    phoneNumber: string,
+  ): Promise<{ success: boolean; message: string; expiresIn?: number }> {
     try {
       // Check if account exists with this phone number
       const user = await this.usersService.findByPhone(phoneNumber);
@@ -643,26 +771,25 @@ export class AuthService {
       if (!user && !provider) {
         return {
           success: false,
-          message: 'No account found with this phone number'
+          message: 'No account found with this phone number',
         };
       }
 
       // Send OTP for password reset
       const result = await this.smsService.sendOtp({
         phoneNumber,
-        purpose: 'password_reset'
+        purpose: 'password_reset',
       });
 
       return {
         success: result.success,
         message: result.message,
-        expiresIn: result.expiresIn
+        expiresIn: result.expiresIn,
       };
-
     } catch (error) {
       return {
         success: false,
-        message: 'Failed to send password reset OTP'
+        message: 'Failed to send password reset OTP',
       };
     }
   }
@@ -670,7 +797,9 @@ export class AuthService {
   /**
    * Phone login without OTP (main login method)
    */
-  async phoneLogin(directPhoneLoginDto: DirectPhoneLoginDto): Promise<PhoneLoginResponseDto> {
+  async phoneLogin(
+    directPhoneLoginDto: DirectPhoneLoginDto,
+  ): Promise<PhoneLoginResponseDto> {
     try {
       const { phoneNumber, password } = directPhoneLoginDto;
 
@@ -681,7 +810,7 @@ export class AuthService {
           sub: 0,
           role: 'ADMIN',
           phone: phoneNumber,
-          state: 'Muscat' // Admin state
+          state: 'Muscat', // Admin state
         };
 
         const access_token = this.jwtService.sign(payload);
@@ -694,8 +823,8 @@ export class AuthService {
             id: 0,
             phone: phoneNumber,
             role: 'ADMIN',
-            state: 'Muscat'
-          } as any
+            state: 'Muscat',
+          } as any,
         };
       }
 
@@ -706,7 +835,7 @@ export class AuthService {
       if (!user && !provider) {
         return {
           success: false,
-          message: 'No account found with this phone number'
+          message: 'No account found with this phone number',
         };
       }
 
@@ -718,7 +847,8 @@ export class AuthService {
         if (!user.isActive && user.role !== 'ADMIN') {
           return {
             success: false,
-            message: 'Account is not active. Please contact support to activate your account.'
+            message:
+              'Account is not active. Please contact support to activate your account.',
           };
         }
         userData = user;
@@ -728,14 +858,16 @@ export class AuthService {
         if (!provider.isVerified) {
           return {
             success: false,
-            message: 'Provider account is not verified. Please wait for admin verification.'
+            message:
+              'Provider account is not verified. Please wait for admin verification.',
           };
         }
         // Check if provider is active
         if (!provider.isActive) {
           return {
             success: false,
-            message: 'Provider account is not active. Please contact support to activate your account.'
+            message:
+              'Provider account is not active. Please contact support to activate your account.',
           };
         }
         userData = provider;
@@ -744,11 +876,14 @@ export class AuthService {
 
       // If password is provided, validate it
       if (password && userData.password) {
-        const isPasswordValid = await bcrypt.compare(password, userData.password);
+        const isPasswordValid = await bcrypt.compare(
+          password,
+          userData.password,
+        );
         if (!isPasswordValid) {
           return {
             success: false,
-            message: 'Invalid password'
+            message: 'Invalid password',
           };
         }
       }
@@ -759,7 +894,7 @@ export class AuthService {
         sub: userData.id,
         role: role,
         phone: phoneNumber,
-        state: userData.state
+        state: userData.state,
       };
 
       const access_token = this.jwtService.sign(payload);
@@ -772,14 +907,13 @@ export class AuthService {
           id: userData.id,
           phone: phoneNumber,
           role: role,
-          state: userData.state
-        } as any
+          state: userData.state,
+        } as any,
       };
-
     } catch (error) {
       return {
         success: false,
-        message: 'Login failed. Please try again.'
+        message: 'Login failed. Please try again.',
       };
     }
   }
@@ -787,7 +921,9 @@ export class AuthService {
   /**
    * Register user with phone verification (OTP optional)
    */
-  async registerWithPhone(data: RegisterDto & { phoneNumber: string; otp?: string }): Promise<any> {
+  async registerWithPhone(
+    data: RegisterDto & { phoneNumber: string; otp?: string },
+  ): Promise<any> {
     try {
       const { phoneNumber, otp, ...registerData } = data;
 
@@ -796,7 +932,7 @@ export class AuthService {
         const otpResult = await this.smsService.verifyOtp({
           phoneNumber,
           otp,
-          purpose: 'registration'
+          purpose: 'registration',
         });
 
         if (!otpResult.success) {
@@ -806,7 +942,8 @@ export class AuthService {
 
       // Check if phone number is already registered
       const existingUser = await this.usersService.findByPhone(phoneNumber);
-      const existingProvider = await this.providersService.findByPhone(phoneNumber);
+      const existingProvider =
+        await this.providersService.findByPhone(phoneNumber);
 
       if (existingUser || existingProvider) {
         throw new ConflictException('Phone number is already registered');
@@ -815,14 +952,16 @@ export class AuthService {
       // Add phone number to registration data
       const registrationData = {
         ...registerData,
-        phone: phoneNumber
+        phone: phoneNumber,
       };
 
       // Register user using existing method
       return this.register(registrationData);
-
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ConflictException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Registration failed');
@@ -832,19 +971,23 @@ export class AuthService {
   /**
    * Reset password with phone verification
    */
-  async resetPasswordWithPhone(phoneNumber: string, otp: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  async resetPasswordWithPhone(
+    phoneNumber: string,
+    otp: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       // Verify OTP
       const otpResult = await this.smsService.verifyOtp({
         phoneNumber,
         otp,
-        purpose: 'password_reset'
+        purpose: 'password_reset',
       });
 
       if (!otpResult.success) {
         return {
           success: false,
-          message: otpResult.message
+          message: otpResult.message,
         };
       }
 
@@ -855,7 +998,7 @@ export class AuthService {
       if (!user && !provider) {
         return {
           success: false,
-          message: 'No account found with this phone number'
+          message: 'No account found with this phone number',
         };
       }
 
@@ -866,18 +1009,19 @@ export class AuthService {
       if (user) {
         await this.usersService.update(user.id, { password: hashedPassword });
       } else if (provider) {
-        await this.providersService.update(provider.id, { password: hashedPassword });
+        await this.providersService.update(provider.id, {
+          password: hashedPassword,
+        });
       }
 
       return {
         success: true,
-        message: 'Password reset successfully'
+        message: 'Password reset successfully',
       };
-
     } catch (error) {
       return {
         success: false,
-        message: 'Password reset failed'
+        message: 'Password reset failed',
       };
     }
   }
@@ -886,7 +1030,14 @@ export class AuthService {
    * Step 1: Initiate registration and send OTP
    * User provides all registration data including password
    */
-  async initiateRegistration(data: RegisterDto & { phoneNumber: string }): Promise<{ success: boolean; message: string; expiresIn?: number; registrationData?: any }> {
+  async initiateRegistration(
+    data: RegisterDto & { phoneNumber: string },
+  ): Promise<{
+    success: boolean;
+    message: string;
+    expiresIn?: number;
+    registrationData?: any;
+  }> {
     try {
       const { phoneNumber, ...registerData } = data;
 
@@ -907,13 +1058,19 @@ export class AuthService {
 
       // Validate password strength
       if (registerData.password.length < 6) {
-        throw new BadRequestException('Password must be at least 6 characters long');
+        throw new BadRequestException(
+          'Password must be at least 6 characters long',
+        );
       }
 
       // Check if user already exists (only if email is provided)
       if (registerData.email) {
-        const existingUser = await this.usersService.findByEmail(registerData.email);
-        const existingProvider = await this.providersService.findByEmail(registerData.email);
+        const existingUser = await this.usersService.findByEmail(
+          registerData.email,
+        );
+        const existingProvider = await this.providersService.findByEmail(
+          registerData.email,
+        );
 
         if (existingUser || existingProvider) {
           throw new ConflictException('User with this email already exists');
@@ -921,8 +1078,10 @@ export class AuthService {
       }
 
       // Check if phone number is already registered
-      const existingUserByPhone = await this.usersService.findByPhone(phoneNumber);
-      const existingProviderByPhone = await this.providersService.findByPhone(phoneNumber);
+      const existingUserByPhone =
+        await this.usersService.findByPhone(phoneNumber);
+      const existingProviderByPhone =
+        await this.providersService.findByPhone(phoneNumber);
 
       if (existingUserByPhone || existingProviderByPhone) {
         throw new ConflictException('Phone number is already registered');
@@ -931,14 +1090,14 @@ export class AuthService {
       // Send OTP for registration
       const otpResult = await this.smsService.sendOtp({
         phoneNumber,
-        purpose: 'registration'
+        purpose: 'registration',
       });
 
       if (otpResult.success) {
         // Store registration data in cache for the next step
         const dataToCache = {
           phoneNumber,
-          ...registerData
+          ...registerData,
         };
 
         this.storeRegistrationData(phoneNumber, dataToCache, 10); // Cache for 10 minutes
@@ -946,17 +1105,19 @@ export class AuthService {
         return {
           success: otpResult.success,
           message: otpResult.message,
-          expiresIn: otpResult.expiresIn
+          expiresIn: otpResult.expiresIn,
         };
       }
 
       return {
         success: false,
-        message: otpResult.message
+        message: otpResult.message,
       };
-
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ConflictException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Registration initiation failed');
@@ -969,13 +1130,11 @@ export class AuthService {
    */
   async completeRegistration(phoneNumber: string, otp: string): Promise<any> {
     try {
-
-
       // Verify OTP
       const otpResult = await this.smsService.verifyOtp({
         phoneNumber,
         otp,
-        purpose: 'registration'
+        purpose: 'registration',
       });
 
       if (!otpResult.success) {
@@ -983,8 +1142,10 @@ export class AuthService {
       }
 
       // Check if phone number is already registered (double-check)
-      const existingUserByPhone = await this.usersService.findByPhone(phoneNumber);
-      const existingProviderByPhone = await this.providersService.findByPhone(phoneNumber);
+      const existingUserByPhone =
+        await this.usersService.findByPhone(phoneNumber);
+      const existingProviderByPhone =
+        await this.providersService.findByPhone(phoneNumber);
 
       if (existingUserByPhone || existingProviderByPhone) {
         throw new BadRequestException('Phone number is already registered');
@@ -993,7 +1154,9 @@ export class AuthService {
       // Retrieve registration data from cache
       const registrationData = this.getRegistrationData(phoneNumber);
       if (!registrationData) {
-        throw new BadRequestException('Registration data expired or not found. Please restart the registration process.');
+        throw new BadRequestException(
+          'Registration data expired or not found. Please restart the registration process.',
+        );
       }
 
       // Remove data from cache to prevent reuse
@@ -1004,7 +1167,9 @@ export class AuthService {
 
       // Validate required fields
       if (!registerData.password || !registerData.name) {
-        throw new BadRequestException('Invalid registration data. Please restart the registration process.');
+        throw new BadRequestException(
+          'Invalid registration data. Please restart the registration process.',
+        );
       }
 
       // Hash password
@@ -1021,7 +1186,7 @@ export class AuthService {
         state: registerData.state || '',
         role: registerData.role || 'USER',
         isActive: registerData.isActive ?? true,
-        officialDocuments: registerData.officialDocuments
+        officialDocuments: registerData.officialDocuments,
       };
 
       // Create user or provider based on role
@@ -1039,17 +1204,23 @@ export class AuthService {
           isVerified: false,
           location: null,
           officialDocuments: registerData.officialDocuments || undefined,
-          categoryIds: (registerData as any).categoryIds?.map((id: any) => Number(id)) || []
+          categoryIds:
+            (registerData as any).categoryIds?.map((id: any) => Number(id)) ||
+            [],
         };
 
-        const provider = await this.providersService.registerProviderWithCategories(providerData);
+        const provider =
+          await this.providersService.registerProviderWithCategories(
+            providerData,
+          );
 
         // Return provider data without password
         const { password, ...result } = provider as any;
         return {
           ...result,
           role: 'PROVIDER',
-          message: 'Provider registered successfully. Please wait for admin verification to login.'
+          message:
+            'Provider registered successfully. Please wait for admin verification to login.',
         };
       } else {
         // Create regular user
@@ -1059,7 +1230,7 @@ export class AuthService {
           sub: user.id,
           role: user.role,
           phone: phoneNumber,
-          state: user.state
+          state: user.state,
         };
         // User is already returned without password from the service
         return {
@@ -1069,10 +1240,9 @@ export class AuthService {
           },
           message: 'User registered successfully',
           success: true,
-          access_token: this.jwtService.sign(payload)
+          access_token: this.jwtService.sign(payload),
         };
       }
-
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -1085,17 +1255,17 @@ export class AuthService {
    * Alternative approach: Complete registration with all data and OTP verification
    * This method combines both steps for better security
    */
-  async completeRegistrationWithData(data: RegisterDto & { phoneNumber: string; otp: string }): Promise<any> {
+  async completeRegistrationWithData(
+    data: RegisterDto & { phoneNumber: string; otp: string },
+  ): Promise<any> {
     try {
       const { phoneNumber, otp, ...registerData } = data;
-
-
 
       // Verify OTP first
       const otpResult = await this.smsService.verifyOtp({
         phoneNumber,
         otp,
-        purpose: 'registration'
+        purpose: 'registration',
       });
 
       if (!otpResult.success) {
@@ -1111,8 +1281,12 @@ export class AuthService {
 
       // Check if user already exists (double-check, only if email is provided)
       if (registerData.email) {
-        const existingUser = await this.usersService.findByEmail(registerData.email);
-        const existingProvider = await this.providersService.findByEmail(registerData.email);
+        const existingUser = await this.usersService.findByEmail(
+          registerData.email,
+        );
+        const existingProvider = await this.providersService.findByEmail(
+          registerData.email,
+        );
 
         if (existingUser || existingProvider) {
           throw new ConflictException('User with this email already exists');
@@ -1120,8 +1294,10 @@ export class AuthService {
       }
 
       // Check if phone number is already registered (double-check)
-      const existingUserByPhone = await this.usersService.findByPhone(phoneNumber);
-      const existingProviderByPhone = await this.providersService.findByPhone(phoneNumber);
+      const existingUserByPhone =
+        await this.usersService.findByPhone(phoneNumber);
+      const existingProviderByPhone =
+        await this.providersService.findByPhone(phoneNumber);
 
       if (existingUserByPhone || existingProviderByPhone) {
         throw new ConflictException('Phone number is already registered');
@@ -1141,7 +1317,7 @@ export class AuthService {
         state: registerData.state || '',
         role: registerData.role || 'USER',
         isActive: registerData.isActive ?? true,
-        officialDocuments: registerData.officialDocuments
+        officialDocuments: registerData.officialDocuments,
       };
 
       // Create user or provider based on role
@@ -1159,23 +1335,29 @@ export class AuthService {
           isVerified: false,
           location: null,
           officialDocuments: registerData.officialDocuments || undefined,
-          categoryIds: (registerData as any).categoryIds?.map((id: any) => Number(id)) || []
+          categoryIds:
+            (registerData as any).categoryIds?.map((id: any) => Number(id)) ||
+            [],
         };
 
         console.log('🔍 Provider registration data:', {
           name: providerData.name,
           categoryIds: providerData.categoryIds,
-          categoryIdsCount: providerData.categoryIds?.length || 0
+          categoryIdsCount: providerData.categoryIds?.length || 0,
         });
 
-        const provider = await this.providersService.registerProviderWithCategories(providerData);
+        const provider =
+          await this.providersService.registerProviderWithCategories(
+            providerData,
+          );
 
         // Return provider data without password
         const { password, ...result } = provider as any;
         return {
           ...result,
           role: 'PROVIDER',
-          message: 'Provider registered successfully. Please wait for admin verification to login.'
+          message:
+            'Provider registered successfully. Please wait for admin verification to login.',
         };
       } else {
         // Create regular user
@@ -1185,12 +1367,14 @@ export class AuthService {
         return {
           ...user,
           role: 'USER',
-          message: 'User registered successfully'
+          message: 'User registered successfully',
         };
       }
-
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ConflictException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Registration completion failed');
@@ -1201,30 +1385,35 @@ export class AuthService {
    * Check if registration data exists for a phone number
    * Useful for frontend to know if step 1 was completed
    */
-  async checkRegistrationStatus(phoneNumber: string): Promise<{ exists: boolean; expiresIn?: number; message: string }> {
+  async checkRegistrationStatus(
+    phoneNumber: string,
+  ): Promise<{ exists: boolean; expiresIn?: number; message: string }> {
     try {
       const registrationData = this.getRegistrationData(phoneNumber);
 
       if (!registrationData) {
         return {
           exists: false,
-          message: 'No registration data found for this phone number'
+          message: 'No registration data found for this phone number',
         };
       }
 
       // Calculate remaining time
       const cached = this.registrationCache[phoneNumber];
-      const remainingTime = Math.max(0, Math.ceil((cached.expiresAt - Date.now()) / 1000 / 60)); // in minutes
+      const remainingTime = Math.max(
+        0,
+        Math.ceil((cached.expiresAt - Date.now()) / 1000 / 60),
+      ); // in minutes
 
       return {
         exists: true,
         expiresIn: remainingTime,
-        message: `Registration data exists and expires in ${remainingTime} minutes`
+        message: `Registration data exists and expires in ${remainingTime} minutes`,
       };
     } catch (error) {
       return {
         exists: false,
-        message: 'Error checking registration status'
+        message: 'Error checking registration status',
       };
     }
   }
@@ -1233,17 +1422,19 @@ export class AuthService {
    * Clear expired registration data for a phone number
    * Useful for cleanup or when user wants to restart registration
    */
-  async clearRegistrationData(phoneNumber: string): Promise<{ success: boolean; message: string }> {
+  async clearRegistrationData(
+    phoneNumber: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       this.removeRegistrationData(phoneNumber);
       return {
         success: true,
-        message: 'Registration data cleared successfully'
+        message: 'Registration data cleared successfully',
       };
     } catch (error) {
       return {
         success: false,
-        message: 'Error clearing registration data'
+        message: 'Error clearing registration data',
       };
     }
   }
@@ -1251,25 +1442,27 @@ export class AuthService {
   /**
    * Logout user by clearing FCM token
    */
-  async logout(userId: number, userRole: string): Promise<{ success: boolean; message: string }> {
+  async logout(
+    userId: number,
+    userRole: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       if (userRole === 'PROVIDER') {
-        await this.providersService.updateFCMToken(userId, "");
+        await this.providersService.updateFCMToken(userId, '');
       } else if (userRole === 'USER') {
-        await this.usersService.updateFCMToken(userId, "");
+        await this.usersService.updateFCMToken(userId, '');
       }
 
       return {
         success: true,
-        message: 'Logged out successfully'
+        message: 'Logged out successfully',
       };
     } catch (error) {
       console.error('Logout error:', error);
       return {
         success: false,
-        message: 'Logout failed'
+        message: 'Logout failed',
       };
     }
   }
 }
-
