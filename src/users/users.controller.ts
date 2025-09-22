@@ -12,6 +12,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtService } from '@nestjs/jwt';
 import {
   ApiTags,
   ApiOperation,
@@ -43,6 +44,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly filesService: FilesService,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Get()
@@ -96,6 +98,33 @@ export class UsersController {
 
   @Put(':id')
   @Roles('USER', 'ADMIN')
+  @ApiOperation({ summary: 'Update user profile and return new access token' })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile updated successfully with new access token',
+    schema: {
+      type: 'object',
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'number' },
+            name: { type: 'string' },
+            email: { type: 'string' },
+            phone: { type: 'string' },
+            role: { type: 'string' },
+            image: { type: 'string' },
+            address: { type: 'string' },
+            state: { type: 'string' },
+            isActive: { type: 'boolean' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        access_token: { type: 'string' },
+      },
+    },
+  })
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -132,7 +161,27 @@ export class UsersController {
       );
       updateData.image = fileResult.url;
     }
-    return this.usersService.update(Number(id), updateData);
+
+    // Update user
+    const updatedUser = await this.usersService.update(Number(id), updateData);
+
+    // Generate new JWT token with updated user data
+    const username = updatedUser.email || updatedUser.phone;
+    const payload = {
+      username,
+      sub: updatedUser.id,
+      role: updatedUser.role,
+      phone: updatedUser.phone,
+      state: updatedUser.state,
+      permissions: [], // Add permissions if needed
+    };
+
+    const access_token = this.jwtService.sign(payload);
+
+    return {
+      user: updatedUser,
+      access_token,
+    };
   }
 
   @Delete(':id')
