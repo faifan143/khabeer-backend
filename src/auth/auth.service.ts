@@ -151,7 +151,7 @@ export class AuthService {
               id: subAdmin.id,
               email: subAdmin.email,
               name: subAdmin.name,
-              role: 'SUBADMIN',
+              role: 'ADMIN', // Return ADMIN role for subadmins
               permissions: permissions,
               isActive: subAdmin.isActive,
               isVerified: true,

@@ -29,9 +29,7 @@ export class RolesGuard implements CanActivate {
       throw new UnauthorizedException('User role not found');
     }
 
-    // Check if user has required role or if subadmin is trying to access admin endpoints
-    const hasRole = requiredRoles.includes(user.role) || 
-                   (user.role === 'SUBADMIN' && requiredRoles.includes('ADMIN'));
+    const hasRole = requiredRoles.includes(user.role);
 
     if (!hasRole) {
       throw new UnauthorizedException(`User role '${user.role}' is not authorized. Required roles: ${requiredRoles.join(', ')}`);
