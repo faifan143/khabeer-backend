@@ -1,16 +1,34 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
+import {
+  ChangePhoneRequestDto,
+  VerifyPhoneChangeDto,
+  PhoneChangeResponseDto,
+} from './dto/change-phone.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { ProviderOrderResponseDto, ProviderOrdersResponseDto } from './dto/provider-orders-response.dto';
+import {
+  ProviderOrderResponseDto,
+  ProviderOrdersResponseDto,
+} from './dto/provider-orders-response.dto';
 import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
 import { ProviderFullDetailsDto } from './dto/provider-full-details.dto';
 import { ProviderPendingCountResponseDto } from './dto/provider-pending-count.dto';
+import { SmsService } from '../sms/sms.service';
 
 @Injectable()
 export class ProvidersService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly smsService: SmsService,
+  ) {}
 
   async findAll(userRole?: string) {
     try {
@@ -38,18 +56,17 @@ export class ProvidersService {
           createdAt: true,
           providerServices: {
             where: {
-              isActive: true
+              isActive: true,
             },
             include: {
               service: {
                 include: {
-                  category: true
-                }
-              }
-            }
-          }
+                  category: true,
+                },
+              },
+            },
+          },
         },
-
       });
 
       // Enhance providers with rating information
@@ -58,21 +75,22 @@ export class ProvidersService {
           // Fetch ratings for this provider
           const ratings = await this.prisma.providerRating.findMany({
             where: { providerId: provider.id },
-            select: { rating: true }
+            select: { rating: true },
           });
 
           // Calculate average rating and total ratings
           const totalRatings = ratings.length;
-          const averageRating = totalRatings > 0
-            ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
-            : 0;
+          const averageRating =
+            totalRatings > 0
+              ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
+              : 0;
 
           return {
             ...provider,
             averageRating: Math.round(averageRating * 100) / 100, // Round to 2 decimal places
-            totalRatings
+            totalRatings,
           };
-        })
+        }),
       );
 
       return providersWithRatings;
@@ -133,8 +151,8 @@ export class ProvidersService {
           officialDocuments: true,
           createdAt: true,
           updatedAt: true,
-          fcm: true
-        }
+          fcm: true,
+        },
       });
     } catch (error) {
       throw new InternalServerErrorException('Error finding provider by email');
@@ -160,8 +178,8 @@ export class ProvidersService {
           officialDocuments: true,
           createdAt: true,
           updatedAt: true,
-          fcm: true
-        }
+          fcm: true,
+        },
       });
     } catch (error) {
       throw new InternalServerErrorException('Error finding provider by phone');
@@ -178,7 +196,7 @@ export class ProvidersService {
           ratings: true,
           providerServices: {
             where: {
-              isActive: true
+              isActive: true,
             },
             include: {
               service: {
@@ -187,17 +205,17 @@ export class ProvidersService {
                   offers: {
                     where: {
                       isActive: true,
-                      providerId: id
+                      providerId: id,
                     },
                     orderBy: {
-                      startDate: 'desc'
+                      startDate: 'desc',
                     },
-                    take: 1
-                  }
-                }
-              }
-            }
-          }
+                    take: 1,
+                  },
+                },
+              },
+            },
+          },
         },
       });
       if (!provider) {
@@ -207,13 +225,14 @@ export class ProvidersService {
       // Transform offers array to single object for each service
       const transformedProvider = {
         ...provider,
-        providerServices: provider.providerServices.map(ps => ({
+        providerServices: provider.providerServices.map((ps) => ({
           ...ps,
           service: {
             ...ps.service,
-            offerPrice: ps.service.offers.length > 0 ? ps.service.offers[0] : null,
-          }
-        }))
+            offerPrice:
+              ps.service.offers.length > 0 ? ps.service.offers[0] : null,
+          },
+        })),
       };
 
       return transformedProvider;
@@ -244,8 +263,8 @@ export class ProvidersService {
           location: true,
           officialDocuments: true,
           createdAt: true,
-          updatedAt: true
-        }
+          updatedAt: true,
+        },
       });
 
       if (!provider) {
@@ -256,19 +275,22 @@ export class ProvidersService {
       const systemSettings = await this.prisma.systemSettings.findMany({
         where: {
           category: {
-            in: ['social', 'legal', 'support']
-          }
-        }
+            in: ['social', 'legal', 'support'],
+          },
+        },
       });
 
       // Group settings by category and map to expected field names
-      const groupedSettings = systemSettings.reduce((acc: Record<string, Record<string, string>>, setting) => {
-        if (!acc[setting.category]) {
-          acc[setting.category] = {};
-        }
-        acc[setting.category][setting.key] = setting.value;
-        return acc;
-      }, {});
+      const groupedSettings = systemSettings.reduce(
+        (acc: Record<string, Record<string, string>>, setting) => {
+          if (!acc[setting.category]) {
+            acc[setting.category] = {};
+          }
+          acc[setting.category][setting.key] = setting.value;
+          return acc;
+        },
+        {},
+      );
 
       // Map to the exact structure expected by Flutter models
       let socialMedia = {
@@ -282,7 +304,9 @@ export class ProvidersService {
       // Parse social media links if they exist
       if (groupedSettings.social?.social_links) {
         try {
-          const parsedSocialLinks = JSON.parse(groupedSettings.social.social_links);
+          const parsedSocialLinks = JSON.parse(
+            groupedSettings.social.social_links,
+          );
           socialMedia = {
             whatsapp: parsedSocialLinks.whatsapp || null,
             instagram: parsedSocialLinks.instagram || null,
@@ -292,7 +316,10 @@ export class ProvidersService {
           };
         } catch (parseError) {
           console.error('Failed to parse social media links:', parseError);
-          console.error('Raw social_links value:', groupedSettings.social.social_links);
+          console.error(
+            'Raw social_links value:',
+            groupedSettings.social.social_links,
+          );
         }
       }
 
@@ -312,8 +339,8 @@ export class ProvidersService {
         systemInfo: {
           socialMedia,
           legalDocuments,
-          support
-        }
+          support,
+        },
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -334,8 +361,14 @@ export class ProvidersService {
       if (error instanceof PrismaClientKnownRequestError) {
         switch (error.code) {
           case 'P2002':
-            if (error.meta?.target && Array.isArray(error.meta.target) && error.meta.target.includes('email')) {
-              throw new BadRequestException('Provider with this email already exists');
+            if (
+              error.meta?.target &&
+              Array.isArray(error.meta.target) &&
+              error.meta.target.includes('email')
+            ) {
+              throw new BadRequestException(
+                'Provider with this email already exists',
+              );
             }
             break;
           case 'P2003':
@@ -354,7 +387,7 @@ export class ProvidersService {
 
       console.log('🔍 registerProviderWithCategories received:', {
         categoryIds: categoryIds,
-        categoryIdsLength: categoryIds?.length || 0
+        categoryIdsLength: categoryIds?.length || 0,
       });
 
       // Prepare provider categories data
@@ -366,26 +399,29 @@ export class ProvidersService {
       // Handle categoryIds
       if (categoryIds && categoryIds.length > 0) {
         console.log('🔍 Processing categories:', categoryIds);
-        providerCategoriesData = categoryIds.map(categoryId => ({
+        providerCategoriesData = categoryIds.map((categoryId) => ({
           categoryId: Number(categoryId), // Convert to number
-          isActive: true
+          isActive: true,
         }));
-        console.log('🔍 Mapped provider categories data:', providerCategoriesData);
+        console.log(
+          '🔍 Mapped provider categories data:',
+          providerCategoriesData,
+        );
       }
 
       console.log('🔍 About to create provider with data:', {
         ...providerData,
         providerCategories: {
-          create: providerCategoriesData
-        }
+          create: providerCategoriesData,
+        },
       });
 
       const provider = await this.prisma.provider.create({
         data: {
           ...providerData,
           providerCategories: {
-            create: providerCategoriesData
-          }
+            create: providerCategoriesData,
+          },
         },
         include: {
           providerCategories: {
@@ -395,12 +431,12 @@ export class ProvidersService {
                   id: true,
                   titleAr: true,
                   titleEn: true,
-                  state: true
-                }
-              }
-            }
-          }
-        }
+                  state: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       // Return provider without password
@@ -408,7 +444,7 @@ export class ProvidersService {
       console.log('🔍 Provider created successfully:', {
         id: provider.id,
         name: provider.name,
-        categoryCount: provider.providerCategories?.length || 0
+        categoryCount: provider.providerCategories?.length || 0,
       });
       return providerWithoutPassword;
     } catch (error) {
@@ -417,26 +453,36 @@ export class ProvidersService {
         message: error.message,
         code: error.code,
         meta: error.meta,
-        stack: error.stack
+        stack: error.stack,
       });
 
       if (error instanceof PrismaClientKnownRequestError) {
         console.error('🔍 Prisma error code:', error.code);
         switch (error.code) {
           case 'P2002':
-            if (error.meta?.target && Array.isArray(error.meta.target) && error.meta.target.includes('email')) {
-              throw new BadRequestException('Provider with this email already exists');
+            if (
+              error.meta?.target &&
+              Array.isArray(error.meta.target) &&
+              error.meta.target.includes('email')
+            ) {
+              throw new BadRequestException(
+                'Provider with this email already exists',
+              );
             }
             break;
           case 'P2003':
-            throw new BadRequestException('Invalid category reference provided');
+            throw new BadRequestException(
+              'Invalid category reference provided',
+            );
           default:
             console.error('🔍 Unhandled Prisma error:', error.code);
             throw new InternalServerErrorException('Database operation failed');
         }
       }
       console.error('🔍 Non-Prisma error:', error);
-      throw new InternalServerErrorException('Error registering provider with categories');
+      throw new InternalServerErrorException(
+        'Error registering provider with categories',
+      );
     }
   }
 
@@ -448,16 +494,16 @@ export class ProvidersService {
       if (serviceIds !== undefined) {
         // First, delete existing provider services
         await this.prisma.providerService.deleteMany({
-          where: { providerId: id }
+          where: { providerId: id },
         });
 
         // Then create new provider services
         if (serviceIds && serviceIds.length > 0) {
           await this.prisma.providerService.createMany({
-            data: serviceIds.map(serviceId => ({
+            data: serviceIds.map((serviceId) => ({
               providerId: id,
-              serviceId
-            }))
+              serviceId,
+            })),
           });
         }
       }
@@ -465,7 +511,7 @@ export class ProvidersService {
       const provider = await this.prisma.provider.update({
         where: { id },
         data: providerData,
-        include: { providerServices: true }
+        include: { providerServices: true },
       });
 
       // Return provider without password
@@ -477,8 +523,14 @@ export class ProvidersService {
           case 'P2025':
             throw new NotFoundException(`Provider with ID ${id} not found`);
           case 'P2002':
-            if (error.meta?.target && Array.isArray(error.meta.target) && error.meta.target.includes('email')) {
-              throw new BadRequestException('Provider with this email already exists');
+            if (
+              error.meta?.target &&
+              Array.isArray(error.meta.target) &&
+              error.meta.target.includes('email')
+            ) {
+              throw new BadRequestException(
+                'Provider with this email already exists',
+              );
             }
             break;
           case 'P2003':
@@ -496,7 +548,7 @@ export class ProvidersService {
       const provider = await this.prisma.provider.update({
         where: { id },
         data: { isActive },
-        include: { providerServices: true }
+        include: { providerServices: true },
       });
 
       // Return provider without password
@@ -521,8 +573,8 @@ export class ProvidersService {
         where: { id },
         select: {
           id: true,
-          onlineStatus: true
-        }
+          onlineStatus: true,
+        },
       });
 
       if (!provider) {
@@ -534,7 +586,9 @@ export class ProvidersService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error getting provider online status');
+      throw new InternalServerErrorException(
+        'Error getting provider online status',
+      );
     }
   }
 
@@ -543,7 +597,7 @@ export class ProvidersService {
       const provider = await this.prisma.provider.update({
         where: { id },
         data: { onlineStatus },
-        include: { providerServices: true }
+        include: { providerServices: true },
       });
 
       // Return provider without password
@@ -558,31 +612,35 @@ export class ProvidersService {
             throw new InternalServerErrorException('Database operation failed');
         }
       }
-      throw new InternalServerErrorException('Error updating provider online status');
+      throw new InternalServerErrorException(
+        'Error updating provider online status',
+      );
     }
   }
 
   async addServices(providerId: number, serviceIds: number[]) {
     try {
       const existingServices = await this.prisma.providerService.findMany({
-        where: { providerId }
+        where: { providerId },
       });
 
-      const existingServiceIds = existingServices.map(ps => ps.serviceId);
-      const newServiceIds = serviceIds.filter(id => !existingServiceIds.includes(id));
+      const existingServiceIds = existingServices.map((ps) => ps.serviceId);
+      const newServiceIds = serviceIds.filter(
+        (id) => !existingServiceIds.includes(id),
+      );
 
       if (newServiceIds.length > 0) {
         await this.prisma.providerService.createMany({
-          data: newServiceIds.map(serviceId => ({
+          data: newServiceIds.map((serviceId) => ({
             providerId,
-            serviceId
-          }))
+            serviceId,
+          })),
         });
       }
 
       const provider = await this.prisma.provider.findUnique({
         where: { id: providerId },
-        include: { providerServices: true }
+        include: { providerServices: true },
       });
 
       if (!provider) {
@@ -601,7 +659,9 @@ export class ProvidersService {
             throw new InternalServerErrorException('Database operation failed');
         }
       }
-      throw new InternalServerErrorException('Error adding services to provider');
+      throw new InternalServerErrorException(
+        'Error adding services to provider',
+      );
     }
   }
 
@@ -610,13 +670,13 @@ export class ProvidersService {
       await this.prisma.providerService.deleteMany({
         where: {
           providerId,
-          serviceId: { in: serviceIds }
-        }
+          serviceId: { in: serviceIds },
+        },
       });
 
       const provider = await this.prisma.provider.findUnique({
         where: { id: providerId },
-        include: { providerServices: true }
+        include: { providerServices: true },
       });
 
       if (!provider) {
@@ -627,7 +687,9 @@ export class ProvidersService {
       const { password, ...providerWithoutPassword } = provider;
       return providerWithoutPassword;
     } catch (error) {
-      throw new InternalServerErrorException('Error removing services from provider');
+      throw new InternalServerErrorException(
+        'Error removing services from provider',
+      );
     }
   }
 
@@ -636,17 +698,19 @@ export class ProvidersService {
       return await this.prisma.providerService.findMany({
         where: { providerId },
         include: {
-          service: true
-        }
+          service: true,
+        },
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error fetching provider services');
+      throw new InternalServerErrorException(
+        'Error fetching provider services',
+      );
     }
   }
 
   private isMultipleServicesOrder(order: any): boolean {
     // Check if this order has multiple services by looking at the quantity and total amount
-    return order.quantity > 1 && order.totalAmount > (order.providerAmount * 1.2);
+    return order.quantity > 1 && order.totalAmount > order.providerAmount * 1.2;
   }
 
   private getServicesBreakdown(order: any): any[] {
@@ -666,15 +730,18 @@ export class ProvidersService {
     const remainingQuantity = order.quantity % estimatedServiceCount;
 
     for (let i = 0; i < estimatedServiceCount; i++) {
-      const serviceQuantity = i === 0 ? baseQuantity + remainingQuantity : baseQuantity;
-      const serviceAmount = (order.providerAmount / order.quantity) * serviceQuantity;
-      const serviceCommission = (order.commissionAmount / order.quantity) * serviceQuantity;
+      const serviceQuantity =
+        i === 0 ? baseQuantity + remainingQuantity : baseQuantity;
+      const serviceAmount =
+        (order.providerAmount / order.quantity) * serviceQuantity;
+      const serviceCommission =
+        (order.commissionAmount / order.quantity) * serviceQuantity;
 
       services.push({
         quantity: serviceQuantity,
         unitPrice: order.providerAmount / order.quantity,
         totalPrice: serviceAmount,
-        commissionAmount: serviceCommission
+        commissionAmount: serviceCommission,
       });
     }
 
@@ -697,8 +764,8 @@ export class ProvidersService {
           netAmount: order.providerNetAmount, // What provider actually receives
           commission: service.commission || 0,
           commissionAmount: order.commissionAmount,
-          commissionDeduction: order.providerAmount - order.providerNetAmount // Commission deducted from provider
-        }
+          commissionDeduction: order.providerAmount - order.providerNetAmount, // Commission deducted from provider
+        },
       ];
     } else {
       // For multiple services orders, create a logical breakdown - FIXED: Show correct amounts
@@ -720,13 +787,15 @@ export class ProvidersService {
           netAmount: order.providerNetAmount, // What provider actually receives
           commission: service.commission || 0,
           commissionAmount: order.commissionAmount,
-          commissionDeduction: order.providerAmount - order.providerNetAmount // Commission deducted from provider
-        }
+          commissionDeduction: order.providerAmount - order.providerNetAmount, // Commission deducted from provider
+        },
       ];
     }
   }
 
-  async getProviderOrders(providerId: number): Promise<ProviderOrdersResponseDto> {
+  async getProviderOrders(
+    providerId: number,
+  ): Promise<ProviderOrdersResponseDto> {
     try {
       const orders = await this.prisma.order.findMany({
         where: { providerId },
@@ -740,8 +809,8 @@ export class ProvidersService {
               image: true,
               state: true,
               latitude: true,
-              longitude: true
-            }
+              longitude: true,
+            },
           },
           service: {
             select: {
@@ -757,26 +826,26 @@ export class ProvidersService {
                   image: true,
                   titleAr: true,
                   titleEn: true,
-                  state: true
-                }
-              }
-            }
-          }
+                  state: true,
+                },
+              },
+            },
+          },
         },
         orderBy: {
-          orderDate: 'desc'
-        }
+          orderDate: 'desc',
+        },
       });
 
       // Transform orders to always include services array
-      const transformedOrders = orders.map(order => {
+      const transformedOrders = orders.map((order) => {
         let services: any[] = [];
 
         if (order.isMultipleServices && order.servicesBreakdown) {
           // Use the stored services breakdown from the database and enhance with category data
-          services = (order.servicesBreakdown as any[]).map(serviceItem => ({
+          services = (order.servicesBreakdown as any[]).map((serviceItem) => ({
             ...serviceItem,
-            category: order.service.category
+            category: order.service.category,
           }));
         } else {
           // For single service orders, create a single-item array with complete data
@@ -792,8 +861,8 @@ export class ProvidersService {
               totalPrice: order.providerAmount,
               commission: service.commission || 0,
               commissionAmount: order.commissionAmount,
-              category: service.category
-            }
+              category: service.category,
+            },
           ];
         }
 
@@ -810,27 +879,32 @@ export class ProvidersService {
             image: order.user.image || '',
             state: order.user.state || '',
             latitude: order.user.latitude ? Number(order.user.latitude) : null,
-            longitude: order.user.longitude ? Number(order.user.longitude) : null
-          }
+            longitude: order.user.longitude
+              ? Number(order.user.longitude)
+              : null,
+          },
         };
       });
 
       return {
         orders: transformedOrders as unknown as ProviderOrderResponseDto[],
         total: transformedOrders.length,
-        status: 'all'
+        status: 'all',
       };
     } catch (error) {
       throw new InternalServerErrorException('Error fetching provider orders');
     }
   }
 
-  async getProviderOrdersByStatus(providerId: number, status: string): Promise<ProviderOrdersResponseDto> {
+  async getProviderOrdersByStatus(
+    providerId: number,
+    status: string,
+  ): Promise<ProviderOrdersResponseDto> {
     try {
       const orders = await this.prisma.order.findMany({
         where: {
           providerId,
-          status: status.toLowerCase()
+          status: status.toLowerCase(),
         },
         include: {
           user: {
@@ -842,8 +916,8 @@ export class ProvidersService {
               image: true,
               state: true,
               latitude: true,
-              longitude: true
-            }
+              longitude: true,
+            },
           },
           service: {
             select: {
@@ -859,26 +933,26 @@ export class ProvidersService {
                   image: true,
                   titleAr: true,
                   titleEn: true,
-                  state: true
-                }
-              }
-            }
-          }
+                  state: true,
+                },
+              },
+            },
+          },
         },
         orderBy: {
-          orderDate: 'desc'
-        }
+          orderDate: 'desc',
+        },
       });
 
       // Transform orders to always include services array
-      const transformedOrders = orders.map(order => {
+      const transformedOrders = orders.map((order) => {
         let services: any[] = [];
 
         if (order.isMultipleServices && order.servicesBreakdown) {
           // Use the stored services breakdown from the database and enhance with category data
-          services = (order.servicesBreakdown as any[]).map(serviceItem => ({
+          services = (order.servicesBreakdown as any[]).map((serviceItem) => ({
             ...serviceItem,
-            category: order.service.category
+            category: order.service.category,
           }));
         } else {
           // For single service orders, create a single-item array with complete data
@@ -894,8 +968,8 @@ export class ProvidersService {
               totalPrice: order.providerAmount,
               commission: service.commission || 0,
               commissionAmount: order.commissionAmount,
-              category: service.category
-            }
+              category: service.category,
+            },
           ];
         }
 
@@ -912,27 +986,33 @@ export class ProvidersService {
             image: order.user.image || '',
             state: order.user.state || '',
             latitude: order.user.latitude ? Number(order.user.latitude) : null,
-            longitude: order.user.longitude ? Number(order.user.longitude) : null
-          }
+            longitude: order.user.longitude
+              ? Number(order.user.longitude)
+              : null,
+          },
         };
       });
 
       return {
         orders: transformedOrders as unknown as ProviderOrderResponseDto[],
         total: transformedOrders.length,
-        status: status.toLowerCase()
+        status: status.toLowerCase(),
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error fetching provider orders by status');
+      throw new InternalServerErrorException(
+        'Error fetching provider orders by status',
+      );
     }
   }
 
-  async getProviderPendingOrders(providerId: number): Promise<ProviderOrdersResponseDto> {
+  async getProviderPendingOrders(
+    providerId: number,
+  ): Promise<ProviderOrdersResponseDto> {
     try {
       const orders = await this.prisma.order.findMany({
         where: {
           providerId,
-          status: 'pending'
+          status: 'pending',
         },
         include: {
           user: {
@@ -944,8 +1024,8 @@ export class ProvidersService {
               image: true,
               state: true,
               latitude: true,
-              longitude: true
-            }
+              longitude: true,
+            },
           },
           service: {
             select: {
@@ -961,26 +1041,26 @@ export class ProvidersService {
                   image: true,
                   titleAr: true,
                   titleEn: true,
-                  state: true
-                }
-              }
-            }
-          }
+                  state: true,
+                },
+              },
+            },
+          },
         },
         orderBy: {
-          orderDate: 'desc'
-        }
+          orderDate: 'desc',
+        },
       });
 
       // Transform orders to always include services array
-      const transformedOrders = orders.map(order => {
+      const transformedOrders = orders.map((order) => {
         let services: any[] = [];
 
         if (order.isMultipleServices && order.servicesBreakdown) {
           // Use the stored services breakdown from the database and enhance with category data
-          services = (order.servicesBreakdown as any[]).map(serviceItem => ({
+          services = (order.servicesBreakdown as any[]).map((serviceItem) => ({
             ...serviceItem,
-            category: order.service.category
+            category: order.service.category,
           }));
         } else {
           // For single service orders, create a single-item array with complete data
@@ -996,8 +1076,8 @@ export class ProvidersService {
               totalPrice: order.providerAmount,
               commission: service.commission || 0,
               commissionAmount: order.commissionAmount,
-              category: service.category
-            }
+              category: service.category,
+            },
           ];
         }
 
@@ -1014,79 +1094,88 @@ export class ProvidersService {
             image: order.user.image || '',
             state: order.user.state || '',
             latitude: order.user.latitude ? Number(order.user.latitude) : null,
-            longitude: order.user.longitude ? Number(order.user.longitude) : null
-          }
+            longitude: order.user.longitude
+              ? Number(order.user.longitude)
+              : null,
+          },
         };
       });
 
       return {
         orders: transformedOrders as unknown as ProviderOrderResponseDto[],
         total: transformedOrders.length,
-        status: 'pending'
+        status: 'pending',
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error fetching provider pending orders');
+      throw new InternalServerErrorException(
+        'Error fetching provider pending orders',
+      );
     }
   }
 
-  async getProviderPendingOrdersCount(providerId: number): Promise<ProviderPendingCountResponseDto> {
+  async getProviderPendingOrdersCount(
+    providerId: number,
+  ): Promise<ProviderPendingCountResponseDto> {
     try {
       const [count, whatsappSupport] = await Promise.all([
         this.prisma.order.count({
           where: {
             providerId,
-            status: 'pending'
-          }
+            status: 'pending',
+          },
         }),
         this.prisma.systemSettings.findUnique({
           where: {
-            key: 'whatsapp_support'
+            key: 'whatsapp_support',
           },
           select: {
-            value: true
-          }
-        })
+            value: true,
+          },
+        }),
       ]);
 
       return {
         count,
         status: 'pending',
-        support: whatsappSupport?.value || null
+        support: whatsappSupport?.value || null,
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error fetching provider pending orders count');
+      throw new InternalServerErrorException(
+        'Error fetching provider pending orders count',
+      );
     }
   }
 
   async getProviderStats(providerId: number) {
     try {
-      const [pendingOrdersCount, servicesCount, whatsappSupport] = await Promise.all([
-        this.prisma.order.count({
-          where: {
-            providerId,
-            status: 'pending'
-          }
-        }),
-        this.prisma.providerService.count({
-          where: {
-            providerId,
-            isActive: true
-          }
-        }),
-        this.prisma.systemSettings.findUnique({
-          where: {
-            key: 'whatsapp_support'
-          },
-          select: {
-            value: true
-          }
-        })
-      ]);
+      const [pendingOrdersCount, servicesCount, whatsappSupport] =
+        await Promise.all([
+          this.prisma.order.count({
+            where: {
+              providerId,
+              status: 'pending',
+            },
+          }),
+          this.prisma.providerService.count({
+            where: {
+              providerId,
+              isActive: true,
+            },
+          }),
+          this.prisma.systemSettings.findUnique({
+            where: {
+              key: 'whatsapp_support',
+            },
+            select: {
+              value: true,
+            },
+          }),
+        ]);
 
       return {
         pendingOrdersCount,
         servicesCount,
-        support: whatsappSupport?.value || null
+        support: whatsappSupport?.value || null,
       };
     } catch (error) {
       throw new InternalServerErrorException('Error fetching provider stats');
@@ -1104,13 +1193,13 @@ export class ProvidersService {
               name: true,
               email: true,
               latitude: true,
-              longitude: true
-            }
-          }
+              longitude: true,
+            },
+          },
         },
         orderBy: {
-          ratingDate: 'desc'
-        }
+          ratingDate: 'desc',
+        },
       });
     } catch (error) {
       throw new InternalServerErrorException('Error fetching provider ratings');
@@ -1127,17 +1216,17 @@ export class ProvidersService {
               id: true,
               name: true,
               email: true,
-              phone: true
-            }
-          }
-        }
+              phone: true,
+            },
+          },
+        },
       });
 
       if (!verification) {
         return {
           documents: [],
           verificationStatus: 'pending',
-          adminNotes: null
+          adminNotes: null,
         };
       }
 
@@ -1155,17 +1244,19 @@ export class ProvidersService {
           type: this.getFileTypeFromUrl(url),
           size: 0, // We don't store file size in the database
           uploadedAt: verification.createdAt.toISOString(),
-          uploadedBy: 'Admin'
+          uploadedBy: 'Admin',
         };
       });
 
       return {
         documents,
         verificationStatus: verification.status,
-        adminNotes: verification.adminNotes
+        adminNotes: verification.adminNotes,
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error fetching provider documents');
+      throw new InternalServerErrorException(
+        'Error fetching provider documents',
+      );
     }
   }
 
@@ -1188,11 +1279,14 @@ export class ProvidersService {
     }
   }
 
-  async findProvidersByServiceId(serviceId: number, userRole?: string): Promise<ProvidersByServiceResponseDto> {
+  async findProvidersByServiceId(
+    serviceId: number,
+    userRole?: string,
+  ): Promise<ProvidersByServiceResponseDto> {
     try {
       // First check if the service exists
       const service = await this.prisma.service.findUnique({
-        where: { id: serviceId }
+        where: { id: serviceId },
       });
 
       if (!service) {
@@ -1203,10 +1297,10 @@ export class ProvidersService {
         providerServices: {
           some: {
             serviceId: serviceId,
-            isActive: true
-          }
+            isActive: true,
+          },
         },
-        isVerified: true
+        isVerified: true,
       };
 
       // Skip provider filtering for admins
@@ -1232,15 +1326,14 @@ export class ProvidersService {
           providerServices: {
             where: {
               serviceId: serviceId,
-              isActive: true
+              isActive: true,
             },
             select: {
               price: true,
-              isActive: true
-            }
+              isActive: true,
+            },
           },
-
-        }
+        },
       });
 
       // Enhance providers with offer information
@@ -1256,51 +1349,54 @@ export class ProvidersService {
                   serviceId: serviceId,
                   isActive: true,
                   startDate: { lte: now },
-                  endDate: { gt: now }
+                  endDate: { gt: now },
                 },
                 orderBy: {
-                  startDate: 'desc'
-                }
+                  startDate: 'desc',
+                },
               });
 
               return {
                 ...providerService,
-                offerPrice: offer ? offer.offerPrice : null
+                offerPrice: offer ? offer.offerPrice : null,
               };
-            })
+            }),
           );
 
           // Fetch ratings for this provider
           const ratings = await this.prisma.providerRating.findMany({
             where: { providerId: provider.id },
-            select: { rating: true }
+            select: { rating: true },
           });
 
           // Calculate average rating and total ratings
           const totalRatings = ratings.length;
-          const averageRating = totalRatings > 0
-            ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
-            : 0;
+          const averageRating =
+            totalRatings > 0
+              ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
+              : 0;
 
           return {
             ...provider,
             providerServices: enhancedProviderServices,
             averageRating: Math.round(averageRating * 100) / 100, // Round to 2 decimal places
-            totalRatings
+            totalRatings,
           };
-        })
+        }),
       );
 
       return {
         providers: providersWithOffers,
         total: providersWithOffers.length,
-        serviceId: serviceId
+        serviceId: serviceId,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error fetching providers by service');
+      throw new InternalServerErrorException(
+        'Error fetching providers by service',
+      );
     }
   }
 
@@ -1331,13 +1427,15 @@ export class ProvidersService {
           email: true,
           name: true,
           fcm: true,
-          updatedAt: true
-        }
+          updatedAt: true,
+        },
       });
 
       return updatedProvider;
     } catch (error) {
-      throw new Error(`Failed to update FCM token for provider ${providerId}: ${error.message}`);
+      throw new Error(
+        `Failed to update FCM token for provider ${providerId}: ${error.message}`,
+      );
     }
   }
 
@@ -1351,17 +1449,21 @@ export class ProvidersService {
           email: true,
           name: true,
           fcm: true,
-          updatedAt: true
-        }
+          updatedAt: true,
+        },
       });
 
       return updatedProvider;
     } catch (error) {
-      throw new Error(`Failed to remove FCM token for provider ${providerId}: ${error.message}`);
+      throw new Error(
+        `Failed to remove FCM token for provider ${providerId}: ${error.message}`,
+      );
     }
   }
 
-  async getProviderFullDetails(providerId: number): Promise<ProviderFullDetailsDto> {
+  async getProviderFullDetails(
+    providerId: number,
+  ): Promise<ProviderFullDetailsDto> {
     try {
       // Get provider with all related data
       const provider = await this.prisma.provider.findUnique({
@@ -1371,15 +1473,15 @@ export class ProvidersService {
             include: {
               service: {
                 include: {
-                  category: true
-                }
-              }
-            }
+                  category: true,
+                },
+              },
+            },
           },
           offers: {
             include: {
-              service: true
-            }
+              service: true,
+            },
           },
           ratings: {
             include: {
@@ -1388,10 +1490,10 @@ export class ProvidersService {
                   id: true,
                   name: true,
                   email: true,
-                  phone: true
-                }
-              }
-            }
+                  phone: true,
+                },
+              },
+            },
           },
           orders: {
             include: {
@@ -1402,27 +1504,27 @@ export class ProvidersService {
                   email: true,
                   phone: true,
                   latitude: true,
-                  longitude: true
-                }
+                  longitude: true,
+                },
               },
               service: {
                 select: {
                   id: true,
                   titleAr: true,
                   titleEn: true,
-                  description: true
-                }
-              }
-            }
+                  description: true,
+                },
+              },
+            },
           },
           verification: true,
           joinRequests: {
             orderBy: {
-              requestDate: 'desc'
+              requestDate: 'desc',
             },
-            take: 1
-          }
-        }
+            take: 1,
+          },
+        },
       });
 
       if (!provider) {
@@ -1431,25 +1533,31 @@ export class ProvidersService {
 
       // Calculate statistics
       const totalOrders = provider.orders.length;
-      const completedOrders = provider.orders.filter(order => order.status === 'completed').length;
-      const pendingOrders = provider.orders.filter(order => order.status === 'pending').length;
+      const completedOrders = provider.orders.filter(
+        (order) => order.status === 'completed',
+      ).length;
+      const pendingOrders = provider.orders.filter(
+        (order) => order.status === 'pending',
+      ).length;
 
       const totalEarnings = provider.orders
-        .filter(order => order.status === 'completed')
+        .filter((order) => order.status === 'completed')
         .reduce((sum, order) => sum + order.providerAmount, 0);
 
       const totalCommission = provider.orders
-        .filter(order => order.status === 'completed')
+        .filter((order) => order.status === 'completed')
         .reduce((sum, order) => sum + order.commissionAmount, 0);
 
       // Calculate average rating
       const totalRatings = provider.ratings.length;
-      const averageRating = totalRatings > 0
-        ? provider.ratings.reduce((sum, rating) => sum + rating.rating, 0) / totalRatings
-        : 0;
+      const averageRating =
+        totalRatings > 0
+          ? provider.ratings.reduce((sum, rating) => sum + rating.rating, 0) /
+            totalRatings
+          : 0;
 
       // Transform data to match DTO structure
-      const providerServices = provider.providerServices.map(ps => ({
+      const providerServices = provider.providerServices.map((ps) => ({
         id: ps.id,
         price: ps.price,
         isActive: ps.isActive,
@@ -1459,11 +1567,11 @@ export class ProvidersService {
           description: ps.service.description,
           image: ps.service.image,
           commission: ps.service.commission,
-          categoryId: ps.service.categoryId || 0
-        }
+          categoryId: ps.service.categoryId || 0,
+        },
       }));
 
-      const offers = provider.offers.map(offer => ({
+      const offers = provider.offers.map((offer) => ({
         id: offer.id,
         startDate: offer.startDate,
         endDate: offer.endDate,
@@ -1474,11 +1582,11 @@ export class ProvidersService {
         service: {
           id: offer.service.id,
           title: offer.service.titleEn,
-          description: offer.service.description
-        }
+          description: offer.service.description,
+        },
       }));
 
-      const ratings = provider.ratings.map(rating => ({
+      const ratings = provider.ratings.map((rating) => ({
         id: rating.id,
         rating: rating.rating,
         comment: rating.comment,
@@ -1488,11 +1596,11 @@ export class ProvidersService {
           id: rating.user.id,
           name: rating.user.name,
           email: rating.user.email,
-          phone: rating.user.phone
-        }
+          phone: rating.user.phone,
+        },
       }));
 
-      const orders = provider.orders.map(order => ({
+      const orders = provider.orders.map((order) => ({
         id: order.id,
         status: order.status,
         orderDate: order.orderDate,
@@ -1510,13 +1618,13 @@ export class ProvidersService {
           email: order.user.email,
           phone: order.user.phone,
           latitude: order.user.latitude ? Number(order.user.latitude) : null,
-          longitude: order.user.longitude ? Number(order.user.longitude) : null
+          longitude: order.user.longitude ? Number(order.user.longitude) : null,
         },
         service: {
           id: order.service.id,
           title: order.service.titleEn,
-          description: order.service.description
-        }
+          description: order.service.description,
+        },
       }));
 
       return {
@@ -1554,31 +1662,38 @@ export class ProvidersService {
         pendingOrders,
 
         // Verification and join request
-        verification: provider.verification ? {
-          id: provider.verification.id,
-          status: provider.verification.status,
-          documents: provider.verification.documents,
-          adminNotes: provider.verification.adminNotes,
-          createdAt: provider.verification.createdAt,
-          updatedAt: provider.verification.updatedAt
-        } : undefined,
+        verification: provider.verification
+          ? {
+              id: provider.verification.id,
+              status: provider.verification.status,
+              documents: provider.verification.documents,
+              adminNotes: provider.verification.adminNotes,
+              createdAt: provider.verification.createdAt,
+              updatedAt: provider.verification.updatedAt,
+            }
+          : undefined,
 
-        joinRequest: provider.joinRequests.length > 0 ? {
-          id: provider.joinRequests[0].id,
-          requestDate: provider.joinRequests[0].requestDate,
-          status: provider.joinRequests[0].status,
-          adminNotes: provider.joinRequests[0].adminNotes
-        } : undefined,
+        joinRequest:
+          provider.joinRequests.length > 0
+            ? {
+                id: provider.joinRequests[0].id,
+                requestDate: provider.joinRequests[0].requestDate,
+                status: provider.joinRequests[0].status,
+                adminNotes: provider.joinRequests[0].adminNotes,
+              }
+            : undefined,
 
         // Statistics
         totalEarnings: Math.round(totalEarnings * 100) / 100,
-        totalCommission: Math.round(totalCommission * 100) / 100
+        totalCommission: Math.round(totalCommission * 100) / 100,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error fetching provider full details');
+      throw new InternalServerErrorException(
+        'Error fetching provider full details',
+      );
     }
   }
 
@@ -1592,7 +1707,7 @@ export class ProvidersService {
         serviceId,
         isActive: true,
         startDate: { lte: now },
-        endDate: { gt: now }
+        endDate: { gt: now },
       },
       select: {
         id: true,
@@ -1600,11 +1715,11 @@ export class ProvidersService {
         endDate: true,
         description: true,
         offerPrice: true,
-        originalPrice: true
+        originalPrice: true,
       },
       orderBy: {
-        offerPrice: 'asc' // Get the best (lowest) offer price
-      }
+        offerPrice: 'asc', // Get the best (lowest) offer price
+      },
     });
 
     return activeOffer;
@@ -1614,7 +1729,7 @@ export class ProvidersService {
     try {
       const provider = await this.prisma.provider.findUnique({
         where: { id: providerId },
-        select: { id: true, name: true }
+        select: { id: true, name: true },
       });
 
       if (!provider) {
@@ -1624,7 +1739,7 @@ export class ProvidersService {
       const providerCategories = await this.prisma.providerCategory.findMany({
         where: {
           providerId: providerId,
-          isActive: true
+          isActive: true,
         },
         include: {
           category: {
@@ -1633,32 +1748,34 @@ export class ProvidersService {
               titleAr: true,
               titleEn: true,
               state: true,
-              image: true
-            }
-          }
+              image: true,
+            },
+          },
         },
         orderBy: {
           category: {
-            titleEn: 'asc'
-          }
-        }
+            titleEn: 'asc',
+          },
+        },
       });
 
       return {
         providerId: provider.id,
         providerName: provider.name,
-        categories: providerCategories.map(pc => pc.category)
+        categories: providerCategories.map((pc) => pc.category),
       };
     } catch (error) {
       console.error('Error getting provider categories:', error);
-      throw new InternalServerErrorException('Error fetching provider categories');
+      throw new InternalServerErrorException(
+        'Error fetching provider categories',
+      );
     }
   }
 
   async addProviderCategories(providerId: number, categoryIds: number[]) {
     try {
       const provider = await this.prisma.provider.findUnique({
-        where: { id: providerId }
+        where: { id: providerId },
       });
 
       if (!provider) {
@@ -1668,7 +1785,7 @@ export class ProvidersService {
       // Check if categories exist
       const categories = await this.prisma.category.findMany({
         where: { id: { in: categoryIds } },
-        select: { id: true }
+        select: { id: true },
       });
 
       if (categories.length !== categoryIds.length) {
@@ -1679,44 +1796,53 @@ export class ProvidersService {
       const existingCategories = await this.prisma.providerCategory.findMany({
         where: {
           providerId: providerId,
-          categoryId: { in: categoryIds }
+          categoryId: { in: categoryIds },
         },
-        select: { categoryId: true }
+        select: { categoryId: true },
       });
 
-      const existingCategoryIds = existingCategories.map(ec => ec.categoryId);
-      const newCategoryIds = categoryIds.filter(id => !existingCategoryIds.includes(id));
+      const existingCategoryIds = existingCategories.map((ec) => ec.categoryId);
+      const newCategoryIds = categoryIds.filter(
+        (id) => !existingCategoryIds.includes(id),
+      );
 
       if (newCategoryIds.length === 0) {
-        throw new BadRequestException('Provider is already registered for all specified categories');
+        throw new BadRequestException(
+          'Provider is already registered for all specified categories',
+        );
       }
 
       // Create new provider categories
       const providerCategories = await this.prisma.providerCategory.createMany({
-        data: newCategoryIds.map(categoryId => ({
+        data: newCategoryIds.map((categoryId) => ({
           providerId: providerId,
           categoryId: categoryId,
-          isActive: true
-        }))
+          isActive: true,
+        })),
       });
 
       return {
         message: `Added ${providerCategories.count} new categories`,
-        addedCategoryIds: newCategoryIds
+        addedCategoryIds: newCategoryIds,
       };
     } catch (error) {
       console.error('Error adding provider categories:', error);
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error adding provider categories');
+      throw new InternalServerErrorException(
+        'Error adding provider categories',
+      );
     }
   }
 
   async removeProviderCategories(providerId: number, categoryIds: number[]) {
     try {
       const provider = await this.prisma.provider.findUnique({
-        where: { id: providerId }
+        where: { id: providerId },
       });
 
       if (!provider) {
@@ -1727,20 +1853,22 @@ export class ProvidersService {
       const result = await this.prisma.providerCategory.deleteMany({
         where: {
           providerId: providerId,
-          categoryId: { in: categoryIds }
-        }
+          categoryId: { in: categoryIds },
+        },
       });
 
       return {
         message: `Removed ${result.count} categories`,
-        removedCategoryIds: categoryIds
+        removedCategoryIds: categoryIds,
       };
     } catch (error) {
       console.error('Error removing provider categories:', error);
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error removing provider categories');
+      throw new InternalServerErrorException(
+        'Error removing provider categories',
+      );
     }
   }
 
@@ -1749,7 +1877,7 @@ export class ProvidersService {
       // First, verify that provider exists
       const provider = await this.prisma.provider.findUnique({
         where: { id: providerId },
-        select: { id: true, name: true }
+        select: { id: true, name: true },
       });
 
       if (!provider) {
@@ -1760,7 +1888,7 @@ export class ProvidersService {
       const providerCategories = await this.prisma.providerCategory.findMany({
         where: {
           providerId: providerId,
-          isActive: true
+          isActive: true,
         },
         include: {
           category: {
@@ -1768,10 +1896,10 @@ export class ProvidersService {
               id: true,
               titleAr: true,
               titleEn: true,
-              state: true
-            }
-          }
-        }
+              state: true,
+            },
+          },
+        },
       });
 
       if (providerCategories.length === 0) {
@@ -1779,17 +1907,17 @@ export class ProvidersService {
           providerId: provider.id,
           providerName: provider.name,
           categories: [],
-          services: []
+          services: [],
         };
       }
 
-      const categoryIds = providerCategories.map(pc => pc.categoryId);
+      const categoryIds = providerCategories.map((pc) => pc.categoryId);
 
       // Get all services from provider's registered categories
       const services = await this.prisma.service.findMany({
         where: {
           categoryId: { in: categoryIds },
-          serviceType: 'NORMAL'
+          serviceType: 'NORMAL',
         },
         include: {
           category: {
@@ -1797,20 +1925,20 @@ export class ProvidersService {
               id: true,
               titleAr: true,
               titleEn: true,
-              state: true
-            }
-          }
+              state: true,
+            },
+          },
         },
         orderBy: {
-          titleEn: 'asc'
-        }
+          titleEn: 'asc',
+        },
       });
 
       return {
         providerId: provider.id,
         providerName: provider.name,
-        categories: providerCategories.map(pc => pc.category),
-        services: services.map(service => ({
+        categories: providerCategories.map((pc) => pc.category),
+        services: services.map((service) => ({
           id: service.id,
           titleAr: service.titleAr,
           titleEn: service.titleEn,
@@ -1819,27 +1947,32 @@ export class ProvidersService {
           commission: service.commission,
           whatsapp: service.whatsapp,
           categoryId: service.categoryId,
-          category: service.category
-        }))
+          category: service.category,
+        })),
       };
     } catch (error) {
       console.error('Error getting services by provider categories:', error);
-      throw new InternalServerErrorException('Error fetching services by provider categories');
+      throw new InternalServerErrorException(
+        'Error fetching services by provider categories',
+      );
     }
   }
 
-  async getCategoryServicesByProviderId(providerId: number, categoryId: number) {
+  async getCategoryServicesByProviderId(
+    providerId: number,
+    categoryId: number,
+  ) {
     try {
       // First, verify that both provider and category exist
       const [provider, category] = await Promise.all([
         this.prisma.provider.findUnique({
           where: { id: providerId },
-          select: { id: true, name: true }
+          select: { id: true, name: true },
         }),
         this.prisma.category.findUnique({
           where: { id: categoryId },
-          select: { id: true, titleAr: true, titleEn: true }
-        })
+          select: { id: true, titleAr: true, titleEn: true },
+        }),
       ]);
 
       if (!provider) {
@@ -1855,19 +1988,21 @@ export class ProvidersService {
         where: {
           providerId: providerId,
           categoryId: categoryId,
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       if (!providerCategory) {
-        throw new BadRequestException(`Provider is not registered for category ${categoryId}`);
+        throw new BadRequestException(
+          `Provider is not registered for category ${categoryId}`,
+        );
       }
 
       // Get all services in the specified category
       const services = await this.prisma.service.findMany({
         where: {
           categoryId: categoryId,
-          serviceType: 'NORMAL'
+          serviceType: 'NORMAL',
         },
         include: {
           category: {
@@ -1875,13 +2010,13 @@ export class ProvidersService {
               id: true,
               titleAr: true,
               titleEn: true,
-              state: true
-            }
-          }
+              state: true,
+            },
+          },
         },
         orderBy: {
-          titleEn: 'asc'
-        }
+          titleEn: 'asc',
+        },
       });
 
       return {
@@ -1889,7 +2024,7 @@ export class ProvidersService {
         categoryName: category.titleEn || category.titleAr, // Prefer English, fallback to Arabic
         providerId: provider.id,
         providerName: provider.name,
-        services: services.map(service => ({
+        services: services.map((service) => ({
           id: service.id,
           titleAr: service.titleAr,
           titleEn: service.titleEn,
@@ -1898,15 +2033,17 @@ export class ProvidersService {
           commission: service.commission,
           whatsapp: service.whatsapp,
           categoryId: service.categoryId,
-          category: service.category
+          category: service.category,
         })),
-        total: services.length
+        total: services.length,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error fetching category services by provider');
+      throw new InternalServerErrorException(
+        'Error fetching category services by provider',
+      );
     }
   }
 
@@ -1915,7 +2052,7 @@ export class ProvidersService {
     minRating: number = 0,
     minOrders: number = 0,
     includeUnrated: boolean = true,
-    userId?: number
+    userId?: number,
   ) {
     try {
       let user;
@@ -1926,7 +2063,7 @@ export class ProvidersService {
       };
       if (userId) {
         user = await this.prisma.user.findUnique({
-          where: { id: userId }
+          where: { id: userId },
         });
         where.state = user.state;
       }
@@ -1937,33 +2074,33 @@ export class ProvidersService {
         include: {
           ratings: {
             select: {
-              rating: true
-            }
+              rating: true,
+            },
           },
           orders: {
             select: {
               id: true,
               status: true,
               totalAmount: true,
-              orderDate: true
-            }
+              orderDate: true,
+            },
           },
           providerServices: {
             where: {
-              isActive: true
+              isActive: true,
             },
             include: {
               service: {
                 include: {
-                  category: true
-                }
-              }
-            }
-          }
+                  category: true,
+                },
+              },
+            },
+          },
         },
         orderBy: {
-          createdAt: 'desc' // Default ordering by join date
-        }
+          createdAt: 'desc', // Default ordering by join date
+        },
       });
 
       if (providers.length === 0) {
@@ -1974,29 +2111,36 @@ export class ProvidersService {
             topRated: 0,
             active: 0,
             verified: 0,
-            new: 0
+            new: 0,
           },
           filters: {
             limit,
             minRating,
             minOrders,
-            includeUnrated
-          }
+            includeUnrated,
+          },
         };
       }
 
       // Process providers with comprehensive scoring
-      const processedProviders = providers.map(provider => {
+      const processedProviders = providers.map((provider) => {
         // Calculate metrics
         const totalRatings = provider.ratings.length;
-        const averageRating = totalRatings > 0
-          ? Math.round((provider.ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings) * 10) / 10
-          : 0;
+        const averageRating =
+          totalRatings > 0
+            ? Math.round(
+                (provider.ratings.reduce((sum, r) => sum + r.rating, 0) /
+                  totalRatings) *
+                  10,
+              ) / 10
+            : 0;
 
         const totalOrders = provider.orders.length;
-        const completedOrders = provider.orders.filter(o => o.status === 'completed').length;
+        const completedOrders = provider.orders.filter(
+          (o) => o.status === 'completed',
+        ).length;
         const totalRevenue = provider.orders
-          .filter(o => o.status === 'completed')
+          .filter((o) => o.status === 'completed')
           .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
         const activeServices = provider.providerServices.length;
@@ -2032,7 +2176,9 @@ export class ProvidersService {
         }
 
         // Activity and recency scoring (10% weight)
-        const daysSinceJoin = Math.floor((Date.now() - provider.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+        const daysSinceJoin = Math.floor(
+          (Date.now() - provider.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+        );
         if (daysSinceJoin <= 30) {
           score += 10; // Bonus for new providers
         } else if (daysSinceJoin <= 90) {
@@ -2048,7 +2194,7 @@ export class ProvidersService {
           totalRevenue: Math.round(totalRevenue * 100) / 100,
           activeServices,
           tier,
-          score: Math.round(score * 100) / 100
+          score: Math.round(score * 100) / 100,
         };
       });
 
@@ -2056,21 +2202,25 @@ export class ProvidersService {
       let filteredProviders = processedProviders;
 
       if (minRating > 0) {
-        filteredProviders = filteredProviders.filter(p => p.averageRating >= minRating);
+        filteredProviders = filteredProviders.filter(
+          (p) => p.averageRating >= minRating,
+        );
       }
 
       if (minOrders > 0) {
-        filteredProviders = filteredProviders.filter(p => p.completedOrders >= minOrders);
+        filteredProviders = filteredProviders.filter(
+          (p) => p.completedOrders >= minOrders,
+        );
       }
 
       if (!includeUnrated) {
-        filteredProviders = filteredProviders.filter(p => p.totalRatings > 0);
+        filteredProviders = filteredProviders.filter((p) => p.totalRatings > 0);
       }
 
       // Multi-tier sorting: top-rated first, then by score, then by other metrics
       filteredProviders.sort((a, b) => {
         // First: tier priority
-        const tierPriority = { 'top-rated': 4, 'active': 3, 'verified': 2, 'new': 1 };
+        const tierPriority = { 'top-rated': 4, active: 3, verified: 2, new: 1 };
         const tierDiff = tierPriority[b.tier] - tierPriority[a.tier];
         if (tierDiff !== 0) return tierDiff;
 
@@ -2078,10 +2228,12 @@ export class ProvidersService {
         if (b.score !== a.score) return b.score - a.score;
 
         // Third: rating
-        if (b.averageRating !== a.averageRating) return b.averageRating - a.averageRating;
+        if (b.averageRating !== a.averageRating)
+          return b.averageRating - a.averageRating;
 
         // Fourth: completed orders
-        if (b.completedOrders !== a.completedOrders) return b.completedOrders - a.completedOrders;
+        if (b.completedOrders !== a.completedOrders)
+          return b.completedOrders - a.completedOrders;
 
         // Fifth: verification status
         if (b.isVerified !== a.isVerified) return b.isVerified ? 1 : -1;
@@ -2091,17 +2243,19 @@ export class ProvidersService {
       });
 
       // Apply limit and add ranking
-      const limitedProviders = filteredProviders.slice(0, limit).map((provider, index) => ({
-        ...provider,
-        rank: index + 1
-      }));
+      const limitedProviders = filteredProviders
+        .slice(0, limit)
+        .map((provider, index) => ({
+          ...provider,
+          rank: index + 1,
+        }));
 
       // Calculate summary statistics
       const summary = {
-        topRated: limitedProviders.filter(p => p.tier === 'top-rated').length,
-        active: limitedProviders.filter(p => p.tier === 'active').length,
-        verified: limitedProviders.filter(p => p.tier === 'verified').length,
-        new: limitedProviders.filter(p => p.tier === 'new').length
+        topRated: limitedProviders.filter((p) => p.tier === 'top-rated').length,
+        active: limitedProviders.filter((p) => p.tier === 'active').length,
+        verified: limitedProviders.filter((p) => p.tier === 'verified').length,
+        new: limitedProviders.filter((p) => p.tier === 'new').length,
       };
 
       return {
@@ -2112,12 +2266,132 @@ export class ProvidersService {
           limit,
           minRating,
           minOrders,
-          includeUnrated
-        }
+          includeUnrated,
+        },
       };
-
     } catch (error) {
       throw new InternalServerErrorException('Error fetching top providers');
+    }
+  }
+
+  // Phone Number Change Methods
+  async requestPhoneChange(
+    providerId: number,
+    changePhoneDto: ChangePhoneRequestDto,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const { newPhoneNumber } = changePhoneDto;
+
+      // Verify provider exists
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId },
+        select: { id: true, phone: true },
+      });
+
+      if (!provider) {
+        throw new NotFoundException('Provider not found');
+      }
+
+      // Check if new phone number is different from current
+      if (provider.phone === newPhoneNumber) {
+        throw new BadRequestException(
+          'New phone number must be different from current phone number',
+        );
+      }
+
+      // Check if new phone number is already in use by another provider
+      const existingProvider = await this.prisma.provider.findFirst({
+        where: { phone: newPhoneNumber },
+      });
+
+      if (existingProvider) {
+        throw new ConflictException(
+          'Phone number is already in use by another provider',
+        );
+      }
+
+      // Check if new phone number is already in use by a user
+      const existingUser = await this.prisma.user.findFirst({
+        where: { phone: newPhoneNumber },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('Phone number is already in use by a user');
+      }
+
+      // Send OTP to new phone number
+      const otpResult = await this.smsService.sendOtp({
+        phoneNumber: newPhoneNumber,
+        purpose: 'phone_change',
+      });
+
+      if (!otpResult.success) {
+        throw new BadRequestException(otpResult.message);
+      }
+
+      return {
+        success: true,
+        message: 'OTP sent to new phone number successfully',
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error requesting phone change');
+    }
+  }
+
+  async verifyPhoneChange(
+    providerId: number,
+    verifyPhoneDto: VerifyPhoneChangeDto,
+  ): Promise<PhoneChangeResponseDto> {
+    try {
+      const { newPhoneNumber, otp } = verifyPhoneDto;
+
+      // Verify provider exists
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId },
+        select: { id: true, phone: true },
+      });
+
+      if (!provider) {
+        throw new NotFoundException('Provider not found');
+      }
+
+      // Verify OTP
+      const otpResult = await this.smsService.verifyOtp({
+        phoneNumber: newPhoneNumber,
+        otp,
+        purpose: 'phone_change',
+      });
+
+      if (!otpResult.success) {
+        throw new BadRequestException(otpResult.message);
+      }
+
+      // Update provider's phone number
+      await this.prisma.provider.update({
+        where: { id: providerId },
+        data: { phone: newPhoneNumber },
+      });
+
+      return {
+        success: true,
+        message: 'Phone number changed successfully',
+        newPhoneNumber,
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error verifying phone change');
     }
   }
 }

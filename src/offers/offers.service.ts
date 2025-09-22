@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface CreateOfferDto {
@@ -22,7 +27,7 @@ export interface UpdateOfferDto {
 
 @Injectable()
 export class OffersService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Normalizes a date to remove time components (hours, minutes, seconds, milliseconds)
@@ -36,7 +41,15 @@ export class OffersService {
    * Normalizes an end date to the end of the day (23:59:59) to avoid timezone issues
    */
   private normalizeEndDateToEndOfDay(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      23,
+      59,
+      59,
+      999,
+    );
   }
 
   /**
@@ -47,7 +60,14 @@ export class OffersService {
   }
 
   async create(providerId: number, createOfferDto: CreateOfferDto) {
-    const { serviceId, startDate, endDate, originalPrice, offerPrice, description } = createOfferDto;
+    const {
+      serviceId,
+      startDate,
+      endDate,
+      originalPrice,
+      offerPrice,
+      description,
+    } = createOfferDto;
 
     // Validate dates - normalize to date-only for comparison
     const start = this.normalizeDateToDateOnly(new Date(startDate));
@@ -68,12 +88,14 @@ export class OffersService {
     }
 
     if (offerPrice >= originalPrice) {
-      throw new BadRequestException('Offer price must be less than original price');
+      throw new BadRequestException(
+        'Offer price must be less than original price',
+      );
     }
 
     // Check if provider exists and is verified
     const provider = await this.prisma.provider.findUnique({
-      where: { id: providerId }
+      where: { id: providerId },
     });
 
     if (!provider) {
@@ -81,12 +103,14 @@ export class OffersService {
     }
 
     if (!provider.isVerified) {
-      throw new BadRequestException('Only verified providers can create offers');
+      throw new BadRequestException(
+        'Only verified providers can create offers',
+      );
     }
 
     // Check if service exists
     const service = await this.prisma.service.findUnique({
-      where: { id: serviceId }
+      where: { id: serviceId },
     });
 
     if (!service) {
@@ -98,8 +122,8 @@ export class OffersService {
       where: {
         providerId,
         serviceId,
-        isActive: true
-      }
+        isActive: true,
+      },
     });
 
     if (!providerService) {
@@ -114,29 +138,22 @@ export class OffersService {
         isActive: true,
         OR: [
           {
-            AND: [
-              { startDate: { lte: start } },
-              { endDate: { gt: start } }
-            ]
+            AND: [{ startDate: { lte: start } }, { endDate: { gt: start } }],
           },
           {
-            AND: [
-              { startDate: { lt: end } },
-              { endDate: { gte: end } }
-            ]
+            AND: [{ startDate: { lt: end } }, { endDate: { gte: end } }],
           },
           {
-            AND: [
-              { startDate: { gte: start } },
-              { endDate: { lte: end } }
-            ]
-          }
-        ]
-      }
+            AND: [{ startDate: { gte: start } }, { endDate: { lte: end } }],
+          },
+        ],
+      },
     });
 
     if (overlappingOffer) {
-      throw new BadRequestException('An active offer already exists for this service during the specified period');
+      throw new BadRequestException(
+        'An active offer already exists for this service during the specified period',
+      );
     }
 
     // Create the offer
@@ -148,15 +165,15 @@ export class OffersService {
         endDate: end,
         originalPrice,
         offerPrice,
-        description
+        description,
       },
       include: {
         provider: {
           select: {
             id: true,
             name: true,
-            image: true
-          }
+            image: true,
+          },
         },
         service: {
           select: {
@@ -164,16 +181,22 @@ export class OffersService {
             titleAr: true,
             titleEn: true,
             description: true,
-            image: true
-          }
-        }
-      }
+            image: true,
+          },
+        },
+      },
     });
 
     return offer;
   }
 
-  async findAll(providerId?: number, serviceId?: number, activeOnly: boolean = true, userState?: string, userRole?: string) {
+  async findAll(
+    providerId?: number,
+    serviceId?: number,
+    activeOnly: boolean = true,
+    userState?: string,
+    userRole?: string,
+  ) {
     const where: any = {};
 
     if (providerId) {
@@ -195,7 +218,7 @@ export class OffersService {
       // Always filter out offers from inactive/offline providers
       where.provider = {
         isActive: true,
-        onlineStatus: true
+        onlineStatus: true,
       };
     }
 
@@ -205,25 +228,25 @@ export class OffersService {
         {
           provider: {
             isActive: true,
-            onlineStatus: true
-          }
+            onlineStatus: true,
+          },
         },
         {
           OR: [
             {
               provider: {
-                state: userState
-              }
+                state: userState,
+              },
             },
             {
               service: {
                 category: {
-                  state: userState
-                }
-              }
-            }
-          ]
-        }
+                  state: userState,
+                },
+              },
+            },
+          ],
+        },
       ];
     }
 
@@ -236,7 +259,7 @@ export class OffersService {
             name: true,
             image: true,
             isVerified: true,
-          }
+          },
         },
         service: {
           select: {
@@ -247,15 +270,15 @@ export class OffersService {
             image: true,
             category: {
               select: {
-                state: true
-              }
-            }
-          }
-        }
+                state: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
-        startDate: 'desc'
-      }
+        startDate: 'desc',
+      },
     });
 
     return offers;
@@ -268,8 +291,8 @@ export class OffersService {
         // Security: Only allow access to offers from active and verified providers
         provider: {
           isActive: true,
-          isVerified: true
-        }
+          isVerified: true,
+        },
       },
       include: {
         provider: {
@@ -278,8 +301,8 @@ export class OffersService {
             name: true,
             image: true,
             isVerified: true,
-            isActive: true
-          }
+            isActive: true,
+          },
         },
         service: {
           select: {
@@ -287,14 +310,16 @@ export class OffersService {
             titleAr: true,
             titleEn: true,
             description: true,
-            image: true
-          }
-        }
-      }
+            image: true,
+          },
+        },
+      },
     });
 
     if (!offer) {
-      throw new NotFoundException('Offer not found or provider is inactive/unverified');
+      throw new NotFoundException(
+        'Offer not found or provider is inactive/unverified',
+      );
     }
 
     return offer;
@@ -302,7 +327,7 @@ export class OffersService {
 
   async update(id: number, providerId: number, updateOfferDto: UpdateOfferDto) {
     const offer = await this.prisma.offer.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!offer) {
@@ -313,7 +338,14 @@ export class OffersService {
       throw new ForbiddenException('You can only update your own offers');
     }
 
-    const { startDate, endDate, originalPrice, offerPrice, description, isActive } = updateOfferDto;
+    const {
+      startDate,
+      endDate,
+      originalPrice,
+      offerPrice,
+      description,
+      isActive,
+    } = updateOfferDto;
 
     // Validate dates if provided - normalize to date-only for comparison
     if (startDate && endDate) {
@@ -337,27 +369,33 @@ export class OffersService {
       }
 
       if (offerPrice >= originalPrice) {
-        throw new BadRequestException('Offer price must be less than original price');
+        throw new BadRequestException(
+          'Offer price must be less than original price',
+        );
       }
     }
 
     const updatedOffer = await this.prisma.offer.update({
       where: { id },
       data: {
-        ...(startDate && { startDate: this.normalizeDateToDateOnly(new Date(startDate)) }),
-        ...(endDate && { endDate: this.normalizeEndDateToEndOfDay(new Date(endDate)) }),
+        ...(startDate && {
+          startDate: this.normalizeDateToDateOnly(new Date(startDate)),
+        }),
+        ...(endDate && {
+          endDate: this.normalizeEndDateToEndOfDay(new Date(endDate)),
+        }),
         ...(originalPrice && { originalPrice }),
         ...(offerPrice && { offerPrice }),
         ...(description !== undefined && { description }),
-        ...(isActive !== undefined && { isActive })
+        ...(isActive !== undefined && { isActive }),
       },
       include: {
         provider: {
           select: {
             id: true,
             name: true,
-            image: true
-          }
+            image: true,
+          },
         },
         service: {
           select: {
@@ -365,10 +403,10 @@ export class OffersService {
             titleAr: true,
             titleEn: true,
             description: true,
-            image: true
-          }
-        }
-      }
+            image: true,
+          },
+        },
+      },
     });
 
     return updatedOffer;
@@ -376,7 +414,7 @@ export class OffersService {
 
   async remove(id: number, providerId: number) {
     const offer = await this.prisma.offer.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!offer) {
@@ -388,13 +426,17 @@ export class OffersService {
     }
 
     await this.prisma.offer.delete({
-      where: { id }
+      where: { id },
     });
 
     return { message: 'Offer deleted successfully' };
   }
 
-  async getActiveOffers(limit: number = 20, userState?: string, userRole?: string) {
+  async getActiveOffers(
+    limit: number = 20,
+    userState?: string,
+    userRole?: string,
+  ) {
     console.log('🔍 Getting active offers with limit:', limit);
     const now = this.getCurrentDateOnly();
     console.log('📅 Current date (UTC):', now.toISOString());
@@ -405,7 +447,7 @@ export class OffersService {
     const where: any = {
       isActive: true,
       startDate: { lte: now },
-      endDate: { gt: now }
+      endDate: { gt: now },
     };
 
     // Skip provider filtering for admins
@@ -413,7 +455,7 @@ export class OffersService {
       where.provider = {
         isVerified: true,
         isActive: true,
-        onlineStatus: true
+        onlineStatus: true,
       };
     }
 
@@ -423,16 +465,16 @@ export class OffersService {
         {
           provider: {
             ...where.provider,
-            state: userState
-          }
+            state: userState,
+          },
         },
         {
           service: {
             category: {
-              state: userState
-            }
-          }
-        }
+              state: userState,
+            },
+          },
+        },
       ];
     }
 
@@ -445,8 +487,8 @@ export class OffersService {
             name: true,
             image: true,
             isVerified: true,
-            state: true
-          }
+            state: true,
+          },
         },
         service: {
           select: {
@@ -457,33 +499,36 @@ export class OffersService {
             image: true,
             category: {
               select: {
-                state: true
-              }
-            }
-          }
-        }
+                state: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
-        startDate: 'desc'
+        startDate: 'desc',
       },
-      take: limit
+      take: limit,
     });
 
     console.log('✅ Filtered active offers:', offers.length);
-    console.log('🎯 Final offers:', offers.map(o => ({
-      id: o.id,
-      providerId: o.providerId,
-      serviceId: o.serviceId,
-      startDate: o.startDate,
-      endDate: o.endDate
-    })));
+    console.log(
+      '🎯 Final offers:',
+      offers.map((o) => ({
+        id: o.id,
+        providerId: o.providerId,
+        serviceId: o.serviceId,
+        startDate: o.startDate,
+        endDate: o.endDate,
+      })),
+    );
 
     return offers;
   }
 
   async getProviderOffers(providerId: number) {
     const provider = await this.prisma.provider.findUnique({
-      where: { id: providerId }
+      where: { id: providerId },
     });
 
     if (!provider) {
@@ -509,8 +554,8 @@ export class OffersService {
         // Additional security: ensure provider is still active and verified
         provider: {
           isActive: true,
-          isVerified: true
-        }
+          isVerified: true,
+        },
       },
       include: {
         service: {
@@ -519,13 +564,13 @@ export class OffersService {
             titleAr: true,
             titleEn: true,
             description: true,
-            image: true
-          }
-        }
+            image: true,
+          },
+        },
       },
       orderBy: {
-        startDate: 'desc'
-      }
+        startDate: 'desc',
+      },
     });
 
     return offers;
@@ -535,18 +580,18 @@ export class OffersService {
     const expiredOffers = await this.prisma.offer.findMany({
       where: {
         isActive: true,
-        endDate: { lt: this.getCurrentDateOnly() }
-      }
+        endDate: { lt: this.getCurrentDateOnly() },
+      },
     });
 
     if (expiredOffers.length > 0) {
       await this.prisma.offer.updateMany({
         where: {
-          id: { in: expiredOffers.map(o => o.id) }
+          id: { in: expiredOffers.map((o) => o.id) },
         },
         data: {
-          isActive: false
-        }
+          isActive: false,
+        },
       });
     }
 
@@ -561,26 +606,26 @@ export class OffersService {
             id: true,
             name: true,
             isVerified: true,
-            isActive: true
-          }
+            isActive: true,
+          },
         },
         service: {
           select: {
             id: true,
             titleAr: true,
-            titleEn: true
-          }
-        }
+            titleEn: true,
+          },
+        },
       },
       orderBy: {
-        startDate: 'desc'
-      }
+        startDate: 'desc',
+      },
     });
 
     return {
       totalOffers: offers.length,
       currentDate: this.getCurrentDateOnly().toISOString(),
-      offers: offers.map(o => ({
+      offers: offers.map((o) => ({
         id: o.id,
         providerId: o.providerId,
         serviceId: o.serviceId,
@@ -591,11 +636,11 @@ export class OffersService {
           id: o.provider.id,
           name: o.provider.name,
           isVerified: o.provider.isVerified,
-          isActive: o.provider.isActive
+          isActive: o.provider.isActive,
         },
         service: {
           id: o.service.id,
-          title: o.service.titleEn
+          title: o.service.titleEn,
         },
         // Check each filter criteria
         passesIsActive: o.isActive,
@@ -604,12 +649,13 @@ export class OffersService {
         passesProviderVerified: o.provider.isVerified,
         passesProviderActive: o.provider.isActive,
         // Overall result
-        wouldBeVisible: o.isActive &&
+        wouldBeVisible:
+          o.isActive &&
           o.startDate <= this.getCurrentDateOnly() &&
           o.endDate > this.getCurrentDateOnly() &&
           o.provider.isVerified &&
-          o.provider.isActive
-      }))
+          o.provider.isActive,
+      })),
     };
   }
 
@@ -619,31 +665,31 @@ export class OffersService {
     // Check offers that fail each criteria
     const inactiveOffers = await this.prisma.offer.findMany({
       where: { isActive: false },
-      select: { id: true, providerId: true, serviceId: true }
+      select: { id: true, providerId: true, serviceId: true },
     });
 
     const futureStartOffers = await this.prisma.offer.findMany({
       where: { startDate: { gt: now } },
-      select: { id: true, providerId: true, serviceId: true, startDate: true }
+      select: { id: true, providerId: true, serviceId: true, startDate: true },
     });
 
     const expiredOffers = await this.prisma.offer.findMany({
       where: { endDate: { lte: now } },
-      select: { id: true, providerId: true, serviceId: true, endDate: true }
+      select: { id: true, providerId: true, serviceId: true, endDate: true },
     });
 
     const unverifiedProviderOffers = await this.prisma.offer.findMany({
       where: {
-        provider: { isVerified: false }
+        provider: { isVerified: false },
       },
-      select: { id: true, providerId: true, serviceId: true }
+      select: { id: true, providerId: true, serviceId: true },
     });
 
     const inactiveProviderOffers = await this.prisma.offer.findMany({
       where: {
-        provider: { isActive: false }
+        provider: { isActive: false },
       },
-      select: { id: true, providerId: true, serviceId: true }
+      select: { id: true, providerId: true, serviceId: true },
     });
 
     return {
@@ -651,25 +697,25 @@ export class OffersService {
       criteria: {
         inactiveOffers: {
           count: inactiveOffers.length,
-          offers: inactiveOffers
+          offers: inactiveOffers,
         },
         futureStartOffers: {
           count: futureStartOffers.length,
-          offers: futureStartOffers
+          offers: futureStartOffers,
         },
         expiredOffers: {
           count: expiredOffers.length,
-          offers: expiredOffers
+          offers: expiredOffers,
         },
         unverifiedProviderOffers: {
           count: unverifiedProviderOffers.length,
-          offers: unverifiedProviderOffers
+          offers: unverifiedProviderOffers,
         },
         inactiveProviderOffers: {
           count: inactiveProviderOffers.length,
-          offers: inactiveProviderOffers
-        }
-      }
+          offers: inactiveProviderOffers,
+        },
+      },
     };
   }
 
@@ -687,8 +733,8 @@ export class OffersService {
         // Security: Only show offers from active and verified providers
         provider: {
           isActive: true,
-          isVerified: true
-        }
+          isVerified: true,
+        },
       },
       include: {
         provider: {
@@ -697,8 +743,8 @@ export class OffersService {
             name: true,
             image: true,
             isVerified: true,
-            isActive: true
-          }
+            isActive: true,
+          },
         },
         service: {
           select: {
@@ -706,46 +752,72 @@ export class OffersService {
             titleAr: true,
             titleEn: true,
             description: true,
-            image: true
-          }
-        }
+            image: true,
+          },
+        },
       },
       orderBy: {
-        startDate: 'desc'
+        startDate: 'desc',
       },
-      take: limit
+      take: limit,
     });
-
-    console.log('✅ Flexible filtered offers:', offers.length);
-    console.log('🎯 Flexible offers:', offers.map(o => ({
-      id: o.id,
-      providerId: o.providerId,
-      serviceId: o.serviceId,
-      startDate: o.startDate,
-      endDate: o.endDate,
-      providerVerified: o.provider.isVerified,
-      providerActive: o.provider.isActive
-    })));
 
     return offers;
   }
 
-  async getAvailableOffers(limit: number = 20) {
-    console.log('🔍 Getting available offers with limit:', limit);
+  async getAvailableOffers(
+    limit: number = 20,
+    userState?: string,
+    userRole?: string,
+  ) {
     const now = this.getCurrentDateOnly();
-    console.log('📅 Current date:', now.toISOString());
 
-    // Use the same date validation logic as all other offer endpoints
-    const offers = await this.prisma.offer.findMany({
-      where: {
+    const where: any = {
+      isActive: true,
+      startDate: { lte: now },
+      endDate: { gt: now },
+    };
+
+    // Skip provider filtering for admins
+    if (userRole !== 'ADMIN') {
+      where.provider = {
         isActive: true,
-        startDate: { lte: now },
-        endDate: { gt: now },
-        provider: {
-          isActive: true,
-          isVerified: true // Still require verified provider for safety
-        }
-      },
+        isVerified: true,
+        onlineStatus: true,
+      };
+    }
+
+    // Add state filtering for regular users
+    if (userState && userState !== 'undefined' && userRole !== 'ADMIN') {
+      where.AND = [
+        {
+          provider: {
+            isActive: true,
+            isVerified: true,
+            onlineStatus: true,
+          },
+        },
+        {
+          OR: [
+            {
+              provider: {
+                state: userState,
+              },
+            },
+            {
+              service: {
+                category: {
+                  state: userState,
+                },
+              },
+            },
+          ],
+        },
+      ];
+    }
+
+    const offers = await this.prisma.offer.findMany({
+      where,
       include: {
         provider: {
           select: {
@@ -753,8 +825,9 @@ export class OffersService {
             name: true,
             image: true,
             isVerified: true,
-            isActive: true
-          }
+            isActive: true,
+            state: true,
+          },
         },
         service: {
           select: {
@@ -762,14 +835,19 @@ export class OffersService {
             titleAr: true,
             titleEn: true,
             description: true,
-            image: true
-          }
-        }
+            image: true,
+            category: {
+              select: {
+                state: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
-        startDate: 'desc'
+        startDate: 'desc',
       },
-      take: limit
+      take: limit,
     });
 
     console.log('✅ Available offers:', offers.length);
@@ -785,17 +863,17 @@ export class OffersService {
             id: true,
             name: true,
             isVerified: true,
-            isActive: true
-          }
+            isActive: true,
+          },
         },
         service: {
           select: {
             id: true,
             titleAr: true,
-            titleEn: true
-          }
-        }
-      }
+            titleEn: true,
+          },
+        },
+      },
     });
 
     if (!offer) {
@@ -824,27 +902,28 @@ export class OffersService {
         endDateLocal: offer.endDate.toString(),
         description: offer.description,
         offerPrice: offer.offerPrice,
-        originalPrice: offer.originalPrice
+        originalPrice: offer.originalPrice,
       },
       provider: offer.provider,
       service: offer.service,
       currentDate: {
         utc: now.toISOString(),
-        local: now.toString()
+        local: now.toString(),
       },
       filterChecks: {
         isActive: offer.isActive,
         startDateCheck: offer.startDate <= now,
         endDateCheck: offer.endDate > now,
         providerVerified: offer.provider.isVerified,
-        providerActive: offer.provider.isActive
+        providerActive: offer.provider.isActive,
       },
-      wouldBeVisible: offer.isActive &&
+      wouldBeVisible:
+        offer.isActive &&
         offer.startDate <= now &&
         offer.endDate > now &&
         offer.provider.isVerified &&
         offer.provider.isActive,
-      issues: []
+      issues: [],
     };
 
     // Identify specific issues
@@ -853,11 +932,15 @@ export class OffersService {
     }
 
     if (offer.startDate > now) {
-      result.issues.push(`Offer start date (${offer.startDate.toISOString()}) is in the future`);
+      result.issues.push(
+        `Offer start date (${offer.startDate.toISOString()}) is in the future`,
+      );
     }
 
     if (offer.endDate <= now) {
-      result.issues.push(`Offer end date (${offer.endDate.toISOString()}) has passed`);
+      result.issues.push(
+        `Offer end date (${offer.endDate.toISOString()}) has passed`,
+      );
     }
 
     if (!offer.provider.isVerified) {

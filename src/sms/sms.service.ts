@@ -171,8 +171,21 @@ export class SmsService {
         },
       });
 
-      // Prepare SMS message
-      const message = `Your Khabir verification code is: ${otp}. Valid for 10 minutes. Do not share this code with anyone.`;
+      // Prepare SMS message based on purpose
+      let message: string;
+      switch (purpose) {
+        case 'phone_change':
+          message = `Your Khabir phone change verification code is: ${otp}. Valid for 10 minutes. Do not share this code with anyone.`;
+          break;
+        case 'registration':
+          message = `Your Khabir registration verification code is: ${otp}. Valid for 10 minutes. Do not share this code with anyone.`;
+          break;
+        case 'password_reset':
+          message = `Your Khabir password reset verification code is: ${otp}. Valid for 10 minutes. Do not share this code with anyone.`;
+          break;
+        default:
+          message = `Your Khabir verification code is: ${otp}. Valid for 10 minutes. Do not share this code with anyone.`;
+      }
 
       // Send SMS
       await this.sendSms(phoneNumber, message);

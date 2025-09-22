@@ -1,14 +1,29 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserLocationDto } from './dto/create-user-location.dto';
 import { UpdateUserLocationDto } from './dto/update-user-location.dto';
+import {
+  ChangePhoneRequestDto,
+  VerifyPhoneChangeDto,
+  PhoneChangeResponseDto,
+} from './dto/change-phone.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { SmsService } from '../sms/sms.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly smsService: SmsService,
+  ) {}
 
   // Internal methods for authentication (return passwords)
   async findByEmailWithPassword(email: string) {
@@ -62,8 +77,8 @@ export class UsersService {
           role: true,
           latitude: true,
           longitude: true,
-          fcm: true
-        }
+          fcm: true,
+        },
       });
     } catch (error) {
       throw new InternalServerErrorException('Error finding user by email');
@@ -89,8 +104,8 @@ export class UsersService {
           role: true,
           latitude: true,
           longitude: true,
-          fcm: true
-        }
+          fcm: true,
+        },
       });
     } catch (error) {
       throw new InternalServerErrorException('Error finding user by phone');
@@ -106,7 +121,7 @@ export class UsersService {
         address: data.address || '',
         phone: data.phone || '',
         state: data.state || '',
-        isActive: data.isActive ?? true
+        isActive: data.isActive ?? true,
       };
       const user = await this.prisma.user.create({ data: userData });
 
@@ -117,8 +132,14 @@ export class UsersService {
       if (error instanceof PrismaClientKnownRequestError) {
         switch (error.code) {
           case 'P2002':
-            if (error.meta?.target && Array.isArray(error.meta.target) && error.meta.target.includes('email')) {
-              throw new BadRequestException('User with this email already exists');
+            if (
+              error.meta?.target &&
+              Array.isArray(error.meta.target) &&
+              error.meta.target.includes('email')
+            ) {
+              throw new BadRequestException(
+                'User with this email already exists',
+              );
             }
             break;
           case 'P2003':
@@ -149,8 +170,8 @@ export class UsersService {
           role: true,
           latitude: true,
           longitude: true,
-          fcm: true
-        }
+          fcm: true,
+        },
       });
       return users;
     } catch (error) {
@@ -177,8 +198,8 @@ export class UsersService {
           role: true,
           latitude: true,
           longitude: true,
-          fcm: true
-        }
+          fcm: true,
+        },
       });
       if (!user) {
         throw new NotFoundException(`User with ID ${id} not found`);
@@ -212,8 +233,8 @@ export class UsersService {
           role: true,
           latitude: true,
           longitude: true,
-          fcm: true
-        }
+          fcm: true,
+        },
       });
       return user;
     } catch (error) {
@@ -222,8 +243,14 @@ export class UsersService {
           case 'P2025':
             throw new NotFoundException(`User with ID ${id} not found`);
           case 'P2002':
-            if (error.meta?.target && Array.isArray(error.meta.target) && error.meta.target.includes('email')) {
-              throw new BadRequestException('User with this email already exists');
+            if (
+              error.meta?.target &&
+              Array.isArray(error.meta.target) &&
+              error.meta.target.includes('email')
+            ) {
+              throw new BadRequestException(
+                'User with this email already exists',
+              );
             }
             break;
           default:
@@ -253,8 +280,8 @@ export class UsersService {
           role: true,
           latitude: true,
           longitude: true,
-          fcm: true
-        }
+          fcm: true,
+        },
       });
       return user;
     } catch (error) {
@@ -290,7 +317,7 @@ export class UsersService {
       return {
         userCount,
         locationCount,
-        providerCount
+        providerCount,
       };
     } catch (error) {
       console.error('Error getting database stats:', error);
@@ -315,8 +342,8 @@ export class UsersService {
           isActive: true,
           officialDocuments: true,
           createdAt: true,
-          updatedAt: true
-        }
+          updatedAt: true,
+        },
       });
 
       if (!user) {
@@ -327,19 +354,22 @@ export class UsersService {
       const systemSettings = await this.prisma.systemSettings.findMany({
         where: {
           category: {
-            in: ['social', 'legal', 'support']
-          }
-        }
+            in: ['social', 'legal', 'support'],
+          },
+        },
       });
 
       // Group settings by category and map to expected field names
-      const groupedSettings = systemSettings.reduce((acc: Record<string, Record<string, string>>, setting) => {
-        if (!acc[setting.category]) {
-          acc[setting.category] = {};
-        }
-        acc[setting.category][setting.key] = setting.value;
-        return acc;
-      }, {});
+      const groupedSettings = systemSettings.reduce(
+        (acc: Record<string, Record<string, string>>, setting) => {
+          if (!acc[setting.category]) {
+            acc[setting.category] = {};
+          }
+          acc[setting.category][setting.key] = setting.value;
+          return acc;
+        },
+        {},
+      );
 
       // Map to the exact structure expected by Flutter models
       let socialMedia = {
@@ -353,7 +383,9 @@ export class UsersService {
       // Parse social media links if they exist
       if (groupedSettings.social?.social_links) {
         try {
-          const parsedSocialLinks = JSON.parse(groupedSettings.social.social_links);
+          const parsedSocialLinks = JSON.parse(
+            groupedSettings.social.social_links,
+          );
           socialMedia = {
             whatsapp: parsedSocialLinks.whatsapp || null,
             instagram: parsedSocialLinks.instagram || null,
@@ -363,7 +395,10 @@ export class UsersService {
           };
         } catch (parseError) {
           console.error('Failed to parse social media links:', parseError);
-          console.error('Raw social_links value:', groupedSettings.social.social_links);
+          console.error(
+            'Raw social_links value:',
+            groupedSettings.social.social_links,
+          );
         }
       }
 
@@ -383,8 +418,8 @@ export class UsersService {
         systemInfo: {
           socialMedia,
           legalDocuments,
-          support
-        }
+          support,
+        },
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -404,13 +439,15 @@ export class UsersService {
           email: true,
           name: true,
           fcm: true,
-          updatedAt: true
-        }
+          updatedAt: true,
+        },
       });
 
       return updatedUser;
     } catch (error) {
-      throw new Error(`Failed to update FCM token for user ${userId}: ${error.message}`);
+      throw new Error(
+        `Failed to update FCM token for user ${userId}: ${error.message}`,
+      );
     }
   }
 
@@ -424,25 +461,25 @@ export class UsersService {
           email: true,
           name: true,
           fcm: true,
-          updatedAt: true
-        }
+          updatedAt: true,
+        },
       });
 
       return updatedUser;
     } catch (error) {
-      throw new Error(`Failed to remove FCM token for user ${userId}: ${error.message}`);
+      throw new Error(
+        `Failed to remove FCM token for user ${userId}: ${error.message}`,
+      );
     }
   }
 
   // User Location Management Methods
   async getUserLocations(userId: number) {
-
-
     try {
       // First, verify the user exists
       const userExists = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, name: true, phone: true, role: true }
+        select: { id: true, name: true, phone: true, role: true },
       });
 
       if (!userExists) {
@@ -452,13 +489,10 @@ export class UsersService {
 
       const locations = await this.prisma.userLocation.findMany({
         where: { userId },
-        orderBy: [
-          { isDefault: 'desc' },
-          { createdAt: 'desc' }
-        ]
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
       });
 
-      const mappedLocations = locations.map(location => ({
+      const mappedLocations = locations.map((location) => ({
         id: location.id,
         title: location.title,
         description: location.description,
@@ -467,7 +501,7 @@ export class UsersService {
         address: location.address,
         isDefault: location.isDefault,
         createdAt: location.createdAt,
-        updatedAt: location.updatedAt
+        updatedAt: location.updatedAt,
       }));
 
       return mappedLocations;
@@ -481,17 +515,22 @@ export class UsersService {
         throw error;
       }
 
-      throw new InternalServerErrorException(`Error fetching user locations: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Error fetching user locations: ${error.message}`,
+      );
     }
   }
 
-  async createUserLocation(userId: number, createLocationDto: CreateUserLocationDto) {
+  async createUserLocation(
+    userId: number,
+    createLocationDto: CreateUserLocationDto,
+  ) {
     try {
       // If this is the first location or marked as default, set it as default
       if (createLocationDto.isDefault) {
         await this.prisma.userLocation.updateMany({
           where: { userId },
-          data: { isDefault: false }
+          data: { isDefault: false },
         });
       }
 
@@ -503,8 +542,8 @@ export class UsersService {
           latitude: createLocationDto.latitude,
           longitude: createLocationDto.longitude,
           address: createLocationDto.address,
-          isDefault: createLocationDto.isDefault || false
-        }
+          isDefault: createLocationDto.isDefault || false,
+        },
       });
 
       return {
@@ -516,18 +555,22 @@ export class UsersService {
         address: location.address,
         isDefault: location.isDefault,
         createdAt: location.createdAt,
-        updatedAt: location.updatedAt
+        updatedAt: location.updatedAt,
       };
     } catch (error) {
       throw new InternalServerErrorException('Error creating user location');
     }
   }
 
-  async updateUserLocation(userId: number, locationId: number, updateLocationDto: UpdateUserLocationDto) {
+  async updateUserLocation(
+    userId: number,
+    locationId: number,
+    updateLocationDto: UpdateUserLocationDto,
+  ) {
     try {
       // Verify the location belongs to the user
       const existingLocation = await this.prisma.userLocation.findFirst({
-        where: { id: locationId, userId }
+        where: { id: locationId, userId },
       });
 
       if (!existingLocation) {
@@ -538,13 +581,13 @@ export class UsersService {
       if (updateLocationDto.isDefault) {
         await this.prisma.userLocation.updateMany({
           where: { userId },
-          data: { isDefault: false }
+          data: { isDefault: false },
         });
       }
 
       const updatedLocation = await this.prisma.userLocation.update({
         where: { id: locationId },
-        data: updateLocationDto
+        data: updateLocationDto,
       });
 
       return {
@@ -556,7 +599,7 @@ export class UsersService {
         address: updatedLocation.address,
         isDefault: updatedLocation.isDefault,
         createdAt: updatedLocation.createdAt,
-        updatedAt: updatedLocation.updatedAt
+        updatedAt: updatedLocation.updatedAt,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -570,7 +613,7 @@ export class UsersService {
     try {
       // Verify the location belongs to the user
       const existingLocation = await this.prisma.userLocation.findFirst({
-        where: { id: locationId, userId }
+        where: { id: locationId, userId },
       });
 
       if (!existingLocation) {
@@ -581,19 +624,19 @@ export class UsersService {
       if (existingLocation.isDefault) {
         const otherLocation = await this.prisma.userLocation.findFirst({
           where: { userId, id: { not: locationId } },
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         });
 
         if (otherLocation) {
           await this.prisma.userLocation.update({
             where: { id: otherLocation.id },
-            data: { isDefault: true }
+            data: { isDefault: true },
           });
         }
       }
 
       await this.prisma.userLocation.delete({
-        where: { id: locationId }
+        where: { id: locationId },
       });
 
       return { message: 'Location deleted successfully' };
@@ -609,7 +652,7 @@ export class UsersService {
     try {
       // Verify the location belongs to the user
       const existingLocation = await this.prisma.userLocation.findFirst({
-        where: { id: locationId, userId }
+        where: { id: locationId, userId },
       });
 
       if (!existingLocation) {
@@ -619,13 +662,13 @@ export class UsersService {
       // Unset all other defaults
       await this.prisma.userLocation.updateMany({
         where: { userId },
-        data: { isDefault: false }
+        data: { isDefault: false },
       });
 
       // Set this location as default
       const updatedLocation = await this.prisma.userLocation.update({
         where: { id: locationId },
-        data: { isDefault: true }
+        data: { isDefault: true },
       });
 
       return {
@@ -637,13 +680,136 @@ export class UsersService {
         address: updatedLocation.address,
         isDefault: updatedLocation.isDefault,
         createdAt: updatedLocation.createdAt,
-        updatedAt: updatedLocation.updatedAt
+        updatedAt: updatedLocation.updatedAt,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
       throw new InternalServerErrorException('Error setting default location');
+    }
+  }
+
+  // Phone Number Change Methods
+  async requestPhoneChange(
+    userId: number,
+    changePhoneDto: ChangePhoneRequestDto,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const { newPhoneNumber } = changePhoneDto;
+
+      // Verify user exists
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, phone: true },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Check if new phone number is different from current
+      if (user.phone === newPhoneNumber) {
+        throw new BadRequestException(
+          'New phone number must be different from current phone number',
+        );
+      }
+
+      // Check if new phone number is already in use by another user
+      const existingUser = await this.prisma.user.findFirst({
+        where: { phone: newPhoneNumber },
+      });
+
+      if (existingUser) {
+        throw new ConflictException(
+          'Phone number is already in use by another user',
+        );
+      }
+
+      // Check if new phone number is already in use by a provider
+      const existingProvider = await this.prisma.provider.findFirst({
+        where: { phone: newPhoneNumber },
+      });
+
+      if (existingProvider) {
+        throw new ConflictException(
+          'Phone number is already in use by a provider',
+        );
+      }
+
+      // Send OTP to new phone number
+      const otpResult = await this.smsService.sendOtp({
+        phoneNumber: newPhoneNumber,
+        purpose: 'phone_change',
+      });
+
+      if (!otpResult.success) {
+        throw new BadRequestException(otpResult.message);
+      }
+
+      return {
+        success: true,
+        message: 'OTP sent to new phone number successfully',
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error requesting phone change');
+    }
+  }
+
+  async verifyPhoneChange(
+    userId: number,
+    verifyPhoneDto: VerifyPhoneChangeDto,
+  ): Promise<PhoneChangeResponseDto> {
+    try {
+      const { newPhoneNumber, otp } = verifyPhoneDto;
+
+      // Verify user exists
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, phone: true },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Verify OTP
+      const otpResult = await this.smsService.verifyOtp({
+        phoneNumber: newPhoneNumber,
+        otp,
+        purpose: 'phone_change',
+      });
+
+      if (!otpResult.success) {
+        throw new BadRequestException(otpResult.message);
+      }
+
+      // Update user's phone number
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { phone: newPhoneNumber },
+      });
+
+      return {
+        success: true,
+        message: 'Phone number changed successfully',
+        newPhoneNumber,
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error verifying phone change');
     }
   }
 }

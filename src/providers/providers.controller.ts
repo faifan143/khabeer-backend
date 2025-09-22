@@ -1,5 +1,27 @@
-import { Controller, Get, Param, Body, Post, Put, Delete, UseGuards, Request, UploadedFile, UseInterceptors, BadRequestException, ParseIntPipe, Query, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Body,
+  Post,
+  Put,
+  Delete,
+  UseGuards,
+  Request,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+  ParseIntPipe,
+  Query,
+  ForbiddenException,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { FilesService } from '../files/files.service';
 import { ProvidersService } from './providers.service';
 import { ComprehensiveAuthGuard } from '../auth/comprehensive-auth.guard';
@@ -9,17 +31,24 @@ import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { UpdateOnlineStatusDto } from './dto/update-online-status.dto';
+import {
+  ChangePhoneRequestDto,
+  VerifyPhoneChangeDto,
+  PhoneChangeResponseDto,
+} from './dto/change-phone.dto';
 import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
+@ApiTags('Providers')
+@ApiBearerAuth()
 @Controller('providers')
 @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
 export class ProvidersController {
   constructor(
     private readonly providersService: ProvidersService,
-    private readonly filesService: FilesService
-  ) { }
+    private readonly filesService: FilesService,
+  ) {}
 
   @Get()
   @Roles('USER', 'PROVIDER', 'ADMIN')
@@ -30,13 +59,21 @@ export class ProvidersController {
 
   @Get('service/:serviceId')
   @Roles('USER', 'PROVIDER', 'ADMIN')
-  async getProvidersByService(@Param('serviceId') serviceId: string, @Request() req): Promise<ProvidersByServiceResponseDto> {
+  async getProvidersByService(
+    @Param('serviceId') serviceId: string,
+    @Request() req,
+  ): Promise<ProvidersByServiceResponseDto> {
     const serviceIdNum = Number(serviceId);
     if (isNaN(serviceIdNum) || serviceIdNum <= 0) {
-      throw new BadRequestException('Invalid service ID. Must be a positive number.');
+      throw new BadRequestException(
+        'Invalid service ID. Must be a positive number.',
+      );
     }
     const userRole = req.user.role;
-    return this.providersService.findProvidersByServiceId(serviceIdNum, userRole);
+    return this.providersService.findProvidersByServiceId(
+      serviceIdNum,
+      userRole,
+    );
   }
 
   @Get('profile')
@@ -68,30 +105,35 @@ export class ProvidersController {
     return { isActive: provider.isActive };
   }
 
-
   @Post('register')
   @Roles('USER', 'ADMIN')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads/images/providers',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `provider-${uniqueSuffix}${ext}`);
-      },
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/images/providers',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `provider-${uniqueSuffix}${ext}`);
+        },
+      }),
     }),
-  }))
+  )
   async register(
     @Body() data: CreateProviderDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
     if (file) {
       const options = {
         maxSize: 5 * 1024 * 1024, // 5MB for images
         allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
-        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif'],
       };
-      const fileResult = await this.filesService.handleUploadedFile(file, options);
+      const fileResult = await this.filesService.handleUploadedFile(
+        file,
+        options,
+      );
       data.image = fileResult.url;
     } else {
       data.image = '';
@@ -101,7 +143,9 @@ export class ProvidersController {
       if (typeof data.categoryIds === 'string') {
         data.categoryIds = [parseInt(data.categoryIds, 10)];
       } else if (Array.isArray(data.categoryIds)) {
-        data.categoryIds = data.categoryIds.map(id => typeof id === 'string' ? parseInt(id, 10) : id);
+        data.categoryIds = data.categoryIds.map((id) =>
+          typeof id === 'string' ? parseInt(id, 10) : id,
+        );
       }
     }
 
@@ -116,28 +160,34 @@ export class ProvidersController {
 
   @Post()
   @Roles('ADMIN')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads/images/providers',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `provider-${uniqueSuffix}${ext}`);
-      },
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/images/providers',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `provider-${uniqueSuffix}${ext}`);
+        },
+      }),
     }),
-  }))
+  )
   async create(
     @Body() createProviderDto: CreateProviderDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
     const data = { ...createProviderDto };
     if (file) {
       const options = {
         maxSize: 5 * 1024 * 1024, // 5MB for images
         allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
-        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif'],
       };
-      const fileResult = await this.filesService.handleUploadedFile(file, options);
+      const fileResult = await this.filesService.handleUploadedFile(
+        file,
+        options,
+      );
       data.image = fileResult.url;
     } else {
       data.image = '';
@@ -158,30 +208,36 @@ export class ProvidersController {
   @Roles('PROVIDER', 'ADMIN', 'USER')
   async updateOnlineStatus(
     @Body() data: UpdateOnlineStatusDto,
-    @Request() req
+    @Request() req,
   ) {
     // Get provider ID from JWT token
     const providerId = req.user.userId;
-    return this.providersService.updateOnlineStatus(providerId, data.onlineStatus);
+    return this.providersService.updateOnlineStatus(
+      providerId,
+      data.onlineStatus,
+    );
   }
 
   @Put(':id')
   @Roles('PROVIDER', 'ADMIN', 'USER')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        cb(null, `provider-${uniqueSuffix}${ext}`);
-      },
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `provider-${uniqueSuffix}${ext}`);
+        },
+      }),
     }),
-  }))
+  )
   async update(
     @Param('id') id: string,
     @Body() data: UpdateProviderDto,
     @UploadedFile() file: Express.Multer.File,
-    @Request() req
+    @Request() req,
   ) {
     // Providers can only update their own information, admins can update any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -193,9 +249,12 @@ export class ProvidersController {
       const options = {
         maxSize: 5 * 1024 * 1024, // 5MB for images
         allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
-        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif']
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif'],
       };
-      const fileResult = await this.filesService.handleUploadedFile(file, options);
+      const fileResult = await this.filesService.handleUploadedFile(
+        file,
+        options,
+      );
       updateData.image = fileResult.url;
     }
     return this.providersService.update(Number(id), updateData);
@@ -206,7 +265,7 @@ export class ProvidersController {
   async updateStatus(
     @Param('id') id: string,
     @Body() data: UpdateStatusDto,
-    @Request() req
+    @Request() req,
   ) {
     // Providers can only update their own status, admins can update any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -235,7 +294,7 @@ export class ProvidersController {
   @Roles('PROVIDER', 'ADMIN')
   async getProviderCategories(
     @Param('id', ParseIntPipe) id: number,
-    @Request() req
+    @Request() req,
   ) {
     // Check if user is the provider or admin
     if (req.user.role !== 'ADMIN' && req.user.userId !== id) {
@@ -250,7 +309,7 @@ export class ProvidersController {
   async addProviderCategories(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { categoryIds: number[] },
-    @Request() req
+    @Request() req,
   ) {
     // Check if user is the provider or admin
     if (req.user.role !== 'ADMIN' && req.user.userId !== id) {
@@ -265,7 +324,7 @@ export class ProvidersController {
   async removeProviderCategories(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { categoryIds: number[] },
-    @Request() req
+    @Request() req,
   ) {
     // Check if user is the provider or admin
     if (req.user.role !== 'ADMIN' && req.user.userId !== id) {
@@ -279,7 +338,7 @@ export class ProvidersController {
   @Roles('PROVIDER', 'ADMIN')
   async getServicesByProviderCategories(
     @Param('id', ParseIntPipe) id: number,
-    @Request() req
+    @Request() req,
   ) {
     // Check if user is the provider or admin
     if (req.user.role !== 'ADMIN' && req.user.userId !== id) {
@@ -293,9 +352,12 @@ export class ProvidersController {
   @Roles('PROVIDER', 'ADMIN', 'USER')
   async getCategoryServicesByProviderId(
     @Param('id', ParseIntPipe) providerId: number,
-    @Param('categoryId', ParseIntPipe) categoryId: number
+    @Param('categoryId', ParseIntPipe) categoryId: number,
   ) {
-    return this.providersService.getCategoryServicesByProviderId(providerId, categoryId);
+    return this.providersService.getCategoryServicesByProviderId(
+      providerId,
+      categoryId,
+    );
   }
 
   @Post(':id/services')
@@ -303,7 +365,7 @@ export class ProvidersController {
   async addServices(
     @Param('id') id: string,
     @Body() body: { serviceIds: number[] },
-    @Request() req
+    @Request() req,
   ) {
     // Providers can only modify their own services, admins can modify any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -317,7 +379,7 @@ export class ProvidersController {
   async removeServices(
     @Param('id') id: string,
     @Body() body: { serviceIds: number[] },
-    @Request() req
+    @Request() req,
   ) {
     // Providers can only modify their own services, admins can modify any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -361,7 +423,7 @@ export class ProvidersController {
   async getProviderOrdersByStatus(
     @Param('id') id: string,
     @Param('status') status: string,
-    @Request() req
+    @Request() req,
   ) {
     // Providers can only access their own orders, admins can access any
     if (req.user.role === 'PROVIDER' && req.user.userId !== Number(id)) {
@@ -396,7 +458,7 @@ export class ProvidersController {
     @Query('limit') limit?: string,
     @Query('minRating') minRating?: string,
     @Query('minOrders') minOrders?: string,
-    @Query('includeUnrated') includeUnrated?: string
+    @Query('includeUnrated') includeUnrated?: string,
   ) {
     const limitNum = limit ? parseInt(limit, 10) : 10;
     const minRatingNum = minRating ? parseFloat(minRating) : 0;
@@ -421,8 +483,47 @@ export class ProvidersController {
       minRatingNum,
       minOrdersNum,
       includeUnratedBool,
-      req.user.userId
+      req.user.userId,
+    );
+  }
+
+  // Phone Number Change Endpoints
+  @Post('change-phone/request')
+  @Roles('PROVIDER')
+  @ApiOperation({ summary: 'Request phone number change' })
+  @ApiResponse({ status: 200, description: 'OTP sent successfully' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request or phone number already in use',
+  })
+  @ApiResponse({ status: 404, description: 'Provider not found' })
+  async requestPhoneChange(
+    @Body() changePhoneDto: ChangePhoneRequestDto,
+    @Request() req,
+  ) {
+    return this.providersService.requestPhoneChange(
+      req.user.userId,
+      changePhoneDto,
+    );
+  }
+
+  @Post('change-phone/verify')
+  @Roles('PROVIDER')
+  @ApiOperation({ summary: 'Verify phone number change with OTP' })
+  @ApiResponse({
+    status: 200,
+    description: 'Phone number changed successfully',
+    type: PhoneChangeResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid OTP or request' })
+  @ApiResponse({ status: 404, description: 'Provider not found' })
+  async verifyPhoneChange(
+    @Body() verifyPhoneDto: VerifyPhoneChangeDto,
+    @Request() req,
+  ) {
+    return this.providersService.verifyPhoneChange(
+      req.user.userId,
+      verifyPhoneDto,
     );
   }
 }
-
