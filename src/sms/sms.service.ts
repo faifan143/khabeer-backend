@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SendOtpDto, VerifyOtpDto, OtpResponseDto } from './dto/send-sms.dto';
@@ -11,7 +16,7 @@ export class SmsService {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
   /**
    * Generate a random OTP
@@ -27,17 +32,37 @@ export class SmsService {
   /**
    * Send SMS using Tamimah SMS service
    */
-  private async sendSms(phoneNumber: string, message: string): Promise<{ success: boolean; message: string }> {
+  private async sendSms(
+    phoneNumber: string,
+    message: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       // Tamimah SMS API configuration - using the working endpoint
-      const apiUrl = this.configService.get<string>('TAMIMAH_SMS_API_URL', 'https://tamimahsms.com/user/smspush.aspx');
-      const username = this.configService.get<string>('SMS_USERNAME', 'Khabsms');
-      const password = this.configService.get<string>('SMS_PASSWORD', 'Khab!rsm$24!');
-      const sender = this.configService.get<string>('TAMIMAH_SMS_SENDER_ID', 'Khabeer');
-      const source = this.configService.get<string>('TAMIMAH_SMS_SOURCE', 'OTP');
+      const apiUrl = this.configService.get<string>(
+        'TAMIMAH_SMS_API_URL',
+        'https://tamimahsms.com/user/smspush.aspx',
+      );
+      const username = this.configService.get<string>(
+        'SMS_USERNAME',
+        'Khabsms',
+      );
+      const password = this.configService.get<string>(
+        'SMS_PASSWORD',
+        'Khab!rsm$24!',
+      );
+      const sender = this.configService.get<string>(
+        'TAMIMAH_SMS_SENDER_ID',
+        'Khabir',
+      );
+      const source = this.configService.get<string>(
+        'TAMIMAH_SMS_SOURCE',
+        'OTP',
+      );
 
       if (!apiUrl || !username || !password) {
-        throw new InternalServerErrorException('SMS service configuration is missing');
+        throw new InternalServerErrorException(
+          'SMS service configuration is missing',
+        );
       }
 
       // Format phone number for Oman (968xxxxxxxx)
@@ -59,12 +84,14 @@ export class SmsService {
         phoneno: formattedPhone,
         message: message,
         sender: sender,
-        source: source
+        source: source,
       });
 
       const fullUrl = `${apiUrl}?${params.toString()}`;
 
-      this.logger.log(`Sending SMS to ${formattedPhone} (original: ${phoneNumber})`);
+      this.logger.log(
+        `Sending SMS to ${formattedPhone} (original: ${phoneNumber})`,
+      );
       this.logger.log(`SMS URL: ${fullUrl}`);
 
       // Make GET request to Tamimah SMS service (matching Flutter implementation)
@@ -81,23 +108,28 @@ export class SmsService {
 
         return {
           success: true,
-          message: 'SMS sent successfully'
+          message: 'SMS sent successfully',
         };
       } else {
-        throw new BadRequestException(`SMS sending failed: ${response.statusText || 'Unknown error'}`);
+        throw new BadRequestException(
+          `SMS sending failed: ${response.statusText || 'Unknown error'}`,
+        );
       }
-
     } catch (error) {
       this.logger.error(`Error sending SMS: ${error.message}`, error.stack);
 
       // Log failed SMS attempt
-      await this.logSmsActivity(phoneNumber, message, 'failed', { error: error.message });
+      await this.logSmsActivity(phoneNumber, message, 'failed', {
+        error: error.message,
+      });
 
       if (error instanceof BadRequestException) {
         throw error;
       }
 
-      throw new InternalServerErrorException('Failed to send SMS. Please try again later.');
+      throw new InternalServerErrorException(
+        'Failed to send SMS. Please try again later.',
+      );
     }
   }
 
@@ -109,14 +141,18 @@ export class SmsService {
       const { phoneNumber, purpose = 'verification' } = sendOtpDto;
 
       // Check if OTP is enabled in environment
-      const otpEnabled = this.configService.get<string>('ENABLE_OTP', 'true').toLowerCase() === 'true';
+      const otpEnabled =
+        this.configService.get<string>('ENABLE_OTP', 'true').toLowerCase() ===
+        'true';
 
       if (!otpEnabled) {
-        this.logger.log(`OTP disabled in environment. Skipping OTP for ${phoneNumber}`);
+        this.logger.log(
+          `OTP disabled in environment. Skipping OTP for ${phoneNumber}`,
+        );
         return {
           success: true,
           message: 'OTP bypassed (disabled in environment)',
-          expiresIn: 600 // 10 minutes
+          expiresIn: 600, // 10 minutes
         };
       }
 
@@ -131,12 +167,12 @@ export class SmsService {
           otp: otp, // Store plain text OTP (no hashing)
           purpose,
           expiresAt: new Date(Date.now() + expiresIn * 1000),
-          attempts: 0
-        }
+          attempts: 0,
+        },
       });
 
       // Prepare SMS message
-      const message = `Your Khabeer verification code is: ${otp}. Valid for 10 minutes. Do not share this code with anyone.`;
+      const message = `Your Khabir verification code is: ${otp}. Valid for 10 minutes. Do not share this code with anyone.`;
 
       // Send SMS
       await this.sendSms(phoneNumber, message);
@@ -146,9 +182,8 @@ export class SmsService {
       return {
         success: true,
         message: 'OTP sent successfully',
-        expiresIn
+        expiresIn,
       };
-
     } catch (error) {
       this.logger.error(`Error sending OTP: ${error.message}`, error.stack);
 
@@ -156,25 +191,33 @@ export class SmsService {
         throw error;
       }
 
-      throw new InternalServerErrorException('Failed to send OTP. Please try again later.');
+      throw new InternalServerErrorException(
+        'Failed to send OTP. Please try again later.',
+      );
     }
   }
 
   /**
    * Verify OTP
    */
-  async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<{ success: boolean; message: string }> {
+  async verifyOtp(
+    verifyOtpDto: VerifyOtpDto,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       const { phoneNumber, otp, purpose = 'verification' } = verifyOtpDto;
 
       // Check if OTP is enabled in environment
-      const otpEnabled = this.configService.get<string>('ENABLE_OTP', 'true').toLowerCase() === 'true';
+      const otpEnabled =
+        this.configService.get<string>('ENABLE_OTP', 'true').toLowerCase() ===
+        'true';
 
       if (!otpEnabled) {
-        this.logger.log(`OTP disabled in environment. Auto-verifying OTP for ${phoneNumber}`);
+        this.logger.log(
+          `OTP disabled in environment. Auto-verifying OTP for ${phoneNumber}`,
+        );
         return {
           success: true,
-          message: 'OTP verified (bypassed in environment)'
+          message: 'OTP verified (bypassed in environment)',
         };
       }
 
@@ -184,18 +227,18 @@ export class SmsService {
           phoneNumber,
           purpose,
           expiresAt: {
-            gt: new Date()
-          }
+            gt: new Date(),
+          },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: 'desc',
+        },
       });
 
       if (!otpRecord) {
         return {
           success: false,
-          message: 'OTP not found or expired'
+          message: 'OTP not found or expired',
         };
       }
 
@@ -203,7 +246,7 @@ export class SmsService {
       if (otpRecord.attempts >= 5) {
         return {
           success: false,
-          message: 'OTP is blocked due to too many failed attempts'
+          message: 'OTP is blocked due to too many failed attempts',
         };
       }
 
@@ -214,12 +257,12 @@ export class SmsService {
         // Increment attempts
         await this.prisma.otp.update({
           where: { id: otpRecord.id },
-          data: { attempts: otpRecord.attempts + 1 }
+          data: { attempts: otpRecord.attempts + 1 },
         });
 
         return {
           success: false,
-          message: 'Invalid OTP'
+          message: 'Invalid OTP',
         };
       }
 
@@ -228,17 +271,16 @@ export class SmsService {
         where: { id: otpRecord.id },
         data: {
           isUsed: true,
-          usedAt: new Date()
-        }
+          usedAt: new Date(),
+        },
       });
 
       this.logger.log(`OTP verified successfully for ${phoneNumber}`);
 
       return {
         success: true,
-        message: 'OTP verified successfully'
+        message: 'OTP verified successfully',
       };
-
     } catch (error) {
       this.logger.error(`Error verifying OTP: ${error.message}`, error.stack);
       throw new InternalServerErrorException('Failed to verify OTP');
@@ -248,7 +290,12 @@ export class SmsService {
   /**
    * Log SMS activity
    */
-  private async logSmsActivity(phoneNumber: string, message: string, status: string, response: any) {
+  private async logSmsActivity(
+    phoneNumber: string,
+    message: string,
+    status: string,
+    response: any,
+  ) {
     try {
       await this.prisma.smsLog.create({
         data: {
@@ -256,8 +303,8 @@ export class SmsService {
           message,
           status,
           response: JSON.stringify(response),
-          sentAt: new Date()
-        }
+          sentAt: new Date(),
+        },
       });
     } catch (error) {
       this.logger.error(`Failed to log SMS activity: ${error.message}`);
@@ -272,12 +319,12 @@ export class SmsService {
       await this.prisma.otp.deleteMany({
         where: {
           expiresAt: {
-            lt: new Date()
-          }
-        }
+            lt: new Date(),
+          },
+        },
       });
     } catch (error) {
       this.logger.error(`Failed to cleanup expired OTPs: ${error.message}`);
     }
   }
-} 
+}
