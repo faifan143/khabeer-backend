@@ -1375,19 +1375,23 @@ export class AdminService {
   }
 
   async getTermsAndConditions() {
-    const terms = await this.prisma.systemSettings.findMany({
-      where: { key: { in: ['terms_en', 'terms_ar'] } },
+    const settings = await this.prisma.systemSettings.findMany({
+      where: {
+        key: { in: ['terms_en', 'terms_ar', 'privacy_en', 'privacy_ar'] },
+      },
     });
 
     // Convert to object format for easier access
-    const termsObject: { [key: string]: string } = {};
-    terms.forEach((term) => {
-      termsObject[term.key] = term.value;
+    const settingsObject: { [key: string]: string } = {};
+    settings.forEach((setting) => {
+      settingsObject[setting.key] = setting.value;
     });
 
     return {
-      terms_en: termsObject.terms_en || null,
-      terms_ar: termsObject.terms_ar || null,
+      terms_en: settingsObject.terms_en || null,
+      terms_ar: settingsObject.terms_ar || null,
+      privacy_en: settingsObject.privacy_en || null,
+      privacy_ar: settingsObject.privacy_ar || null,
     };
   }
 
