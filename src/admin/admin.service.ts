@@ -1610,6 +1610,7 @@ export class AdminService {
         where: { id },
         data: {
           ...updateData,
+          isActive: updateData.isActive == 'true',
           updatedAt: new Date(),
         },
       });
