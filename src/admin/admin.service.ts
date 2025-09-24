@@ -1562,11 +1562,6 @@ export class AdminService {
       // Convert string values to proper types
       const createData: any = { ...data };
 
-      // Convert isActive from string to boolean
-      if (typeof createData.isActive === 'string') {
-        createData.isActive = createData.isActive === 'true';
-      }
-
       // Convert providerId from string to number if present
       if (createData.providerId && typeof createData.providerId === 'string') {
         createData.providerId = parseInt(createData.providerId, 10);
@@ -1605,11 +1600,6 @@ export class AdminService {
 
       // Convert string values to proper types
       const updateData: any = { ...data };
-
-      // Convert isActive from string to boolean
-      if (typeof updateData.isActive === 'string') {
-        updateData.isActive = updateData.isActive === 'true';
-      }
 
       // Convert providerId from string to number if present
       if (updateData.providerId && typeof updateData.providerId === 'string') {
