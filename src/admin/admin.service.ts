@@ -2065,13 +2065,15 @@ export class AdminService {
 
         const processedServices = services.map((service) => ({
           id: service.id,
-          name: service.titleEn,
+          titleEn: service.titleEn,
+          titleAr: service.titleAr,
           description: service.description,
           price: service.commission,
           category: service.category
             ? {
                 id: service.category.id,
-                name: service.category.titleEn,
+                titleEn: service.category.titleEn,
+                titleAr: service.category.titleAr,
               }
             : null,
           orderCount: service.orders.length,
