@@ -112,13 +112,15 @@ export class AdminService {
       // Process popular services
       const processedPopularServices = popularServices.map((service) => ({
         id: service.id,
-        name: service.titleEn,
+        titleEn: service.titleEn,
+        titleAr: service.titleAr,
         description: service.description,
         price: service.commission,
         category: service.category
           ? {
               id: service.category.id,
-              name: service.category.titleEn,
+              titleEn: service.category.titleEn,
+              titleAr: service.category.titleAr,
             }
           : null,
         orderCount: service.orders.length,
@@ -137,9 +139,9 @@ export class AdminService {
           name: provider.name,
           email: provider.email || '',
           phone: provider.phone,
+          state: provider.state,
           description: provider.description,
           image: provider.image,
-          state: provider.state,
           isActive: provider.isActive,
           isVerified: provider.isVerified,
           orderCount: provider.orders.length,
