@@ -193,7 +193,6 @@ export class ProvidersService {
         include: {
           offers: true,
           orders: true,
-          ratings: true,
           providerServices: {
             where: {
               isActive: true,
@@ -202,6 +201,7 @@ export class ProvidersService {
               service: {
                 include: {
                   category: true,
+
                   offers: {
                     where: {
                       isActive: true,
@@ -220,13 +220,25 @@ export class ProvidersService {
           },
         },
       });
+
       if (!provider) {
         throw new NotFoundException(`Provider with ID ${id} not found`);
       }
 
+      // Calculate average rating without returning all ratings
+      const ratingStats = await this.prisma.providerRating.aggregate({
+        where: { providerId: id },
+        _avg: { rating: true },
+      });
+
+      const averageRating = ratingStats._avg.rating
+        ? Math.round(ratingStats._avg.rating * 10) / 10
+        : 0;
+
       // Transform offers array to single object for each service
       const transformedProvider = {
         ...provider,
+        averageRating,
         providerServices: provider.providerServices.map((ps) => ({
           ...ps,
           service: {
