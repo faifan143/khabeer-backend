@@ -206,9 +206,11 @@ export class ProvidersService {
                     where: {
                       isActive: true,
                       providerId: id,
+                      startDate: { lte: new Date() },
+                      endDate: { gt: new Date() },
                     },
                     orderBy: {
-                      startDate: 'desc',
+                      offerPrice: 'asc',
                     },
                     take: 1,
                   },
@@ -229,8 +231,11 @@ export class ProvidersService {
           ...ps,
           service: {
             ...ps.service,
+            // Return numeric offerPrice if available, otherwise null
             offerPrice:
-              ps.service.offers.length > 0 ? ps.service.offers[0] : null,
+              ps.service.offers.length > 0
+                ? ps.service.offers[0].offerPrice
+                : null,
           },
         })),
       };
