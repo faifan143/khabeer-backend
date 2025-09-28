@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { BusinessFlowNotificationsService } from '../notifications/business-flow-notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ServicesService } from '../services/services.service';
@@ -11,8 +16,8 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: BusinessFlowNotificationsService,
-    private readonly servicesService: ServicesService
-  ) { }
+    private readonly servicesService: ServicesService,
+  ) {}
 
   /**
    * Normalizes a date to remove time components (hours, minutes, seconds, milliseconds)
@@ -33,7 +38,7 @@ export class OrdersService {
     // Validate provider and service exist
     const provider = await this.prisma.provider.findUnique({
       where: { id: createOrderDto.providerId },
-      include: { providerServices: true }
+      include: { providerServices: true },
     });
 
     if (!provider) {
@@ -45,7 +50,7 @@ export class OrdersService {
     }
 
     const service = await this.prisma.service.findUnique({
-      where: { id: createOrderDto.serviceId }
+      where: { id: createOrderDto.serviceId },
     });
 
     if (!service) {
@@ -53,14 +58,18 @@ export class OrdersService {
     }
 
     // Check if service can be ordered (only NORMAL services can be ordered)
-    const canBeOrdered = await this.servicesService.canBeOrdered(createOrderDto.serviceId);
+    const canBeOrdered = await this.servicesService.canBeOrdered(
+      createOrderDto.serviceId,
+    );
     if (!canBeOrdered) {
-      throw new BadRequestException('This service cannot be ordered directly. Please contact via WhatsApp.');
+      throw new BadRequestException(
+        'This service cannot be ordered directly. Please contact via WhatsApp.',
+      );
     }
 
     // Check if provider offers this service
     const providerService = provider.providerServices.find(
-      ps => ps.serviceId === createOrderDto.serviceId && ps.isActive
+      (ps) => ps.serviceId === createOrderDto.serviceId && ps.isActive,
     );
 
     if (!providerService) {
@@ -75,11 +84,11 @@ export class OrdersService {
         serviceId: createOrderDto.serviceId,
         isActive: true,
         startDate: { lte: now },
-        endDate: { gt: now }
+        endDate: { gt: now },
       },
       orderBy: {
-        offerPrice: 'asc' // Get the best (lowest) offer price
-      }
+        offerPrice: 'asc', // Get the best (lowest) offer price
+      },
     });
 
     // Calculate amounts - FIXED: User only pays provider price, commission is deducted from provider earnings
@@ -88,9 +97,13 @@ export class OrdersService {
     const quantity = createOrderDto.quantity || 1;
 
     // Use offer price if available, otherwise use regular price
-    const finalProviderPrice = validOffer ? validOffer.offerPrice : providerPrice;
+    const finalProviderPrice = validOffer
+      ? validOffer.offerPrice
+      : providerPrice;
     const originalPrice = providerPrice;
-    const discount = validOffer ? (originalPrice - finalProviderPrice) * quantity : 0;
+    const discount = validOffer
+      ? (originalPrice - finalProviderPrice) * quantity
+      : 0;
 
     const providerAmount = finalProviderPrice * quantity; // What provider charges
     const commissionAmount = commission * quantity; // Fixed commission per service
@@ -103,7 +116,9 @@ export class OrdersService {
         userId,
         providerId: createOrderDto.providerId,
         serviceId: createOrderDto.serviceId,
-        scheduledDate: createOrderDto.scheduledDate ? new Date(createOrderDto.scheduledDate) : null,
+        scheduledDate: createOrderDto.scheduledDate
+          ? new Date(createOrderDto.scheduledDate)
+          : null,
         location: createOrderDto.location,
         locationDetails: createOrderDto.locationDetails,
         providerLocation: createOrderDto.providerLocation,
@@ -113,14 +128,14 @@ export class OrdersService {
         providerNetAmount,
         commissionAmount,
         status: OrderStatus.PENDING,
-        isMultipleServices: false
+        isMultipleServices: false,
       },
       include: {
         user: true,
         provider: true,
         service: true,
-        invoice: true
-      }
+        invoice: true,
+      },
     });
 
     // Send notification to provider about new order
@@ -130,7 +145,7 @@ export class OrdersService {
         order.providerId,
         order.service.titleEn,
         order.user.name,
-        order.service.image // Pass service image
+        order.service.image, // Pass service image
       );
     } catch (error) {
       console.error('Failed to send new order notification:', error);
@@ -139,23 +154,23 @@ export class OrdersService {
     // Add offer information to response if offer was applied
     const orderWithOffer = {
       ...order,
-      appliedOffer: validOffer ? {
-        id: validOffer.id,
-        title: validOffer.description,
-        originalPrice: originalPrice,
-        offerPrice: finalProviderPrice,
-        discount: discount,
-        savings: discount
-      } : null
+      appliedOffer: validOffer
+        ? {
+            id: validOffer.id,
+            title: validOffer.description,
+            originalPrice: originalPrice,
+            offerPrice: finalProviderPrice,
+            discount: discount,
+            savings: discount,
+          }
+        : null,
     };
 
     return orderWithOffer;
   }
 
   async findAll(userId: number, role: string) {
-    const where = role === 'PROVIDER'
-      ? { providerId: userId }
-      : { userId };
+    const where = role === 'PROVIDER' ? { providerId: userId } : { userId };
 
     const orders = await this.prisma.order.findMany({
       where,
@@ -169,16 +184,16 @@ export class OrdersService {
             image: true,
             state: true,
             latitude: true,
-            longitude: true
-          }
+            longitude: true,
+          },
         },
         provider: {
           select: {
             id: true,
             name: true,
             phone: true,
-            image: true
-          }
+            image: true,
+          },
         },
         service: {
           select: {
@@ -194,27 +209,27 @@ export class OrdersService {
                 image: true,
                 titleAr: true,
                 titleEn: true,
-                state: true
-              }
-            }
-          }
+                state: true,
+              },
+            },
+          },
         },
-        invoice: true
+        invoice: true,
       },
       orderBy: {
-        orderDate: 'desc'
-      }
+        orderDate: 'desc',
+      },
     });
 
     // Transform orders to always include services array
-    const transformedOrders = orders.map(order => {
+    const transformedOrders = orders.map((order) => {
       let services: any[] = [];
 
       if (order.isMultipleServices && order.servicesBreakdown) {
         // Use the stored services breakdown from the database and enhance with category data
-        services = (order.servicesBreakdown as any[]).map(serviceItem => ({
+        services = (order.servicesBreakdown as any[]).map((serviceItem) => ({
           ...serviceItem,
-          category: order.service.category
+          category: order.service.category,
         }));
       } else {
         // For single service orders, create a single-item array with complete data
@@ -222,7 +237,8 @@ export class OrdersService {
         services = [
           {
             serviceId: service.id,
-            serviceTitle: service.titleEn + "-" + service.titleAr,
+            serviceTitleEn: service.titleEn,
+            serviceTitleAr: service.titleAr,
             serviceDescription: service.description,
             serviceImage: service.image,
             quantity: order.quantity,
@@ -230,8 +246,8 @@ export class OrdersService {
             totalPrice: order.providerAmount,
             commission: service.commission || 0,
             commissionAmount: order.commissionAmount,
-            category: service.category
-          }
+            category: service.category,
+          },
         ];
       }
 
@@ -242,7 +258,7 @@ export class OrdersService {
         ...orderWithoutService,
         isMultipleServices: order.isMultipleServices || false,
         services,
-        duration: order.scheduledDate
+        duration: order.scheduledDate,
       };
     });
 
@@ -250,9 +266,8 @@ export class OrdersService {
   }
 
   async findOne(id: number, userId: number, role: string) {
-    const where = role === 'PROVIDER'
-      ? { id, providerId: userId }
-      : { id, userId };
+    const where =
+      role === 'PROVIDER' ? { id, providerId: userId } : { id, userId };
 
     const order = await this.prisma.order.findFirst({
       where,
@@ -265,8 +280,8 @@ export class OrdersService {
             email: true,
             address: true,
             latitude: true,
-            longitude: true
-          }
+            longitude: true,
+          },
         },
         provider: {
           select: {
@@ -274,8 +289,8 @@ export class OrdersService {
             name: true,
             phone: true,
             image: true,
-            description: true
-          }
+            description: true,
+          },
         },
         service: {
           select: {
@@ -291,13 +306,13 @@ export class OrdersService {
                 image: true,
                 titleAr: true,
                 titleEn: true,
-                state: true
-              }
-            }
-          }
+                state: true,
+              },
+            },
+          },
         },
-        invoice: true
-      }
+        invoice: true,
+      },
     });
 
     if (!order) {
@@ -309,9 +324,9 @@ export class OrdersService {
 
     if (order.isMultipleServices && order.servicesBreakdown) {
       // Use the stored services breakdown from the database and enhance with category data
-      services = (order.servicesBreakdown as any[]).map(serviceItem => ({
+      services = (order.servicesBreakdown as any[]).map((serviceItem) => ({
         ...serviceItem,
-        category: order.service.category
+        category: order.service.category,
       }));
     } else {
       // For single service orders, create a single-item array with complete data
@@ -319,7 +334,8 @@ export class OrdersService {
       services = [
         {
           serviceId: service.id,
-          serviceTitle: service.titleEn,
+          serviceTitleEn: service.titleEn,
+          serviceTitleAr: service.titleAr,
           serviceDescription: service.description,
           serviceImage: service.image,
           quantity: order.quantity,
@@ -327,8 +343,8 @@ export class OrdersService {
           totalPrice: order.providerAmount,
           commission: service.commission || 0,
           commissionAmount: order.commissionAmount,
-          category: service.category
-        }
+          category: service.category,
+        },
       ];
     }
 
@@ -339,14 +355,19 @@ export class OrdersService {
       ...orderWithoutService,
       isMultipleServices: order.isMultipleServices || false,
       services,
-      duration: order.scheduledDate
+      duration: order.scheduledDate,
     };
   }
 
-  async updateStatus(id: number, updateStatusDto: UpdateOrderStatusDto, userId: number, role: string) {
+  async updateStatus(
+    id: number,
+    updateStatusDto: UpdateOrderStatusDto,
+    userId: number,
+    role: string,
+  ) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { provider: true, invoice: true }
+      include: { provider: true, invoice: true },
     });
 
     if (!order) {
@@ -365,11 +386,13 @@ export class OrdersService {
     // Validate status transitions
     const validTransitions = this.getValidStatusTransitions(order.status, role);
     if (!validTransitions.includes(updateStatusDto.status)) {
-      throw new BadRequestException(`Invalid status transition from ${order.status} to ${updateStatusDto.status}`);
+      throw new BadRequestException(
+        `Invalid status transition from ${order.status} to ${updateStatusDto.status}`,
+      );
     }
 
     const updateData: any = {
-      status: updateStatusDto.status
+      status: updateStatusDto.status,
     };
 
     // Update provider location if provided
@@ -385,8 +408,8 @@ export class OrdersService {
           orderId: order.id,
           totalAmount: order.totalAmount,
           discount: 0, // No discount applied
-          paymentStatus: 'unpaid'
-        }
+          paymentStatus: 'unpaid',
+        },
       });
     }
 
@@ -401,16 +424,16 @@ export class OrdersService {
             phone: true,
             email: true,
             latitude: true,
-            longitude: true
-          }
+            longitude: true,
+          },
         },
         provider: {
           select: {
             id: true,
             name: true,
             phone: true,
-            image: true
-          }
+            image: true,
+          },
         },
         service: {
           select: {
@@ -418,11 +441,11 @@ export class OrdersService {
             titleAr: true,
             titleEn: true,
             description: true,
-            image: true
-          }
+            image: true,
+          },
         },
-        invoice: true
-      }
+        invoice: true,
+      },
     });
 
     // Send notification to customer about order status update
@@ -432,7 +455,7 @@ export class OrdersService {
         updatedOrder.userId,
         updatedOrder.status,
         updatedOrder.provider.name,
-        updatedOrder.provider.image // Pass provider image
+        updatedOrder.provider.image, // Pass provider image
       );
     } catch (error) {
       console.error('Failed to send order status notification:', error);
@@ -443,7 +466,7 @@ export class OrdersService {
 
   async cancel(id: number, userId: number, role: string) {
     const order = await this.prisma.order.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!order) {
@@ -461,7 +484,9 @@ export class OrdersService {
 
     // Only allow cancellation if order is pending or accepted
     if (!['pending', 'accepted'].includes(order.status)) {
-      throw new BadRequestException('Order cannot be cancelled in current status');
+      throw new BadRequestException(
+        'Order cannot be cancelled in current status',
+      );
     }
 
     return this.prisma.order.update({
@@ -475,16 +500,16 @@ export class OrdersService {
             phone: true,
             email: true,
             latitude: true,
-            longitude: true
-          }
+            longitude: true,
+          },
         },
         provider: {
           select: {
             id: true,
             name: true,
             phone: true,
-            image: true
-          }
+            image: true,
+          },
         },
         service: {
           select: {
@@ -492,18 +517,18 @@ export class OrdersService {
             titleAr: true,
             titleEn: true,
             description: true,
-            image: true
-          }
+            image: true,
+          },
         },
-        invoice: true
-      }
+        invoice: true,
+      },
     });
   }
 
   async deleteOrder(id: number, userId: number, role: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { invoice: true }
+      include: { invoice: true },
     });
 
     if (!order) {
@@ -526,29 +551,38 @@ export class OrdersService {
 
     // Delete the order (this will cascade delete related records like invoice)
     await this.prisma.order.delete({
-      where: { id }
+      where: { id },
     });
 
     return { message: 'Order deleted successfully' };
   }
 
   async getOrderStats(userId: number, role: string) {
-    const where = role === 'PROVIDER'
-      ? { providerId: userId }
-      : { userId };
+    const where = role === 'PROVIDER' ? { providerId: userId } : { userId };
 
-    const [total, pending, accepted, inProgress, completed, cancelled] = await Promise.all([
-      this.prisma.order.count({ where }),
-      this.prisma.order.count({ where: { ...where, status: OrderStatus.PENDING } }),
-      this.prisma.order.count({ where: { ...where, status: OrderStatus.ACCEPTED } }),
-      this.prisma.order.count({ where: { ...where, status: OrderStatus.IN_PROGRESS } }),
-      this.prisma.order.count({ where: { ...where, status: OrderStatus.COMPLETED } }),
-      this.prisma.order.count({ where: { ...where, status: OrderStatus.CANCELLED } })
-    ]);
+    const [total, pending, accepted, inProgress, completed, cancelled] =
+      await Promise.all([
+        this.prisma.order.count({ where }),
+        this.prisma.order.count({
+          where: { ...where, status: OrderStatus.PENDING },
+        }),
+        this.prisma.order.count({
+          where: { ...where, status: OrderStatus.ACCEPTED },
+        }),
+        this.prisma.order.count({
+          where: { ...where, status: OrderStatus.IN_PROGRESS },
+        }),
+        this.prisma.order.count({
+          where: { ...where, status: OrderStatus.COMPLETED },
+        }),
+        this.prisma.order.count({
+          where: { ...where, status: OrderStatus.CANCELLED },
+        }),
+      ]);
 
     const totalRevenue = await this.prisma.order.aggregate({
       where: { ...where, status: OrderStatus.COMPLETED },
-      _sum: { totalAmount: true }
+      _sum: { totalAmount: true },
     });
 
     return {
@@ -559,15 +593,18 @@ export class OrdersService {
       completed,
       cancelled,
       totalRevenue: totalRevenue._sum.totalAmount || 0,
-      completionRate: total > 0 ? Math.round((completed / total) * 100) : 0
+      completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
     };
   }
 
-  async getOrderHistory(userId: number, role: string, page: number = 1, limit: number = 10) {
+  async getOrderHistory(
+    userId: number,
+    role: string,
+    page: number = 1,
+    limit: number = 10,
+  ) {
     const skip = (page - 1) * limit;
-    const where = role === 'PROVIDER'
-      ? { providerId: userId }
-      : { userId };
+    const where = role === 'PROVIDER' ? { providerId: userId } : { userId };
 
     const [orders, total] = await Promise.all([
       this.prisma.order.findMany({
@@ -580,25 +617,25 @@ export class OrdersService {
               phone: true,
               email: true,
               latitude: true,
-              longitude: true
-            }
+              longitude: true,
+            },
           },
           provider: {
             select: {
               id: true,
               name: true,
               phone: true,
-              email: true
-            }
+              email: true,
+            },
           },
           service: true,
-          invoice: true
+          invoice: true,
         },
         orderBy: { orderDate: 'desc' },
         skip,
-        take: limit
+        take: limit,
       }),
-      this.prisma.order.count({ where })
+      this.prisma.order.count({ where }),
     ]);
 
     return {
@@ -609,33 +646,38 @@ export class OrdersService {
         total,
         totalPages: Math.ceil(total / limit),
         hasNext: page < Math.ceil(total / limit),
-        hasPrev: page > 1
-      }
+        hasPrev: page > 1,
+      },
     };
   }
 
-  async getOrderAnalytics(userId: number, role: string, startDate?: Date, endDate?: Date) {
-    const baseWhere = role === 'PROVIDER'
-      ? { providerId: userId }
-      : { userId };
+  async getOrderAnalytics(
+    userId: number,
+    role: string,
+    startDate?: Date,
+    endDate?: Date,
+  ) {
+    const baseWhere = role === 'PROVIDER' ? { providerId: userId } : { userId };
 
     const where = {
       ...baseWhere,
-      ...(startDate || endDate ? {
-        orderDate: {
-          ...(startDate ? { gte: startDate } : {}),
-          ...(endDate ? { lte: endDate } : {})
-        }
-      } : {})
+      ...(startDate || endDate
+        ? {
+            orderDate: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(endDate ? { lte: endDate } : {}),
+            },
+          }
+        : {}),
     };
 
     const orders = await this.prisma.order.findMany({
       where,
       include: {
         service: true,
-        invoice: true
+        invoice: true,
       },
-      orderBy: { orderDate: 'asc' }
+      orderBy: { orderDate: 'asc' },
     });
 
     // Monthly analytics
@@ -653,11 +695,20 @@ export class OrdersService {
       statusAnalytics,
       totalOrders: orders.length,
       totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
-      averageOrderValue: orders.length > 0 ? orders.reduce((sum, order) => sum + order.totalAmount, 0) / orders.length : 0
+      averageOrderValue:
+        orders.length > 0
+          ? orders.reduce((sum, order) => sum + order.totalAmount, 0) /
+            orders.length
+          : 0,
     };
   }
 
-  async bulkUpdateStatus(orderIds: number[], status: OrderStatus, userId: number, role: string) {
+  async bulkUpdateStatus(
+    orderIds: number[],
+    status: OrderStatus,
+    userId: number,
+    role: string,
+  ) {
     if (role !== 'PROVIDER') {
       throw new ForbiddenException('Only providers can perform bulk updates');
     }
@@ -665,42 +716,52 @@ export class OrdersService {
     const orders = await this.prisma.order.findMany({
       where: {
         id: { in: orderIds },
-        providerId: userId
-      }
+        providerId: userId,
+      },
     });
 
     if (orders.length !== orderIds.length) {
       throw new BadRequestException('Some orders not found or not accessible');
     }
 
-    const updatePromises = orders.map(order => {
-      const validTransitions = this.getValidStatusTransitions(order.status, role);
+    const updatePromises = orders.map((order) => {
+      const validTransitions = this.getValidStatusTransitions(
+        order.status,
+        role,
+      );
       if (!validTransitions.includes(status)) {
-        throw new BadRequestException(`Invalid status transition from ${order.status} to ${status}`);
+        throw new BadRequestException(
+          `Invalid status transition from ${order.status} to ${status}`,
+        );
       }
 
       return this.prisma.order.update({
         where: { id: order.id },
-        data: { status }
+        data: { status },
       });
     });
 
     await Promise.all(updatePromises);
 
-    return { message: `Successfully updated ${orders.length} orders to ${status}` };
+    return {
+      message: `Successfully updated ${orders.length} orders to ${status}`,
+    };
   }
 
-  async getOrdersByDateRange(userId: number, role: string, startDate: Date, endDate: Date) {
-    const baseWhere = role === 'PROVIDER'
-      ? { providerId: userId }
-      : { userId };
+  async getOrdersByDateRange(
+    userId: number,
+    role: string,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    const baseWhere = role === 'PROVIDER' ? { providerId: userId } : { userId };
 
     const where = {
       ...baseWhere,
       orderDate: {
         gte: startDate,
-        lte: endDate
-      }
+        lte: endDate,
+      },
     };
 
     return this.prisma.order.findMany({
@@ -713,32 +774,30 @@ export class OrdersService {
             phone: true,
             email: true,
             latitude: true,
-            longitude: true
-          }
+            longitude: true,
+          },
         },
         provider: {
           select: {
             id: true,
             name: true,
             phone: true,
-            email: true
-          }
+            email: true,
+          },
         },
         service: true,
-        invoice: true
+        invoice: true,
       },
-      orderBy: { orderDate: 'desc' }
+      orderBy: { orderDate: 'desc' },
     });
   }
 
   async getOrdersByStatus(userId: number, role: string, status: OrderStatus) {
-    const baseWhere = role === 'PROVIDER'
-      ? { providerId: userId }
-      : { userId };
+    const baseWhere = role === 'PROVIDER' ? { providerId: userId } : { userId };
 
     const where = {
       ...baseWhere,
-      status
+      status,
     };
 
     return this.prisma.order.findMany({
@@ -751,37 +810,35 @@ export class OrdersService {
             phone: true,
             email: true,
             latitude: true,
-            longitude: true
-          }
+            longitude: true,
+          },
         },
         provider: {
           select: {
             id: true,
             name: true,
             phone: true,
-            email: true
-          }
+            email: true,
+          },
         },
         service: true,
-        invoice: true
+        invoice: true,
       },
-      orderBy: { orderDate: 'desc' }
+      orderBy: { orderDate: 'desc' },
     });
   }
 
   async getUpcomingOrders(userId: number, role: string) {
-    const baseWhere = role === 'PROVIDER'
-      ? { providerId: userId }
-      : { userId };
+    const baseWhere = role === 'PROVIDER' ? { providerId: userId } : { userId };
 
     const where = {
       ...baseWhere,
       scheduledDate: {
-        gte: this.getCurrentDateOnly()
+        gte: this.getCurrentDateOnly(),
       },
       status: {
-        in: [OrderStatus.PENDING, OrderStatus.ACCEPTED]
-      }
+        in: [OrderStatus.PENDING, OrderStatus.ACCEPTED],
+      },
     };
 
     return this.prisma.order.findMany({
@@ -794,37 +851,35 @@ export class OrdersService {
             phone: true,
             email: true,
             latitude: true,
-            longitude: true
-          }
+            longitude: true,
+          },
         },
         provider: {
           select: {
             id: true,
             name: true,
             phone: true,
-            email: true
-          }
+            email: true,
+          },
         },
         service: true,
-        invoice: true
+        invoice: true,
       },
-      orderBy: { scheduledDate: 'asc' }
+      orderBy: { scheduledDate: 'asc' },
     });
   }
 
   async getOverdueOrders(userId: number, role: string) {
-    const baseWhere = role === 'PROVIDER'
-      ? { providerId: userId }
-      : { userId };
+    const baseWhere = role === 'PROVIDER' ? { providerId: userId } : { userId };
 
     const where = {
       ...baseWhere,
       scheduledDate: {
-        lt: this.getCurrentDateOnly()
+        lt: this.getCurrentDateOnly(),
       },
       status: {
-        in: [OrderStatus.ACCEPTED, OrderStatus.IN_PROGRESS]
-      }
+        in: [OrderStatus.ACCEPTED, OrderStatus.IN_PROGRESS],
+      },
     };
 
     return this.prisma.order.findMany({
@@ -837,72 +892,76 @@ export class OrdersService {
             phone: true,
             email: true,
             latitude: true,
-            longitude: true
-          }
+            longitude: true,
+          },
         },
         provider: {
           select: {
             id: true,
             name: true,
             phone: true,
-            email: true
-          }
+            email: true,
+          },
         },
         service: true,
-        invoice: true
+        invoice: true,
       },
-      orderBy: { scheduledDate: 'asc' }
+      orderBy: { scheduledDate: 'asc' },
     });
   }
 
   private calculateMonthlyAnalytics(orders: any[]): any[] {
     const monthlyData = {};
 
-    orders.forEach(order => {
+    orders.forEach((order) => {
       const month = order.orderDate.toISOString().substring(0, 7); // YYYY-MM format
       if (!monthlyData[month]) {
         monthlyData[month] = {
           month,
           orders: 0,
-          revenue: 0
+          revenue: 0,
         };
       }
       monthlyData[month].orders++;
       monthlyData[month].revenue += order.totalAmount;
     });
 
-    return Object.values(monthlyData).sort((a: any, b: any) => a.month.localeCompare(b.month));
+    return Object.values(monthlyData).sort((a: any, b: any) =>
+      a.month.localeCompare(b.month),
+    );
   }
 
   private calculateServiceAnalytics(orders: any[]): any[] {
     const serviceData = {};
 
-    orders.forEach(order => {
+    orders.forEach((order) => {
       const serviceName = order.service.titleEn;
       if (!serviceData[serviceName]) {
         serviceData[serviceName] = {
           service: serviceName,
           orders: 0,
-          revenue: 0
+          revenue: 0,
         };
       }
       serviceData[serviceName].orders++;
       serviceData[serviceName].revenue += order.totalAmount;
     });
 
-    return Object.values(serviceData).sort((a: any, b: any) => b.orders - a.orders);
+    return Object.values(serviceData).sort(
+      (a: any, b: any) => b.orders - a.orders,
+    );
   }
 
   private calculateStatusAnalytics(orders: any[]): any[] {
     const statusData = {};
 
-    orders.forEach(order => {
+    orders.forEach((order) => {
       const status = order.status;
       if (!statusData[status]) {
         statusData[status] = {
           status,
           count: 0,
-          percentage: 0
+          percentage: 0,
         };
       }
       statusData[status].count++;
@@ -916,19 +975,29 @@ export class OrdersService {
     return Object.values(statusData);
   }
 
-  private getValidStatusTransitions(currentStatus: string, role: string): OrderStatus[] {
+  private getValidStatusTransitions(
+    currentStatus: string,
+    role: string,
+  ): OrderStatus[] {
     const transitions = {
-      [OrderStatus.PENDING]: role === 'PROVIDER'
-        ? [OrderStatus.ACCEPTED, OrderStatus.CANCELLED]
-        : [OrderStatus.CANCELLED],
-      [OrderStatus.ACCEPTED]: role === 'PROVIDER'
-        ? [OrderStatus.IN_PROGRESS, OrderStatus.COMPLETED, OrderStatus.CANCELLED]
-        : [OrderStatus.CANCELLED],
-      [OrderStatus.IN_PROGRESS]: role === 'PROVIDER'
-        ? [OrderStatus.COMPLETED, OrderStatus.CANCELLED]
-        : [],
+      [OrderStatus.PENDING]:
+        role === 'PROVIDER'
+          ? [OrderStatus.ACCEPTED, OrderStatus.CANCELLED]
+          : [OrderStatus.CANCELLED],
+      [OrderStatus.ACCEPTED]:
+        role === 'PROVIDER'
+          ? [
+              OrderStatus.IN_PROGRESS,
+              OrderStatus.COMPLETED,
+              OrderStatus.CANCELLED,
+            ]
+          : [OrderStatus.CANCELLED],
+      [OrderStatus.IN_PROGRESS]:
+        role === 'PROVIDER'
+          ? [OrderStatus.COMPLETED, OrderStatus.CANCELLED]
+          : [],
       [OrderStatus.COMPLETED]: [],
-      [OrderStatus.CANCELLED]: []
+      [OrderStatus.CANCELLED]: [],
     };
 
     return transitions[currentStatus] || [];
@@ -937,7 +1006,7 @@ export class OrdersService {
   private isMultipleServicesOrder(order: any): boolean {
     // Check if this order has multiple services by looking at the quantity and total amount
     // This is a heuristic approach - in a real implementation you might want to store this information
-    return order.quantity > 1 && order.totalAmount > (order.providerAmount * 1.2);
+    return order.quantity > 1 && order.totalAmount > order.providerAmount * 1.2;
   }
 
   private getServicesBreakdown(order: any): any[] {
@@ -957,15 +1026,18 @@ export class OrdersService {
     const remainingQuantity = order.quantity % estimatedServiceCount;
 
     for (let i = 0; i < estimatedServiceCount; i++) {
-      const serviceQuantity = i === 0 ? baseQuantity + remainingQuantity : baseQuantity;
-      const serviceAmount = (order.providerAmount / order.quantity) * serviceQuantity;
-      const serviceCommission = (order.commissionAmount / order.quantity) * serviceQuantity;
+      const serviceQuantity =
+        i === 0 ? baseQuantity + remainingQuantity : baseQuantity;
+      const serviceAmount =
+        (order.providerAmount / order.quantity) * serviceQuantity;
+      const serviceCommission =
+        (order.commissionAmount / order.quantity) * serviceQuantity;
 
       services.push({
         quantity: serviceQuantity,
         unitPrice: order.providerAmount / order.quantity,
         totalPrice: serviceAmount,
-        commissionAmount: serviceCommission
+        commissionAmount: serviceCommission,
       });
     }
 
@@ -986,8 +1058,8 @@ export class OrdersService {
           unitPrice: order.providerAmount,
           totalPrice: order.providerAmount,
           commission: service.commission || 0,
-          commissionAmount: order.commissionAmount
-        }
+          commissionAmount: order.commissionAmount,
+        },
       ];
     } else {
       // For multiple services orders, create a logical breakdown
@@ -1007,22 +1079,37 @@ export class OrdersService {
           unitPrice: unitPrice,
           totalPrice: order.providerAmount,
           commission: service.commission || 0,
-          commissionAmount: order.commissionAmount
-        }
+          commissionAmount: order.commissionAmount,
+        },
       ];
     }
   }
 
-  async createMultipleServices(createOrderDto: CreateOrderMultipleServicesDto, userId: number) {
-    console.log('🔍 createMultipleServices - Input:', { createOrderDto, userId });
+  async createMultipleServices(
+    createOrderDto: CreateOrderMultipleServicesDto,
+    userId: number,
+  ) {
+    console.log('🔍 createMultipleServices - Input:', {
+      createOrderDto,
+      userId,
+    });
 
     // Validate provider exists and is active
     const provider = await this.prisma.provider.findUnique({
       where: { id: createOrderDto.providerId },
-      include: { providerServices: true }
+      include: { providerServices: true },
     });
 
-    console.log('🔍 Provider found:', provider ? { id: provider.id, isActive: provider.isActive, isVerified: provider.isVerified } : 'NOT FOUND');
+    console.log(
+      '🔍 Provider found:',
+      provider
+        ? {
+            id: provider.id,
+            isActive: provider.isActive,
+            isVerified: provider.isVerified,
+          }
+        : 'NOT FOUND',
+    );
 
     if (!provider) {
       console.log('❌ Provider not found for ID:', createOrderDto.providerId);
@@ -1035,7 +1122,7 @@ export class OrdersService {
     }
 
     // Validate all services exist and provider offers them
-    const serviceIds = createOrderDto.services.map(s => s.serviceId);
+    const serviceIds = createOrderDto.services.map((s) => s.serviceId);
     console.log('🔍 Service IDs requested:', serviceIds);
 
     const services = await this.prisma.service.findMany({
@@ -1047,36 +1134,74 @@ export class OrdersService {
         description: true,
         image: true,
         commission: true,
-        serviceType: true
-      }
+        serviceType: true,
+      },
     });
 
-    console.log('🔍 Services found:', services.map(s => ({ id: s.id, titleEn: s.titleEn, serviceType: s.serviceType })));
+    console.log(
+      '🔍 Services found:',
+      services.map((s) => ({
+        id: s.id,
+        titleEn: s.titleEn,
+        serviceType: s.serviceType,
+      })),
+    );
 
     if (services.length !== serviceIds.length) {
-      console.log('❌ Services not found. Requested:', serviceIds, 'Found:', services.map(s => s.id));
+      console.log(
+        '❌ Services not found. Requested:',
+        serviceIds,
+        'Found:',
+        services.map((s) => s.id),
+      );
       throw new BadRequestException('One or more services not found');
     }
 
     // Check if all services can be ordered (only NORMAL services can be ordered)
     for (const service of services) {
       if (service.serviceType !== 'NORMAL') {
-        console.log('❌ Service cannot be ordered:', service.titleEn, 'Type:', service.serviceType);
-        throw new BadRequestException(`Service "${service.titleEn}" cannot be ordered directly. Please contact via WhatsApp.`);
+        console.log(
+          '❌ Service cannot be ordered:',
+          service.titleEn,
+          'Type:',
+          service.serviceType,
+        );
+        throw new BadRequestException(
+          `Service "${service.titleEn}" cannot be ordered directly. Please contact via WhatsApp.`,
+        );
       }
     }
 
     // Check if provider offers all services
-    const providerServices = provider.providerServices.filter(ps =>
-      serviceIds.includes(ps.serviceId) && ps.isActive
+    const providerServices = provider.providerServices.filter(
+      (ps) => serviceIds.includes(ps.serviceId) && ps.isActive,
     );
 
-    console.log('🔍 Provider services:', provider.providerServices.map(ps => ({ serviceId: ps.serviceId, isActive: ps.isActive })));
-    console.log('🔍 Matching provider services:', providerServices.map(ps => ({ serviceId: ps.serviceId, isActive: ps.isActive })));
+    console.log(
+      '🔍 Provider services:',
+      provider.providerServices.map((ps) => ({
+        serviceId: ps.serviceId,
+        isActive: ps.isActive,
+      })),
+    );
+    console.log(
+      '🔍 Matching provider services:',
+      providerServices.map((ps) => ({
+        serviceId: ps.serviceId,
+        isActive: ps.isActive,
+      })),
+    );
 
     if (providerServices.length !== serviceIds.length) {
-      console.log('❌ Provider does not offer all services. Requested:', serviceIds, 'Offered:', providerServices.map(ps => ps.serviceId));
-      throw new BadRequestException('Provider does not offer one or more of the requested services');
+      console.log(
+        '❌ Provider does not offer all services. Requested:',
+        serviceIds,
+        'Offered:',
+        providerServices.map((ps) => ps.serviceId),
+      );
+      throw new BadRequestException(
+        'Provider does not offer one or more of the requested services',
+      );
     }
 
     // Check for valid offers for each service - use date-only comparison
@@ -1087,8 +1212,8 @@ export class OrdersService {
         serviceId: { in: serviceIds },
         isActive: true,
         startDate: { lte: now },
-        endDate: { gt: now }
-      }
+        endDate: { gt: now },
+      },
     });
 
     // Calculate totals for each service - FIXED: User only pays provider prices, commission deducted from provider earnings
@@ -1098,12 +1223,16 @@ export class OrdersService {
     const appliedOffers: any[] = [];
 
     for (const serviceItem of createOrderDto.services) {
-      const service = services.find(s => s.id === serviceItem.serviceId);
-      const providerService = providerServices.find(ps => ps.serviceId === serviceItem.serviceId);
-      const offer = offers.find(o => o.serviceId === serviceItem.serviceId);
+      const service = services.find((s) => s.id === serviceItem.serviceId);
+      const providerService = providerServices.find(
+        (ps) => ps.serviceId === serviceItem.serviceId,
+      );
+      const offer = offers.find((o) => o.serviceId === serviceItem.serviceId);
 
       if (!service || !providerService) {
-        throw new BadRequestException(`Service or provider service not found for service ID ${serviceItem.serviceId}`);
+        throw new BadRequestException(
+          `Service or provider service not found for service ID ${serviceItem.serviceId}`,
+        );
       }
 
       const unitPrice = providerService.price;
@@ -1124,7 +1253,7 @@ export class OrdersService {
         unitPrice: finalUnitPrice,
         totalPrice: serviceTotal,
         commission: service.commission,
-        commissionAmount: commission
+        commissionAmount: commission,
       });
 
       if (offer) {
@@ -1133,7 +1262,7 @@ export class OrdersService {
           originalPrice: unitPrice,
           offerPrice: finalUnitPrice,
           discount: (unitPrice - finalUnitPrice) * quantity,
-          savings: (unitPrice - finalUnitPrice) * quantity
+          savings: (unitPrice - finalUnitPrice) * quantity,
         });
       }
     }
@@ -1151,16 +1280,17 @@ export class OrdersService {
       if (createOrderDto.savedLocationId) {
         // Use saved location
         const savedLocation = await tx.userLocation.findFirst({
-          where: { id: createOrderDto.savedLocationId, userId }
+          where: { id: createOrderDto.savedLocationId, userId },
         });
 
         if (savedLocation) {
           orderLocation = savedLocation.title;
-          orderLocationDetails = savedLocation.description || savedLocation.address || undefined;
+          orderLocationDetails =
+            savedLocation.description || savedLocation.address || undefined;
           orderProviderLocation = {
             latitude: Number(savedLocation.latitude),
             longitude: Number(savedLocation.longitude),
-            address: savedLocation.address
+            address: savedLocation.address,
           };
         }
       } else if (createOrderDto.currentLocation) {
@@ -1176,30 +1306,35 @@ export class OrdersService {
           userId,
           providerId: createOrderDto.providerId,
           serviceId: serviceBreakdown[0]?.serviceId || serviceIds[0], // Use first service as primary
-          scheduledDate: createOrderDto.scheduledDate ? new Date(createOrderDto.scheduledDate) : null,
+          scheduledDate: createOrderDto.scheduledDate
+            ? new Date(createOrderDto.scheduledDate)
+            : null,
           location: orderLocation,
           locationDetails: orderLocationDetails,
           providerLocation: orderProviderLocation,
-          quantity: serviceBreakdown.reduce((sum: number, s: any) => sum + s.quantity, 0),
+          quantity: serviceBreakdown.reduce(
+            (sum: number, s: any) => sum + s.quantity,
+            0,
+          ),
           totalAmount,
           providerAmount: subtotal,
           providerNetAmount,
           commissionAmount: totalCommission,
           status: OrderStatus.PENDING,
           isMultipleServices: true,
-          servicesBreakdown: serviceBreakdown
-        }
+          servicesBreakdown: serviceBreakdown,
+        },
       });
 
       // Fetch user and provider details separately
       const user = await tx.user.findUnique({
         where: { id: userId },
-        select: { id: true, name: true, phone: true, email: true }
+        select: { id: true, name: true, phone: true, email: true },
       });
 
       const provider = await tx.provider.findUnique({
         where: { id: createOrderDto.providerId },
-        select: { id: true, name: true, phone: true, image: true }
+        select: { id: true, name: true, phone: true, image: true },
       });
 
       return { order, user, provider, orderProviderLocation };
@@ -1207,7 +1342,9 @@ export class OrdersService {
 
     // Send notification to provider about new order
     try {
-      const serviceNames = serviceBreakdown.map((s: any) => `${s.serviceTitle} (${s.quantity})`).join(', ');
+      const serviceNames = serviceBreakdown
+        .map((s: any) => `${s.serviceTitle} (${s.quantity})`)
+        .join(', ');
       if (result.user) {
         // Use the first service image for multiple services notification
         const firstServiceImage = serviceBreakdown[0]?.serviceImage;
@@ -1216,7 +1353,7 @@ export class OrdersService {
           result.order.providerId,
           serviceNames,
           result.user.name,
-          firstServiceImage // Pass first service image
+          firstServiceImage, // Pass first service image
         );
       }
     } catch (error) {
@@ -1241,18 +1378,22 @@ export class OrdersService {
       totalCommission,
       totalAmount,
       appliedOffers: appliedOffers.length > 0 ? appliedOffers : undefined,
-      provider: result.provider ? {
-        id: result.provider.id,
-        name: result.provider.name,
-        phone: result.provider.phone,
-        image: result.provider.image
-      } : undefined,
-      user: result.user ? {
-        id: result.user.id,
-        name: result.user.name,
-        phone: result.user.phone,
-        email: result.user.email
-      } : undefined
+      provider: result.provider
+        ? {
+            id: result.provider.id,
+            name: result.provider.name,
+            phone: result.provider.phone,
+            image: result.provider.image,
+          }
+        : undefined,
+      user: result.user
+        ? {
+            id: result.user.id,
+            name: result.user.name,
+            phone: result.user.phone,
+            email: result.user.email,
+          }
+        : undefined,
     };
   }
 }
