@@ -229,6 +229,7 @@ export class OrdersService {
         // Use the stored services breakdown from the database and enhance with category data
         services = (order.servicesBreakdown as any[]).map((serviceItem) => ({
           ...serviceItem,
+
           category: order.service.category,
         }));
       } else {
@@ -1246,7 +1247,8 @@ export class OrdersService {
 
       serviceBreakdown.push({
         serviceId: service.id,
-        serviceTitle: service.titleEn,
+        serviceTitleEn: service.titleEn,
+        serviceTitleAr: service.titleAr,
         serviceDescription: service.description,
         serviceImage: service.image,
         quantity,
