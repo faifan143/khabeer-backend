@@ -55,6 +55,12 @@ export class ServicesController {
   ) {
     const userState = req.user.state;
     const userRole = req.user.role;
+    console.log('[category/:id]', {
+      userState,
+      userRole,
+      categoryId,
+    });
+
     return this.servicesService.findByCategory(
       Number(categoryId),
       userState,

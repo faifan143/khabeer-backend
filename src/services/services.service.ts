@@ -5,7 +5,7 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 
 @Injectable()
 export class ServicesService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(userState?: string, userRole?: string, userId?: number) {
     const where: any = {};
@@ -15,12 +15,12 @@ export class ServicesService {
       const providerCategories = await this.prisma.providerCategory.findMany({
         where: {
           providerId: userId,
-          isActive: true
+          isActive: true,
         },
-        select: { categoryId: true }
+        select: { categoryId: true },
       });
 
-      const categoryIds = providerCategories.map(pc => pc.categoryId);
+      const categoryIds = providerCategories.map((pc) => pc.categoryId);
 
       if (categoryIds.length > 0) {
         where.categoryId = { in: categoryIds };
@@ -33,7 +33,7 @@ export class ServicesService {
     // For state filtering, check category's state
     if (userState && userState !== 'undefined' && userRole !== 'ADMIN') {
       where.category = {
-        state: userState
+        state: userState,
       };
     }
 
@@ -43,51 +43,83 @@ export class ServicesService {
         some: {
           provider: {
             isActive: true,
-            onlineStatus: true
-          }
-        }
+            onlineStatus: true,
+          },
+        },
       };
     }
 
     return this.prisma.service.findMany({
       where,
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
   }
 
-  async findByCategory(categoryId: number, userState?: string, userRole?: string) {
-    const where: any = {
-      categoryId
-    };
+  async findByCategory(
+    categoryId: number,
+    userState?: string,
+    userRole?: string,
+  ) {
+    const where: any = {};
+    const andConditions: any[] = [];
 
-    // Skip provider filtering for admins
+    // Always filter by categoryId
+    andConditions.push({ categoryId });
+
+    // Conditional filtering for providers (only for non-admins and NORMAL services)
     if (userRole !== 'ADMIN') {
-      // Always filter out services from inactive/offline providers
-      where.providerServices = {
-        some: {
-          provider: {
-            isActive: true,
-            onlineStatus: true
-          }
-        }
-      };
+      andConditions.push({
+        OR: [
+          { serviceType: 'KHABEER' },
+          {
+            serviceType: 'NORMAL',
+            providerServices: {
+              some: {
+                provider: {
+                  isActive: true,
+                  onlineStatus: true,
+                },
+              },
+            },
+          },
+        ],
+      });
     }
 
-    // For services in categories, we check the category's state
+    // Conditional filtering for category state (only for non-admins with userState)
     if (userState && userState !== 'undefined' && userRole !== 'ADMIN') {
-      where.category = {
-        id: categoryId,
-        state: userState
-      };
+      // Modify the categoryId filter to include state
+      const categoryIdConditionIndex = andConditions.findIndex(
+        (condition) => condition.categoryId !== undefined,
+      );
+      if (categoryIdConditionIndex > -1) {
+        // Replace the categoryId condition with the nested category condition
+        andConditions[categoryIdConditionIndex] = {
+          category: {
+            AND: [{ id: categoryId }, { state: userState }],
+          },
+        };
+      } else {
+        // Fallback, though categoryId should always be pushed first
+        andConditions.push({
+          category: {
+            AND: [{ id: categoryId }, { state: userState }],
+          },
+        });
+      }
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     return this.prisma.service.findMany({
       where,
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
   }
 
@@ -95,8 +127,8 @@ export class ServicesService {
     return this.prisma.service.findUnique({
       where: { id },
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
   }
 
@@ -107,8 +139,8 @@ export class ServicesService {
     return this.prisma.service.create({
       data,
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
   }
 
@@ -120,8 +152,8 @@ export class ServicesService {
       where: { id },
       data,
       include: {
-        category: true
-      }
+        category: true,
+      },
     });
   }
 
@@ -132,29 +164,29 @@ export class ServicesService {
       await tx.invoice.deleteMany({
         where: {
           order: {
-            serviceId: id
-          }
-        }
+            serviceId: id,
+          },
+        },
       });
 
       // Then delete all related orders
       await tx.order.deleteMany({
-        where: { serviceId: id }
+        where: { serviceId: id },
       });
 
       // Then delete all related provider services
       await tx.providerService.deleteMany({
-        where: { serviceId: id }
+        where: { serviceId: id },
       });
 
       // Then delete all related offers
       await tx.offer.deleteMany({
-        where: { serviceId: id }
+        where: { serviceId: id },
       });
 
       // Finally delete the service
       return tx.service.delete({
-        where: { id }
+        where: { id },
       });
     });
   }
@@ -199,13 +231,13 @@ export class ServicesService {
             titleAr: true,
             titleEn: true,
             image: true,
-            state: true
-          }
-        }
+            state: true,
+          },
+        },
       },
       orderBy: {
-        id: 'asc'
-      }
+        id: 'asc',
+      },
     });
   }
 
@@ -213,7 +245,7 @@ export class ServicesService {
   async canBeAssignedToProviders(serviceId: number): Promise<boolean> {
     const service = await this.prisma.service.findUnique({
       where: { id: serviceId },
-      select: { serviceType: true }
+      select: { serviceType: true },
     });
 
     return service?.serviceType === 'NORMAL';
@@ -223,7 +255,7 @@ export class ServicesService {
   async canBeOrdered(serviceId: number): Promise<boolean> {
     const service = await this.prisma.service.findUnique({
       where: { id: serviceId },
-      select: { serviceType: true }
+      select: { serviceType: true },
     });
 
     return service?.serviceType === 'NORMAL';
