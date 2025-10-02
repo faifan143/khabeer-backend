@@ -14,6 +14,7 @@ import {
   ParseIntPipe,
   Query,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -36,6 +37,11 @@ import {
   VerifyPhoneChangeDto,
   PhoneChangeResponseDto,
 } from './dto/change-phone.dto';
+import {
+  DeleteAccountDto,
+  DeleteAccountResponseDto,
+  DeleteAccountErrorResponseDto,
+} from './dto/delete-account.dto';
 import { ProvidersByServiceResponseDto } from './dto/providers-by-service-response.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -485,6 +491,38 @@ export class ProvidersController {
       includeUnratedBool,
       req.user.userId,
     );
+  }
+
+  // Account Deletion Endpoint
+  @Delete('delete-account')
+  @Roles('PROVIDER')
+  @ApiOperation({ summary: 'Delete provider account with password verification' })
+  @ApiResponse({
+    status: 200,
+    description: 'Account deleted successfully',
+    type: DeleteAccountResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid password',
+    type: DeleteAccountErrorResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Provider not found' })
+  async deleteAccount(
+    @Body() deleteAccountDto: DeleteAccountDto,
+    @Request() req,
+  ) {
+    const result = await this.providersService.deleteAccount(
+      req.user.userId,
+      deleteAccountDto.password,
+    );
+
+    // If password is invalid, return 401 status
+    if (!result.success) {
+      throw new UnauthorizedException(result);
+    }
+
+    return result;
   }
 
   // Phone Number Change Endpoints

@@ -22,6 +22,7 @@ import { ProvidersByServiceResponseDto } from './dto/providers-by-service-respon
 import { ProviderFullDetailsDto } from './dto/provider-full-details.dto';
 import { ProviderPendingCountResponseDto } from './dto/provider-pending-count.dto';
 import { SmsService } from '../sms/sms.service';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class ProvidersService {
@@ -1431,6 +1432,63 @@ export class ProvidersService {
         }
       }
       throw new InternalServerErrorException('Error deleting provider');
+    }
+  }
+
+  async deleteAccount(providerId: number, password: string) {
+    try {
+      // First, find the provider with password
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId },
+        select: {
+          id: true,
+          password: true,
+          name: true,
+          email: true,
+        },
+      });
+
+      if (!provider) {
+        throw new NotFoundException('Provider not found');
+      }
+
+      // Verify password
+      if (!provider.password) {
+        throw new BadRequestException('Account does not have a password set');
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, provider.password);
+      if (!isPasswordValid) {
+        return {
+          success: false,
+          message: 'Invalid password',
+          message_ar: 'كلمة المرور غير صحيحة',
+          error: 'INVALID_PASSWORD',
+        };
+      }
+
+      // Delete the provider account
+      await this.prisma.provider.delete({ where: { id: providerId } });
+
+      return {
+        success: true,
+        message: 'Account deleted successfully',
+        message_ar: 'تم حذف الحساب بنجاح',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      if (error instanceof PrismaClientKnownRequestError) {
+        switch (error.code) {
+          case 'P2025':
+            throw new NotFoundException('Provider not found');
+          default:
+            throw new InternalServerErrorException('Database operation failed');
+        }
+      }
+      console.error('Error deleting provider account:', error);
+      throw new InternalServerErrorException('Error deleting account');
     }
   }
 
