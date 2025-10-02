@@ -107,11 +107,12 @@ export class AuthService {
 
   async validateUser(loginData: {
     email?: string;
-    phone?: string;
+    phone: string;
     password: string;
+    type: 'USER' | 'PROVIDER';
   }): Promise<any> {
     try {
-      const { email, phone, password } = loginData;
+      const { email, phone, password, type } = loginData;
 
       // Admin login - hardcoded credentials
       if (email === 'admin@khabeer.com' && password === 'admin123') {
@@ -162,56 +163,9 @@ export class AuthService {
         }
       }
 
-      // Provider login - by email or phone
-      if (email && !phone) {
-        // Try provider login by email first
-        const provider =
-          await this.providersService.findByEmailWithPassword(email);
-
-        if (provider && provider.password) {
-          const isPasswordValid = await bcrypt.compare(
-            password,
-            provider.password,
-          );
-
-          if (isPasswordValid) {
-            // Check if provider is verified
-            if (!provider.isVerified) {
-              throw new ForbiddenException(
-                'Your account is not verified. Please wait for admin verification.',
-              );
-            }
-            // Check if provider is active
-            if (!provider.isActive) {
-              throw new ForbiddenException(
-                'Your account is not active. Please contact support to activate your account.',
-              );
-            }
-            const { password: _, ...result } = provider;
-            return { ...result, role: 'PROVIDER' };
-          }
-        }
-
-        // Also check for user by email (if provider login failed)
-        const user = await this.usersService.findByEmailWithPassword(email);
-        if (user && user.password) {
-          const isPasswordValid = await bcrypt.compare(password, user.password);
-          if (isPasswordValid) {
-            // Check if user is active
-            if (!user.isActive) {
-              throw new ForbiddenException(
-                'Your account is not active. Please contact support to activate your account.',
-              );
-            }
-            const { password: _, ...result } = user;
-            return { ...result, role: user.role };
-          }
-        }
-      }
-
-      // Provider login - by phone
-      if (phone && !email) {
-        // Try provider login by phone first
+      // Type-based validation for USER and PROVIDER accounts (both login by phone)
+      if (type === 'PROVIDER') {
+        // Provider login - by phone only
         const provider =
           await this.providersService.findByPhoneWithPassword(phone);
 
@@ -238,8 +192,8 @@ export class AuthService {
             return { ...result, role: 'PROVIDER' };
           }
         }
-
-        // Also check for user by phone (if provider login failed)
+      } else if (type === 'USER') {
+        // User login - by phone only
         const user = await this.usersService.findByPhoneWithPassword(phone);
         if (user && (await bcrypt.compare(password, user.password))) {
           // Check if user is active

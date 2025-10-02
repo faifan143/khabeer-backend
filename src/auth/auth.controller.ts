@@ -83,7 +83,8 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({
-    summary: 'Login with email (providers) or phone (users) and password',
+    summary:
+      'Login with phone number and password. Type field required to distinguish between user and provider accounts with same phone number.',
   })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({
@@ -92,17 +93,15 @@ export class AuthController {
   })
   async login(@Body() body: LoginDto) {
     try {
-      // Validate that either email or phone is provided
-      if (!body.email && !body.phone) {
-        throw new BadRequestException(
-          'Either email (for providers) or phone (for users) is required',
-        );
+      // Validate that phone is provided (both users and providers login by phone)
+      if (!body.phone) {
+        throw new BadRequestException('Phone number is required for login');
       }
 
-      // Validate that both email and phone are not provided
-      if (body.email && body.phone) {
+      // Validate type is provided
+      if (!body.type) {
         throw new BadRequestException(
-          'Please provide either email OR phone, not both',
+          'Account type (USER or PROVIDER) is required',
         );
       }
 
