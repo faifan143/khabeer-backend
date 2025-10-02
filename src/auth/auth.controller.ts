@@ -297,12 +297,17 @@ export class AuthController {
   )
   @ApiOperation({
     summary:
-      'Step 1: Initiate registration and send OTP - User/Provider provides all data including password and services with prices',
+      'Step 1: Initiate registration and send OTP - User/Provider provides all data including password and services with prices. Business rule: Providers can register as users, but users cannot register as providers.',
   })
   @ApiResponse({ status: 200, description: 'Registration initiated, OTP sent' })
   @ApiResponse({
     status: 400,
     description: 'Invalid data or user already exists',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Phone number already registered or business rule violation (users cannot register as providers)',
   })
   async initiateRegistration(
     @Body() body: any,

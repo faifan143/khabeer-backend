@@ -18,7 +18,7 @@ import {
   PhoneLoginDto,
   PhoneLoginResponseDto,
 } from './dto/phone-login.dto';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterDto, RegisterType } from './dto/register.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 // Simple in-memory cache for registration data (in production, use Redis or database)
@@ -1043,14 +1043,35 @@ export class AuthService {
         }
       }
 
-      // Check if phone number is already registered
+      // Check if phone number is already registered and apply business rules
       const existingUserByPhone =
         await this.usersService.findByPhone(phoneNumber);
       const existingProviderByPhone =
         await this.providersService.findByPhone(phoneNumber);
 
-      if (existingUserByPhone || existingProviderByPhone) {
-        throw new ConflictException('Phone number is already registered');
+      // Business rule: Providers can register as users, but users cannot register as providers
+      if (registerData.registerType === RegisterType.PROVIDER) {
+        // If trying to register as provider, check if phone already exists as user
+        if (existingUserByPhone) {
+          throw new ConflictException(
+            'This phone number is already registered as a user. Users cannot register as providers.',
+          );
+        }
+        // If phone exists as provider, don't allow duplicate provider registration
+        if (existingProviderByPhone) {
+          throw new ConflictException(
+            'Phone number is already registered as a provider',
+          );
+        }
+      } else if (registerData.registerType === RegisterType.USER) {
+        // If trying to register as user, check if phone already exists as user
+        if (existingUserByPhone) {
+          throw new ConflictException(
+            'Phone number is already registered as a user',
+          );
+        }
+        // If phone exists as provider, allow user registration (providers can have user accounts)
+        // This case is allowed, so we don't throw an error
       }
 
       // Send OTP for registration
