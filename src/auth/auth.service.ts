@@ -1140,7 +1140,7 @@ export class AuthService {
         throw new BadRequestException(otpResult.message);
       }
 
-      // Check if phone number is already registered (double-check)
+      // Check if phone number is already registered (double-check with business rules)
       const existingUserByPhone = await this.usersService.findByPhone(
         normalizedPhoneNumber,
       );
@@ -1148,17 +1148,40 @@ export class AuthService {
         normalizedPhoneNumber,
       );
 
-      if (existingUserByPhone || existingProviderByPhone) {
-        throw new BadRequestException('Phone number is already registered');
-      }
-
-      // Retrieve registration data from cache
+      // Get registration data to check the intended registration type
       const registrationData = this.getRegistrationData(normalizedPhoneNumber);
       if (!registrationData) {
         throw new BadRequestException(
           'Registration data expired or not found. Please restart the registration process.',
         );
       }
+
+      // Apply business rules based on registration type
+      if (registrationData.registerType === RegisterType.PROVIDER) {
+        // If trying to register as provider, check if phone already exists as user
+        if (existingUserByPhone) {
+          throw new BadRequestException(
+            'This phone number is already registered as a user. Users cannot register as providers.',
+          );
+        }
+        // If phone exists as provider, don't allow duplicate provider registration
+        if (existingProviderByPhone) {
+          throw new BadRequestException(
+            'Phone number is already registered as a provider',
+          );
+        }
+      } else if (registrationData.registerType === RegisterType.USER) {
+        // If trying to register as user, check if phone already exists as user
+        if (existingUserByPhone) {
+          throw new BadRequestException(
+            'Phone number is already registered as a user',
+          );
+        }
+        // If phone exists as provider, allow user registration (providers can have user accounts)
+        // This case is allowed, so we don't throw an error
+      }
+
+      // Registration data already retrieved above, continue with the process
 
       // Remove data from cache to prevent reuse
       this.removeRegistrationData(normalizedPhoneNumber);
