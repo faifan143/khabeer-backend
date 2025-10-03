@@ -17,7 +17,7 @@ export class LoginDto {
 
   @ApiProperty({
     description:
-      'Phone number for login (required for both users and providers)',
+      'Phone number for login (required for both users and providers). Can be sent with or without + prefix (e.g., "+96812345678" or "96812345678")',
     required: true,
   })
   @IsString()

@@ -105,7 +105,18 @@ export class AuthController {
         );
       }
 
-      const user = await this.authService.validateUser(body);
+      // Normalize phone number - add + prefix if missing
+      const normalizedPhone = body.phone.startsWith('+')
+        ? body.phone
+        : `+${body.phone}`;
+
+      // Create normalized body for validation
+      const normalizedBody = {
+        ...body,
+        phone: normalizedPhone,
+      };
+
+      const user = await this.authService.validateUser(normalizedBody);
       if (!user) {
         throw new BadRequestException('Invalid credentials');
       }

@@ -1007,6 +1007,11 @@ export class AuthService {
     try {
       const { phoneNumber, ...registerData } = data;
 
+      // Normalize phone number - add + prefix if missing
+      const normalizedPhoneNumber = phoneNumber.startsWith('+')
+        ? phoneNumber
+        : `+${phoneNumber}`;
+
       // Validate required fields
       if (!registerData.password || !registerData.name) {
         throw new BadRequestException('Password and name are required');
@@ -1044,10 +1049,12 @@ export class AuthService {
       }
 
       // Check if phone number is already registered and apply business rules
-      const existingUserByPhone =
-        await this.usersService.findByPhone(phoneNumber);
-      const existingProviderByPhone =
-        await this.providersService.findByPhone(phoneNumber);
+      const existingUserByPhone = await this.usersService.findByPhone(
+        normalizedPhoneNumber,
+      );
+      const existingProviderByPhone = await this.providersService.findByPhone(
+        normalizedPhoneNumber,
+      );
 
       // Business rule: Providers can register as users, but users cannot register as providers
       if (registerData.registerType === RegisterType.PROVIDER) {
@@ -1076,18 +1083,18 @@ export class AuthService {
 
       // Send OTP for registration
       const otpResult = await this.smsService.sendOtp({
-        phoneNumber,
+        phoneNumber: normalizedPhoneNumber,
         purpose: 'registration',
       });
 
       if (otpResult.success) {
         // Store registration data in cache for the next step
         const dataToCache = {
-          phoneNumber,
+          phoneNumber: normalizedPhoneNumber,
           ...registerData,
         };
 
-        this.storeRegistrationData(phoneNumber, dataToCache, 10); // Cache for 10 minutes
+        this.storeRegistrationData(normalizedPhoneNumber, dataToCache, 10); // Cache for 10 minutes
 
         return {
           success: otpResult.success,
@@ -1117,9 +1124,14 @@ export class AuthService {
    */
   async completeRegistration(phoneNumber: string, otp: string): Promise<any> {
     try {
+      // Normalize phone number - add + prefix if missing
+      const normalizedPhoneNumber = phoneNumber.startsWith('+')
+        ? phoneNumber
+        : `+${phoneNumber}`;
+
       // Verify OTP
       const otpResult = await this.smsService.verifyOtp({
-        phoneNumber,
+        phoneNumber: normalizedPhoneNumber,
         otp,
         purpose: 'registration',
       });
@@ -1129,17 +1141,19 @@ export class AuthService {
       }
 
       // Check if phone number is already registered (double-check)
-      const existingUserByPhone =
-        await this.usersService.findByPhone(phoneNumber);
-      const existingProviderByPhone =
-        await this.providersService.findByPhone(phoneNumber);
+      const existingUserByPhone = await this.usersService.findByPhone(
+        normalizedPhoneNumber,
+      );
+      const existingProviderByPhone = await this.providersService.findByPhone(
+        normalizedPhoneNumber,
+      );
 
       if (existingUserByPhone || existingProviderByPhone) {
         throw new BadRequestException('Phone number is already registered');
       }
 
       // Retrieve registration data from cache
-      const registrationData = this.getRegistrationData(phoneNumber);
+      const registrationData = this.getRegistrationData(normalizedPhoneNumber);
       if (!registrationData) {
         throw new BadRequestException(
           'Registration data expired or not found. Please restart the registration process.',
@@ -1147,7 +1161,7 @@ export class AuthService {
       }
 
       // Remove data from cache to prevent reuse
-      this.removeRegistrationData(phoneNumber);
+      this.removeRegistrationData(normalizedPhoneNumber);
 
       // Extract registration data
       const { phoneNumber: cachedPhone, ...registerData } = registrationData;
@@ -1169,7 +1183,7 @@ export class AuthService {
         password: hashedPassword,
         image: registerData.image || '',
         address: registerData.address || '',
-        phone: phoneNumber,
+        phone: normalizedPhoneNumber,
         state: registerData.state || '',
         role: registerData.role || 'USER',
         isActive: registerData.isActive ?? true,
@@ -1186,7 +1200,7 @@ export class AuthService {
           image: registerData.image || '',
           description: registerData.description || '',
           state: registerData.state || '',
-          phone: phoneNumber,
+          phone: normalizedPhoneNumber,
           isActive: registerData.isActive ?? true,
           isVerified: false,
           location: null,
