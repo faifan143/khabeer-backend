@@ -74,7 +74,8 @@ export class InvoicesService {
                 id: true,
                 titleAr: true,
                 titleEn: true,
-                description: true,
+                descriptionAr: true,
+                descriptionEn: true,
               },
             },
           },
@@ -142,7 +143,8 @@ export class InvoicesService {
                 id: true,
                 titleAr: true,
                 titleEn: true,
-                description: true,
+                descriptionAr: true,
+                descriptionEn: true,
                 commission: true,
                 category: {
                   select: {
@@ -249,7 +251,8 @@ export class InvoicesService {
                 id: true,
                 name: true,
                 phone: true,
-                description: true,
+                descriptionAr: true,
+                descriptionEn: true,
               },
             },
             service: {
@@ -257,7 +260,8 @@ export class InvoicesService {
                 id: true,
                 titleAr: true,
                 titleEn: true,
-                description: true,
+                descriptionAr: true,
+                descriptionEn: true,
                 commission: true,
                 category: {
                   select: {
@@ -429,7 +433,8 @@ export class InvoicesService {
                 id: true,
                 titleAr: true,
                 titleEn: true,
-                description: true,
+                descriptionAr: true,
+                descriptionEn: true,
                 commission: true,
                 category: {
                   select: {
@@ -880,7 +885,8 @@ export class InvoicesService {
                 id: true,
                 titleAr: true,
                 titleEn: true,
-                description: true,
+                descriptionAr: true,
+                descriptionEn: true,
                 commission: true,
                 category: {
                   select: {
@@ -1605,7 +1611,8 @@ export class InvoicesService {
                 id: true,
                 titleAr: true,
                 titleEn: true,
-                description: true,
+                descriptionAr: true,
+                descriptionEn: true,
               },
             },
           },
