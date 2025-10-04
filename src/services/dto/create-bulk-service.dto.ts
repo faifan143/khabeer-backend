@@ -39,5 +39,5 @@ export class CreateBulkServiceDto {
   @ArrayMinSize(1, { message: 'At least one category ID must be provided' })
   @IsInt({ each: true })
   @IsNotEmpty({ each: true })
-  categoryIds: number[];
+  categoryIds: string[];
 }

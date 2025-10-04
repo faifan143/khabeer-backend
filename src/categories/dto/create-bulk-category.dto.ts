@@ -1,11 +1,4 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsArray,
-  ValidateNested,
-  ArrayMinSize,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+import { ArrayMinSize, IsArray, IsNotEmpty, IsString } from 'class-validator';
 import { IsValidOmanState } from '../../utils/validators';
 
 export class CreateBulkCategoryDto {
