@@ -1,16 +1,16 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import * as bcrypt from 'bcryptjs';
 import { NotificationType } from '../notifications/dto/create-notification.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   AdminProviderResponseDto,
   AdminProvidersResponseDto,
 } from './dto/admin-provider-response.dto';
-import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AdminService {
@@ -81,8 +81,7 @@ export class AdminService {
             name: true,
             email: true,
             phone: true,
-            descriptionAr: true,
-            descriptionEn: true,
+            description: true,
             image: true,
             state: true,
             isActive: true,
@@ -314,8 +313,7 @@ export class AdminService {
             name: true,
             email: true,
             phone: true,
-            descriptionAr: true,
-            descriptionEn: true,
+            description: true,
             image: true,
             state: true,
             isActive: true,
@@ -458,8 +456,7 @@ export class AdminService {
             id: true,
             name: true,
             phone: true,
-            descriptionAr: true,
-            descriptionEn: true,
+            description: true,
             image: true,
           },
         },
@@ -535,8 +532,7 @@ export class AdminService {
             name: true,
             email: true,
             phone: true,
-            descriptionAr: true,
-            descriptionEn: true,
+            description: true,
             image: true,
             isVerified: true,
             isActive: true,
@@ -1971,8 +1967,7 @@ export class AdminService {
             name: true,
             email: true,
             phone: true,
-            descriptionAr: true,
-            descriptionEn: true,
+            description: true,
             image: true,
             state: true,
             isActive: true,

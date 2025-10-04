@@ -5,7 +5,8 @@ export class ProviderServiceDetailDto {
     service: {
         id: number;
         title: string;
-        description: string | null;
+        descriptionAr: string | null;
+        descriptionEn: string | null;
         image: string;
         commission: number | null;
         categoryId: number;
@@ -23,7 +24,8 @@ export class ProviderOfferDto {
     service: {
         id: number;
         title: string;
-        description: string | null;
+        descriptionAr: string | null;
+        descriptionEn: string | null;
     };
 }
 
@@ -64,7 +66,8 @@ export class ProviderOrderDto {
     service: {
         id: number;
         title: string;
-        description: string | null;
+        descriptionAr: string | null;
+        descriptionEn: string | null;
     };
 }
 

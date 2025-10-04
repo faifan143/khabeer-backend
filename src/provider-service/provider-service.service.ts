@@ -43,7 +43,8 @@ export interface ProviderServiceWithOfferResponse {
     id: number;
     titleAr: string;
     titleEn: string;
-    description: string | null;
+    descriptionAr: string | null;
+    descriptionEn: string | null;
     image: string;
     commission: number | null;
   };

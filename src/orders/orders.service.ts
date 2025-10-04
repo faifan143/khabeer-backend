@@ -292,8 +292,7 @@ export class OrdersService {
             name: true,
             phone: true,
             image: true,
-            descriptionAr: true,
-            descriptionEn: true,
+            description: true,
           },
         },
         service: {

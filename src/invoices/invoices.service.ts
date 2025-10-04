@@ -251,8 +251,7 @@ export class InvoicesService {
                 id: true,
                 name: true,
                 phone: true,
-                descriptionAr: true,
-                descriptionEn: true,
+                description: true,
               },
             },
             service: {
