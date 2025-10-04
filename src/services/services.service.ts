@@ -163,7 +163,7 @@ export class ServicesService {
       commission: data.commission,
       whatsapp: data.whatsapp,
       serviceType: data.serviceType || 'NORMAL',
-      categoryId: parseInt(categoryId),
+      categoryId: categoryId,
       image: data.image,
     }));
 

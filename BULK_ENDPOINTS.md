@@ -71,7 +71,7 @@ Create services for multiple categories at once.
   "description": "Professional maintenance services",
   "commission": 10,
   "serviceType": "NORMAL",
-  "categoryIds": [1, 2, 3]
+  "categoryIds": ["1", "2", "3"]
 }
 ```
 
@@ -123,6 +123,6 @@ Create services for multiple categories at once.
 - Both endpoints require ADMIN role
 - All fields except `image` are required
 - `states` array must contain valid Omani state names
-- `categoryIds` array must contain valid category IDs
+- `categoryIds` array must contain valid category IDs (can be strings or numbers)
 - If image is provided, it will be used for all created items
 - All operations are atomic (all succeed or all fail)
