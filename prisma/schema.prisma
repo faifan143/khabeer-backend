@@ -23,7 +23,8 @@ model Service {
   image            String
   titleAr          String
   titleEn          String
-  description      String?
+  descriptionAr    String?
+  descriptionEn    String?
   commission       Float?
   whatsapp         String?
   serviceType      String            @default("NORMAL")

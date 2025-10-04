@@ -18,7 +18,7 @@ async function main() {
       address: 'Admin Address',
       state: 'Admin State',
       isActive: true,
-      image: ''
+      image: '',
     },
   });
   console.log('✅ Admin user created:', admin.email);
@@ -35,7 +35,7 @@ async function main() {
       address: 'Test Address',
       state: 'Test State',
       isActive: true,
-      image: ''
+      image: '',
     },
   });
   console.log('✅ Test user created:', user.email);
@@ -52,7 +52,7 @@ async function main() {
       description: 'Test provider description',
       image: '',
       isActive: true,
-      isVerified: true
+      isVerified: true,
     },
   });
   console.log('✅ Test provider created:', provider.email);
@@ -63,7 +63,7 @@ async function main() {
       titleAr: 'تنظيف',
       titleEn: 'Cleaning',
       state: 'Riyadh',
-      image: ''
+      image: '',
     },
   });
   console.log('✅ Cleaning category created');
@@ -76,7 +76,7 @@ async function main() {
       titleAr: 'صيانة',
       titleEn: 'Maintenance',
       state: 'Jeddah',
-      image: ''
+      image: '',
     },
   });
   console.log('✅ Maintenance category created');
@@ -89,11 +89,12 @@ async function main() {
       id: 1,
       titleAr: 'تنظيف المنزل',
       titleEn: 'House Cleaning',
-      description: 'Professional house cleaning service',
+      descriptionAr: 'خدمة تنظيف منزلية احترافية',
+      descriptionEn: 'Professional house cleaning service',
       commission: 10.0,
       whatsapp: '+966501234567',
       categoryId: 1,
-      image: ''
+      image: '',
     },
   });
   console.log('✅ Cleaning service created');
@@ -109,7 +110,7 @@ async function main() {
       commission: 15.0,
       whatsapp: '+966501234568',
       categoryId: 2,
-      image: ''
+      image: '',
     },
   });
   console.log('✅ Maintenance service created');
@@ -120,7 +121,7 @@ async function main() {
       providerId: provider.id,
       serviceId: cleaningService.id,
       price: 100.0,
-      isActive: true
+      isActive: true,
     },
   });
   console.log('✅ Provider linked to cleaning service');

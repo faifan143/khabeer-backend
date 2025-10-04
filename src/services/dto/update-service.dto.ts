@@ -11,7 +11,11 @@ export class UpdateServiceDto {
 
   @IsOptional()
   @IsString()
-  description?: string;
+  descriptionAr?: string;
+
+  @IsOptional()
+  @IsString()
+  descriptionEn?: string;
 
   @IsOptional()
   @IsNumber()

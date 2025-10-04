@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface CreateInvoiceDto {
@@ -16,12 +20,12 @@ export interface UpdatePaymentStatusDto {
 
 @Injectable()
 export class InvoicesService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createInvoiceDto: CreateInvoiceDto) {
     // Check if order exists and doesn't already have an invoice
     const existingInvoice = await this.prisma.invoice.findUnique({
-      where: { orderId: createInvoiceDto.orderId }
+      where: { orderId: createInvoiceDto.orderId },
     });
 
     if (existingInvoice) {
@@ -29,7 +33,7 @@ export class InvoicesService {
     }
 
     const order = await this.prisma.order.findUnique({
-      where: { id: createInvoiceDto.orderId }
+      where: { id: createInvoiceDto.orderId },
     });
 
     if (!order) {
@@ -42,7 +46,7 @@ export class InvoicesService {
         totalAmount: createInvoiceDto.totalAmount,
         discount: createInvoiceDto.discount || 0,
         paymentStatus: 'pending',
-        paymentMethod: createInvoiceDto.paymentMethod
+        paymentMethod: createInvoiceDto.paymentMethod,
       },
       include: {
         order: {
@@ -55,27 +59,27 @@ export class InvoicesService {
                 id: true,
                 name: true,
                 email: true,
-                phone: true
-              }
+                phone: true,
+              },
             },
             provider: {
               select: {
                 id: true,
                 name: true,
-                phone: true
-              }
+                phone: true,
+              },
             },
             service: {
               select: {
                 id: true,
                 titleAr: true,
                 titleEn: true,
-                description: true
-              }
-            }
-          }
-        }
-      }
+                description: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // Transform the response to include the required fields
@@ -84,7 +88,7 @@ export class InvoicesService {
       commissionAmount: newInvoice.order.commissionAmount,
       providerAmount: newInvoice.order.providerAmount,
       quantity: newInvoice.order.quantity,
-      discount: newInvoice.discount || 0
+      discount: newInvoice.discount || 0,
     };
   }
 
@@ -93,7 +97,7 @@ export class InvoicesService {
       isDeleted: false, // Exclude deleted invoices
       ...(role === 'PROVIDER'
         ? { order: { providerId: userId } }
-        : { order: { userId } })
+        : { order: { userId } }),
     };
 
     // Add status filter if provided
@@ -124,14 +128,14 @@ export class InvoicesService {
                 latitude: true,
                 longitude: true,
                 address: true,
-              }
+              },
             },
             provider: {
               select: {
                 id: true,
                 name: true,
-                phone: true
-              }
+                phone: true,
+              },
             },
             service: {
               select: {
@@ -146,47 +150,51 @@ export class InvoicesService {
                     image: true,
                     titleAr: true,
                     titleEn: true,
-                    state: true
-                  }
-                }
-              }
-            }
-          }
-        }
+                    state: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: {
         order: {
-          orderDate: 'desc'
-        }
-      }
+          orderDate: 'desc',
+        },
+      },
     });
 
     // Transform the response to include the required fields and services array
-    return invoices.map(invoice => {
+    return invoices.map((invoice) => {
       let services: any[] = [];
 
       if (invoice.order.isMultipleServices && invoice.order.servicesBreakdown) {
         // Use the stored services breakdown from the database and enhance with category data
-        services = (invoice.order.servicesBreakdown as any[]).map(serviceItem => ({
-          ...serviceItem,
-          category: invoice.order.service.category,
-          serviceTitle: serviceItem.serviceTitleEn + "-" + serviceItem.serviceTitleAr,
-        }));
+        services = (invoice.order.servicesBreakdown as any[]).map(
+          (serviceItem) => ({
+            ...serviceItem,
+            category: invoice.order.service.category,
+            serviceTitle:
+              serviceItem.serviceTitleEn + '-' + serviceItem.serviceTitleAr,
+          }),
+        );
       } else {
         // For single service orders, create a single-item array with complete data
         const service = invoice.order.service;
         services = [
           {
             serviceId: service.id,
-            serviceTitle: service.titleEn + "-" + service.titleAr,
-            serviceDescription: service.description,
+            serviceTitle: service.titleEn + '-' + service.titleAr,
+            serviceDescriptionAr: service.descriptionAr,
+            serviceDescriptionEn: service.descriptionEn,
             quantity: invoice.order.quantity,
             unitPrice: invoice.order.providerAmount / invoice.order.quantity,
             totalPrice: invoice.order.providerAmount,
             commission: service.commission || 0,
             commissionAmount: invoice.order.commissionAmount,
-            category: service.category
-          }
+            category: service.category,
+          },
         ];
       }
 
@@ -202,8 +210,8 @@ export class InvoicesService {
         order: {
           ...orderWithoutService,
           isMultipleServices: invoice.order.isMultipleServices || false,
-          services
-        }
+          services,
+        },
       };
     });
   }
@@ -214,7 +222,7 @@ export class InvoicesService {
       isDeleted: false, // Exclude deleted invoices
       ...(role === 'PROVIDER'
         ? { order: { providerId: userId } }
-        : { order: { userId } })
+        : { order: { userId } }),
     };
 
     const foundInvoice = await this.prisma.invoice.findFirst({
@@ -233,16 +241,16 @@ export class InvoicesService {
                 name: true,
                 email: true,
                 phone: true,
-                address: true
-              }
+                address: true,
+              },
             },
             provider: {
               select: {
                 id: true,
                 name: true,
                 phone: true,
-                description: true
-              }
+                description: true,
+              },
             },
             service: {
               select: {
@@ -257,14 +265,14 @@ export class InvoicesService {
                     image: true,
                     titleAr: true,
                     titleEn: true,
-                    state: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    state: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!foundInvoice) {
@@ -274,12 +282,17 @@ export class InvoicesService {
     // Transform the response to include the required fields and services array
     let services: any[] = [];
 
-    if (foundInvoice.order.isMultipleServices && foundInvoice.order.servicesBreakdown) {
+    if (
+      foundInvoice.order.isMultipleServices &&
+      foundInvoice.order.servicesBreakdown
+    ) {
       // Use the stored services breakdown from the database and enhance with category data
-      services = (foundInvoice.order.servicesBreakdown as any[]).map(serviceItem => ({
-        ...serviceItem,
-        category: foundInvoice.order.service.category
-      }));
+      services = (foundInvoice.order.servicesBreakdown as any[]).map(
+        (serviceItem) => ({
+          ...serviceItem,
+          category: foundInvoice.order.service.category,
+        }),
+      );
     } else {
       // For single service orders, create a single-item array with complete data
       const service = foundInvoice.order.service;
@@ -287,14 +300,16 @@ export class InvoicesService {
         {
           serviceId: service.id,
           serviceTitle: service.titleEn,
-          serviceDescription: service.description,
+          serviceDescriptionAr: service.descriptionAr,
+          serviceDescriptionEn: service.descriptionEn,
           quantity: foundInvoice.order.quantity,
-          unitPrice: foundInvoice.order.providerAmount / foundInvoice.order.quantity,
+          unitPrice:
+            foundInvoice.order.providerAmount / foundInvoice.order.quantity,
           totalPrice: foundInvoice.order.providerAmount,
           commission: service.commission || 0,
           commissionAmount: foundInvoice.order.commissionAmount,
-          category: service.category
-        }
+          category: service.category,
+        },
       ];
     }
 
@@ -310,12 +325,17 @@ export class InvoicesService {
       order: {
         ...orderWithoutService,
         isMultipleServices: foundInvoice.order.isMultipleServices || false,
-        services
-      }
+        services,
+      },
     };
   }
 
-  async updatePaymentStatus(id: number, updatePaymentStatusDto: UpdatePaymentStatusDto, userId: number, role: string) {
+  async updatePaymentStatus(
+    id: number,
+    updatePaymentStatusDto: UpdatePaymentStatusDto,
+    userId: number,
+    role: string,
+  ) {
     const existingInvoice = await this.prisma.invoice.findUnique({
       where: { id },
       include: {
@@ -323,10 +343,10 @@ export class InvoicesService {
           include: {
             provider: true,
             user: true,
-            service: true
-          }
-        }
-      }
+            service: true,
+          },
+        },
+      },
     });
 
     if (!existingInvoice) {
@@ -335,11 +355,15 @@ export class InvoicesService {
 
     // Validate permissions
     if (role === 'PROVIDER' && existingInvoice.order.providerId !== userId) {
-      throw new BadRequestException('You can only update invoices for your own orders');
+      throw new BadRequestException(
+        'You can only update invoices for your own orders',
+      );
     }
 
     if (role === 'USER' && existingInvoice.order.userId !== userId) {
-      throw new BadRequestException('You can only update invoices for your own orders');
+      throw new BadRequestException(
+        'You can only update invoices for your own orders',
+      );
     }
 
     const oldStatus = existingInvoice.paymentStatus;
@@ -347,12 +371,14 @@ export class InvoicesService {
 
     // Validate status transition
     if (!this.isValidStatusTransition(oldStatus, newStatus)) {
-      throw new BadRequestException(`Invalid status transition from ${oldStatus} to ${newStatus}`);
+      throw new BadRequestException(
+        `Invalid status transition from ${oldStatus} to ${newStatus}`,
+      );
     }
 
     const updateData: any = {
       paymentStatus: newStatus,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     if (updatePaymentStatusDto.paymentMethod) {
@@ -366,7 +392,11 @@ export class InvoicesService {
     }
 
     // Handle financial calculations and order status updates
-    await this.handleFinancialCalculations(existingInvoice, oldStatus, newStatus);
+    await this.handleFinancialCalculations(
+      existingInvoice,
+      oldStatus,
+      newStatus,
+    );
 
     const updatedInvoice = await this.prisma.invoice.update({
       where: { id },
@@ -384,15 +414,15 @@ export class InvoicesService {
                 id: true,
                 name: true,
                 email: true,
-                phone: true
-              }
+                phone: true,
+              },
             },
             provider: {
               select: {
                 id: true,
                 name: true,
-                phone: true
-              }
+                phone: true,
+              },
             },
             service: {
               select: {
@@ -407,25 +437,30 @@ export class InvoicesService {
                     image: true,
                     titleAr: true,
                     titleEn: true,
-                    state: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    state: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     // Transform the response to include the required fields and services array
     let services: any[] = [];
 
-    if (updatedInvoice.order.isMultipleServices && updatedInvoice.order.servicesBreakdown) {
+    if (
+      updatedInvoice.order.isMultipleServices &&
+      updatedInvoice.order.servicesBreakdown
+    ) {
       // Use the stored services breakdown from the database and enhance with category data
-      services = (updatedInvoice.order.servicesBreakdown as any[]).map(serviceItem => ({
-        ...serviceItem,
-        category: updatedInvoice.order.service.category
-      }));
+      services = (updatedInvoice.order.servicesBreakdown as any[]).map(
+        (serviceItem) => ({
+          ...serviceItem,
+          category: updatedInvoice.order.service.category,
+        }),
+      );
     } else {
       // For single service orders, create a single-item array with complete data
       const service = updatedInvoice.order.service;
@@ -433,14 +468,16 @@ export class InvoicesService {
         {
           serviceId: service.id,
           serviceTitle: service.titleEn,
-          serviceDescription: service.description,
+          serviceDescriptionAr: service.descriptionAr,
+          serviceDescriptionEn: service.descriptionEn,
           quantity: updatedInvoice.order.quantity,
-          unitPrice: updatedInvoice.order.providerAmount / updatedInvoice.order.quantity,
+          unitPrice:
+            updatedInvoice.order.providerAmount / updatedInvoice.order.quantity,
           totalPrice: updatedInvoice.order.providerAmount,
           commission: service.commission || 0,
           commissionAmount: updatedInvoice.order.commissionAmount,
-          category: service.category
-        }
+          category: service.category,
+        },
       ];
     }
 
@@ -456,20 +493,23 @@ export class InvoicesService {
       order: {
         ...orderWithoutService,
         isMultipleServices: updatedInvoice.order.isMultipleServices || false,
-        services
-      }
+        services,
+      },
     };
   }
 
   /**
    * Validate status transitions
    */
-  private isValidStatusTransition(oldStatus: string, newStatus: string): boolean {
+  private isValidStatusTransition(
+    oldStatus: string,
+    newStatus: string,
+  ): boolean {
     const validTransitions: { [key: string]: string[] } = {
-      'pending': ['paid', 'failed'],
-      'paid': ['refunded'],
-      'failed': ['pending', 'paid'],
-      'refunded': [] // No further transitions allowed
+      pending: ['paid', 'failed'],
+      paid: ['refunded'],
+      failed: ['pending', 'paid'],
+      refunded: [], // No further transitions allowed
     };
 
     return validTransitions[oldStatus]?.includes(newStatus) || false;
@@ -481,7 +521,7 @@ export class InvoicesService {
   private async handleFinancialCalculations(
     invoice: any,
     oldStatus: string,
-    newStatus: string
+    newStatus: string,
   ): Promise<void> {
     const order = invoice.order;
 
@@ -493,33 +533,39 @@ export class InvoicesService {
         // Update order status to paid
         await this.prisma.order.update({
           where: { id: order.id },
-          data: { status: 'paid' }
+          data: { status: 'paid' },
         });
 
         // Validate commission calculation
         this.validateCommissionCalculation(order, invoice);
 
         // Log commission earned (for admin tracking)
-        console.log(`Commission earned: ${order.commissionAmount} for order ${order.id}`);
-        console.log(`Provider earnings: ${order.providerAmount} for order ${order.id}`);
+        console.log(
+          `Commission earned: ${order.commissionAmount} for order ${order.id}`,
+        );
+        console.log(
+          `Provider earnings: ${order.providerAmount} for order ${order.id}`,
+        );
         break;
 
       case 'failed':
         // Update order status to payment_failed
         await this.prisma.order.update({
           where: { id: order.id },
-          data: { status: 'payment_failed' }
+          data: { status: 'payment_failed' },
         });
 
         // No commission earned on failed payments
-        console.log(`Payment failed for order ${order.id} - no commission earned`);
+        console.log(
+          `Payment failed for order ${order.id} - no commission earned`,
+        );
         break;
 
       case 'refunded':
         // Update order status to refunded
         await this.prisma.order.update({
           where: { id: order.id },
-          data: { status: 'refunded' }
+          data: { status: 'refunded' },
         });
 
         // Handle refund calculations
@@ -530,7 +576,7 @@ export class InvoicesService {
         // Reset order status back to pending
         await this.prisma.order.update({
           where: { id: order.id },
-          data: { status: 'pending' }
+          data: { status: 'pending' },
         });
         break;
     }
@@ -541,13 +587,20 @@ export class InvoicesService {
    * This represents the actual moment when money is committed
    * FIXED: Now properly handles provider pays commission flow
    */
-  private async commitPaymentToCompany(order: any, invoice: any): Promise<void> {
+  private async commitPaymentToCompany(
+    order: any,
+    invoice: any,
+  ): Promise<void> {
     console.log(`🚨 PAYMENT COMMITTED TO COMPANY 🚨`);
     console.log(`Order: ${order.id}`);
-    console.log(`User Payment: ${invoice.totalAmount} OMR (provider price only)`);
+    console.log(
+      `User Payment: ${invoice.totalAmount} OMR (provider price only)`,
+    );
     console.log(`Provider Gross: ${order.providerAmount} OMR`);
     console.log(`Commission to Admin: ${order.commissionAmount} OMR`);
-    console.log(`Provider Net: ${order.providerNetAmount} OMR (after commission deduction)`);
+    console.log(
+      `Provider Net: ${order.providerNetAmount} OMR (after commission deduction)`,
+    );
     console.log(`Commitment Time: ${new Date().toISOString()}`);
 
     // Here you would typically:
@@ -578,7 +631,7 @@ export class InvoicesService {
       commitmentTime: new Date(),
       status: 'committed',
       type: 'admin_payment_commitment',
-      financialFlow: 'provider_pays_commission'
+      financialFlow: 'provider_pays_commission',
     };
 
     console.log('📊 PAYMENT COMMITMENT LOGGED:', commitmentData);
@@ -602,23 +655,33 @@ export class InvoicesService {
 
     // Validate that user pays only provider amount (no commission added)
     if (Math.abs(providerAmount - totalAmount) > 0.01) {
-      console.warn(`User payment mismatch for order ${order.id}: providerAmount=${providerAmount}, totalAmount=${totalAmount}`);
+      console.warn(
+        `User payment mismatch for order ${order.id}: providerAmount=${providerAmount}, totalAmount=${totalAmount}`,
+      );
     }
 
     // Validate that provider net amount is correct (provider amount minus commission)
-    if (Math.abs(providerNetAmount - (providerAmount - commissionAmount)) > 0.01) {
-      console.warn(`Provider net amount mismatch for order ${order.id}: expected=${providerAmount - commissionAmount}, actual=${providerNetAmount}`);
+    if (
+      Math.abs(providerNetAmount - (providerAmount - commissionAmount)) > 0.01
+    ) {
+      console.warn(
+        `Provider net amount mismatch for order ${order.id}: expected=${providerAmount - commissionAmount}, actual=${providerNetAmount}`,
+      );
     }
 
     // Validate fixed commission per service (not percentage-based)
     const expectedCommission = (order.service.commission || 0) * order.quantity;
     if (Math.abs(commissionAmount - expectedCommission) > 0.01) {
-      console.warn(`Fixed commission mismatch for order ${order.id}: expected=${expectedCommission}, actual=${commissionAmount}`);
+      console.warn(
+        `Fixed commission mismatch for order ${order.id}: expected=${expectedCommission}, actual=${commissionAmount}`,
+      );
     }
 
     console.log(`✅ Financial flow validation for order ${order.id}:`);
     console.log(`   User pays: ${totalAmount} OMR`);
-    console.log(`   Provider gets: ${providerNetAmount} OMR (${providerAmount} - ${commissionAmount})`);
+    console.log(
+      `   Provider gets: ${providerNetAmount} OMR (${providerAmount} - ${commissionAmount})`,
+    );
     console.log(`   Admin gets: ${commissionAmount} OMR`);
   }
 
@@ -635,7 +698,9 @@ export class InvoicesService {
     console.log(`  - Total amount: ${invoice.totalAmount}`);
     console.log(`  - Commission reversed: ${order.commissionAmount}`);
     console.log(`  - Provider earnings reversed: ${order.providerAmount}`);
-    console.log(`  - Net impact: ${order.commissionAmount + order.providerAmount}`);
+    console.log(
+      `  - Net impact: ${order.commissionAmount + order.providerAmount}`,
+    );
   }
 
   async getPaymentStats(userId: number, role: string) {
@@ -643,15 +708,21 @@ export class InvoicesService {
       isDeleted: false, // Exclude deleted invoices
       ...(role === 'PROVIDER'
         ? { order: { providerId: userId } }
-        : { order: { userId } })
+        : { order: { userId } }),
     };
 
     const [total, paid, pending, failed, refunded] = await Promise.all([
       this.prisma.invoice.count({ where }),
       this.prisma.invoice.count({ where: { ...where, paymentStatus: 'paid' } }),
-      this.prisma.invoice.count({ where: { ...where, paymentStatus: 'pending' } }),
-      this.prisma.invoice.count({ where: { ...where, paymentStatus: 'failed' } }),
-      this.prisma.invoice.count({ where: { ...where, paymentStatus: 'refunded' } })
+      this.prisma.invoice.count({
+        where: { ...where, paymentStatus: 'pending' },
+      }),
+      this.prisma.invoice.count({
+        where: { ...where, paymentStatus: 'failed' },
+      }),
+      this.prisma.invoice.count({
+        where: { ...where, paymentStatus: 'refunded' },
+      }),
     ]);
 
     // Calculate total amounts
@@ -660,14 +731,20 @@ export class InvoicesService {
       select: {
         totalAmount: true,
         discount: true,
-        paymentStatus: true
-      }
+        paymentStatus: true,
+      },
     });
 
-    const totalAmount = invoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
-    const totalDiscount = invoices.reduce((sum, invoice) => sum + invoice.discount, 0);
+    const totalAmount = invoices.reduce(
+      (sum, invoice) => sum + invoice.totalAmount,
+      0,
+    );
+    const totalDiscount = invoices.reduce(
+      (sum, invoice) => sum + invoice.discount,
+      0,
+    );
     const paidAmount = invoices
-      .filter(invoice => invoice.paymentStatus === 'paid')
+      .filter((invoice) => invoice.paymentStatus === 'paid')
       .reduce((sum, invoice) => sum + invoice.totalAmount, 0);
 
     return {
@@ -679,22 +756,27 @@ export class InvoicesService {
       totalAmount,
       totalDiscount,
       paidAmount,
-      netAmount: totalAmount - totalDiscount
+      netAmount: totalAmount - totalDiscount,
     };
   }
 
-  async generateInvoiceReport(userId: number, role: string, startDate?: Date, endDate?: Date) {
+  async generateInvoiceReport(
+    userId: number,
+    role: string,
+    startDate?: Date,
+    endDate?: Date,
+  ) {
     const where: any = {
       isDeleted: false, // Exclude deleted invoices
       ...(role === 'PROVIDER'
         ? { order: { providerId: userId } }
-        : { order: { userId } })
+        : { order: { userId } }),
     };
 
     if (startDate || endDate) {
       where.order = {
         ...where.order,
-        orderDate: {}
+        orderDate: {},
       };
 
       if (startDate) {
@@ -722,27 +804,29 @@ export class InvoicesService {
               select: {
                 titleAr: true,
                 titleEn: true,
-                commission: true
-              }
-            }
-          }
-        }
+                commission: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         order: {
-          orderDate: 'desc'
-        }
-      }
+          orderDate: 'desc',
+        },
+      },
     });
 
-    return invoices.map(invoice => {
+    return invoices.map((invoice) => {
       // Handle multiple services for reporting
       let serviceTitle = invoice.order.service.titleEn;
       let totalQuantity = invoice.order.quantity;
 
       if (invoice.order.isMultipleServices && invoice.order.servicesBreakdown) {
         const services = invoice.order.servicesBreakdown as any[];
-        serviceTitle = services.map(s => `${s.serviceTitle} (${s.quantity})`).join(', ');
+        serviceTitle = services
+          .map((s) => `${s.serviceTitle} (${s.quantity})`)
+          .join(', ');
         totalQuantity = services.reduce((sum, s) => sum + s.quantity, 0);
       }
 
@@ -760,7 +844,7 @@ export class InvoicesService {
         paymentStatus: invoice.paymentStatus,
         paymentDate: invoice.paymentDate,
         orderDate: invoice.order.orderDate,
-        isMultipleServices: invoice.order.isMultipleServices || false
+        isMultipleServices: invoice.order.isMultipleServices || false,
       };
     });
   }
@@ -772,8 +856,8 @@ export class InvoicesService {
         isDeleted: false, // Exclude deleted invoices
         paymentStatus: 'unpaid',
         order: {
-          providerId: providerId
-        }
+          providerId: providerId,
+        },
       },
       include: {
         order: {
@@ -788,8 +872,8 @@ export class InvoicesService {
                 id: true,
                 name: true,
                 email: true,
-                phone: true
-              }
+                phone: true,
+              },
             },
             service: {
               select: {
@@ -804,31 +888,33 @@ export class InvoicesService {
                     image: true,
                     titleAr: true,
                     titleEn: true,
-                    state: true
-                  }
-                }
-              }
-            }
-          }
-        }
+                    state: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: {
         order: {
-          orderDate: 'desc'
-        }
-      }
+          orderDate: 'desc',
+        },
+      },
     });
 
     // Transform the response to include the required fields and services array
-    return invoices.map(invoice => {
+    return invoices.map((invoice) => {
       let services: any[] = [];
 
       if (invoice.order.isMultipleServices && invoice.order.servicesBreakdown) {
         // Use the stored services breakdown from the database and enhance with category data
-        services = (invoice.order.servicesBreakdown as any[]).map(serviceItem => ({
-          ...serviceItem,
-          category: invoice.order.service.category
-        }));
+        services = (invoice.order.servicesBreakdown as any[]).map(
+          (serviceItem) => ({
+            ...serviceItem,
+            category: invoice.order.service.category,
+          }),
+        );
       } else {
         // For single service orders, create a single-item array with complete data
         const service = invoice.order.service;
@@ -836,14 +922,15 @@ export class InvoicesService {
           {
             serviceId: service.id,
             serviceTitle: service.titleEn,
-            serviceDescription: service.description,
+            serviceDescriptionAr: service.descriptionAr,
+            serviceDescriptionEn: service.descriptionEn,
             quantity: invoice.order.quantity,
             unitPrice: invoice.order.providerAmount / invoice.order.quantity,
             totalPrice: invoice.order.providerAmount,
             commission: service.commission || 0,
             commissionAmount: invoice.order.commissionAmount,
-            category: service.category
-          }
+            category: service.category,
+          },
         ];
       }
 
@@ -859,8 +946,8 @@ export class InvoicesService {
         order: {
           ...orderWithoutService,
           isMultipleServices: invoice.order.isMultipleServices || false,
-          services
-        }
+          services,
+        },
       };
     });
   }
@@ -871,12 +958,12 @@ export class InvoicesService {
    */
   async getAdminFinancialSummary(startDate?: Date, endDate?: Date) {
     const where: any = {
-      isDeleted: false // Exclude deleted invoices
+      isDeleted: false, // Exclude deleted invoices
     };
 
     if (startDate || endDate) {
       where.order = {
-        orderDate: {}
+        orderDate: {},
       };
 
       if (startDate) {
@@ -895,31 +982,60 @@ export class InvoicesService {
           select: {
             commissionAmount: true,
             providerAmount: true,
-            totalAmount: true
-          }
-        }
-      }
+            totalAmount: true,
+          },
+        },
+      },
     });
 
     // Calculate comprehensive financial metrics
-    const paidInvoices = invoices.filter(inv => inv.paymentStatus === 'paid');
-    const refundedInvoices = invoices.filter(inv => inv.paymentStatus === 'refunded');
-    const failedInvoices = invoices.filter(inv => inv.paymentStatus === 'failed');
+    const paidInvoices = invoices.filter((inv) => inv.paymentStatus === 'paid');
+    const refundedInvoices = invoices.filter(
+      (inv) => inv.paymentStatus === 'refunded',
+    );
+    const failedInvoices = invoices.filter(
+      (inv) => inv.paymentStatus === 'failed',
+    );
 
-    const totalRevenue = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-    const paidRevenue = paidInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-    const refundedRevenue = refundedInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-    const failedRevenue = failedInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+    const totalRevenue = invoices.reduce(
+      (sum, inv) => sum + inv.totalAmount,
+      0,
+    );
+    const paidRevenue = paidInvoices.reduce(
+      (sum, inv) => sum + inv.totalAmount,
+      0,
+    );
+    const refundedRevenue = refundedInvoices.reduce(
+      (sum, inv) => sum + inv.totalAmount,
+      0,
+    );
+    const failedRevenue = failedInvoices.reduce(
+      (sum, inv) => sum + inv.totalAmount,
+      0,
+    );
 
     // Commission calculations
-    const totalCommission = paidInvoices.reduce((sum, inv) => sum + inv.order.commissionAmount, 0);
-    const refundedCommission = refundedInvoices.reduce((sum, inv) => sum + inv.order.commissionAmount, 0);
+    const totalCommission = paidInvoices.reduce(
+      (sum, inv) => sum + inv.order.commissionAmount,
+      0,
+    );
+    const refundedCommission = refundedInvoices.reduce(
+      (sum, inv) => sum + inv.order.commissionAmount,
+      0,
+    );
     const netCommission = totalCommission - refundedCommission;
 
     // Provider earnings calculations
-    const totalProviderEarnings = paidInvoices.reduce((sum, inv) => sum + inv.order.providerAmount, 0);
-    const refundedProviderEarnings = refundedInvoices.reduce((sum, inv) => sum + inv.order.providerAmount, 0);
-    const netProviderEarnings = totalProviderEarnings - refundedProviderEarnings;
+    const totalProviderEarnings = paidInvoices.reduce(
+      (sum, inv) => sum + inv.order.providerAmount,
+      0,
+    );
+    const refundedProviderEarnings = refundedInvoices.reduce(
+      (sum, inv) => sum + inv.order.providerAmount,
+      0,
+    );
+    const netProviderEarnings =
+      totalProviderEarnings - refundedProviderEarnings;
 
     // Net revenue after refunds
     const netRevenue = paidRevenue - refundedRevenue;
@@ -942,7 +1058,8 @@ export class InvoicesService {
       totalProviderEarnings,
       refundedProviderEarnings,
       netProviderEarnings,
-      providerEarningsRate: paidRevenue > 0 ? (netProviderEarnings / netRevenue) * 100 : 0,
+      providerEarningsRate:
+        paidRevenue > 0 ? (netProviderEarnings / netRevenue) * 100 : 0,
 
       // Invoice counts
       totalInvoices: invoices.length,
@@ -951,11 +1068,20 @@ export class InvoicesService {
       failedCount: failedInvoices.length,
 
       // Performance metrics
-      successRate: invoices.length > 0 ? (paidInvoices.length / invoices.length) * 100 : 0,
-      refundRate: paidInvoices.length > 0 ? (refundedInvoices.length / paidInvoices.length) * 100 : 0,
-      averageOrderValue: invoices.length > 0 ? totalRevenue / invoices.length : 0,
-      averageCommission: paidInvoices.length > 0 ? totalCommission / paidInvoices.length : 0,
-      averageProviderEarnings: paidInvoices.length > 0 ? totalProviderEarnings / paidInvoices.length : 0
+      successRate:
+        invoices.length > 0 ? (paidInvoices.length / invoices.length) * 100 : 0,
+      refundRate:
+        paidInvoices.length > 0
+          ? (refundedInvoices.length / paidInvoices.length) * 100
+          : 0,
+      averageOrderValue:
+        invoices.length > 0 ? totalRevenue / invoices.length : 0,
+      averageCommission:
+        paidInvoices.length > 0 ? totalCommission / paidInvoices.length : 0,
+      averageProviderEarnings:
+        paidInvoices.length > 0
+          ? totalProviderEarnings / paidInvoices.length
+          : 0,
     };
   }
 
@@ -971,7 +1097,7 @@ export class InvoicesService {
     const invoice = await this.prisma.invoice.findFirst({
       where: {
         id,
-        isDeleted: false
+        isDeleted: false,
       },
       include: {
         order: {
@@ -980,10 +1106,10 @@ export class InvoicesService {
             status: true,
             commissionAmount: true,
             providerAmount: true,
-            totalAmount: true
-          }
-        }
-      }
+            totalAmount: true,
+          },
+        },
+      },
     });
 
     if (!invoice) {
@@ -999,7 +1125,7 @@ export class InvoicesService {
       data: {
         isDeleted: true,
         deletedAt: new Date(),
-        deletedBy: userId
+        deletedBy: userId,
       },
       include: {
         order: {
@@ -1010,19 +1136,19 @@ export class InvoicesService {
               select: {
                 id: true,
                 name: true,
-                email: true
-              }
+                email: true,
+              },
             },
             provider: {
               select: {
                 id: true,
                 name: true,
-                phone: true
-              }
-            }
-          }
-        }
-      }
+                phone: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     console.log(`🗑️ Invoice ${id} soft deleted by admin ${userId}`);
@@ -1035,7 +1161,7 @@ export class InvoicesService {
       message: 'Invoice deleted successfully',
       invoiceId: id,
       deletedAt: deletedInvoice.deletedAt,
-      deletedBy: userId
+      deletedBy: userId,
     };
   }
 
@@ -1051,7 +1177,7 @@ export class InvoicesService {
     const invoice = await this.prisma.invoice.findFirst({
       where: {
         id,
-        isDeleted: true
+        isDeleted: true,
       },
       include: {
         order: {
@@ -1060,10 +1186,10 @@ export class InvoicesService {
             status: true,
             commissionAmount: true,
             providerAmount: true,
-            totalAmount: true
-          }
-        }
-      }
+            totalAmount: true,
+          },
+        },
+      },
     });
 
     if (!invoice) {
@@ -1079,7 +1205,7 @@ export class InvoicesService {
       data: {
         isDeleted: false,
         deletedAt: null,
-        deletedBy: null
+        deletedBy: null,
       },
       include: {
         order: {
@@ -1090,19 +1216,19 @@ export class InvoicesService {
               select: {
                 id: true,
                 name: true,
-                email: true
-              }
+                email: true,
+              },
             },
             provider: {
               select: {
                 id: true,
                 name: true,
-                phone: true
-              }
-            }
-          }
-        }
-      }
+                phone: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     console.log(`🔄 Invoice ${id} restored by admin ${userId}`);
@@ -1115,7 +1241,7 @@ export class InvoicesService {
       message: 'Invoice restored successfully',
       invoiceId: id,
       restoredAt: new Date(),
-      restoredBy: userId
+      restoredBy: userId,
     };
   }
 
@@ -1124,7 +1250,9 @@ export class InvoicesService {
    */
   async reactivateFailedInvoice(id: number, userId: number, role: string) {
     if (role !== 'ADMIN') {
-      throw new BadRequestException('Only admins can reactivate failed invoices');
+      throw new BadRequestException(
+        'Only admins can reactivate failed invoices',
+      );
     }
 
     // Check if invoice exists and is failed
@@ -1132,7 +1260,7 @@ export class InvoicesService {
       where: {
         id,
         isDeleted: false,
-        paymentStatus: 'failed'
+        paymentStatus: 'failed',
       },
       include: {
         order: {
@@ -1143,19 +1271,19 @@ export class InvoicesService {
               select: {
                 id: true,
                 name: true,
-                email: true
-              }
+                email: true,
+              },
             },
             provider: {
               select: {
                 id: true,
                 name: true,
-                phone: true
-              }
-            }
-          }
-        }
-      }
+                phone: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!invoice) {
@@ -1171,7 +1299,7 @@ export class InvoicesService {
       data: {
         paymentStatus: 'pending',
         paymentMethod: null,
-        paymentDate: null
+        paymentDate: null,
       },
       include: {
         order: {
@@ -1182,25 +1310,25 @@ export class InvoicesService {
               select: {
                 id: true,
                 name: true,
-                email: true
-              }
+                email: true,
+              },
             },
             provider: {
               select: {
                 id: true,
                 name: true,
-                phone: true
-              }
-            }
-          }
-        }
-      }
+                phone: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // Update order status back to pending
     await this.prisma.order.update({
       where: { id: invoice.order.id },
-      data: { status: 'pending' }
+      data: { status: 'pending' },
     });
 
     console.log(`🔄 Failed invoice ${id} reactivated by admin ${userId}`);
@@ -1214,18 +1342,23 @@ export class InvoicesService {
       invoiceId: id,
       newStatus: 'pending',
       reactivatedAt: new Date(),
-      reactivatedBy: userId
+      reactivatedBy: userId,
     };
   }
 
   /**
    * Handle financial impact when deleting an invoice
    */
-  private async handleDeleteFinancialImpact(invoice: any, adminId: number): Promise<void> {
+  private async handleDeleteFinancialImpact(
+    invoice: any,
+    adminId: number,
+  ): Promise<void> {
     const order = invoice.order;
     const paymentStatus = invoice.paymentStatus;
 
-    console.log(`💰 HANDLING FINANCIAL IMPACT FOR DELETED INVOICE ${invoice.id}`);
+    console.log(
+      `💰 HANDLING FINANCIAL IMPACT FOR DELETED INVOICE ${invoice.id}`,
+    );
     console.log(`   - Payment Status: ${paymentStatus}`);
     console.log(`   - Total Amount: ${invoice.totalAmount} SAR`);
     console.log(`   - Commission: ${order.commissionAmount} SAR`);
@@ -1235,9 +1368,15 @@ export class InvoicesService {
       case 'paid':
         // CRITICAL: Reverse all financial commitments
         console.log(`🚨 REVERSING FINANCIAL COMMITMENTS FOR PAID INVOICE`);
-        console.log(`   - Commission earned: -${order.commissionAmount} SAR (REVERSED)`);
-        console.log(`   - Provider earnings: -${order.providerAmount} SAR (REVERSED)`);
-        console.log(`   - Company revenue: -${invoice.totalAmount} SAR (REVERSED)`);
+        console.log(
+          `   - Commission earned: -${order.commissionAmount} SAR (REVERSED)`,
+        );
+        console.log(
+          `   - Provider earnings: -${order.providerAmount} SAR (REVERSED)`,
+        );
+        console.log(
+          `   - Company revenue: -${invoice.totalAmount} SAR (REVERSED)`,
+        );
 
         // Here you would typically:
         // 1. Reverse commission records
@@ -1249,10 +1388,12 @@ export class InvoicesService {
         // Update order status to reflect deletion
         await this.prisma.order.update({
           where: { id: order.id },
-          data: { status: 'deleted' }
+          data: { status: 'deleted' },
         });
 
-        console.log(`✅ Financial commitments reversed for deleted paid invoice`);
+        console.log(
+          `✅ Financial commitments reversed for deleted paid invoice`,
+        );
         break;
 
       case 'pending':
@@ -1267,27 +1408,42 @@ export class InvoicesService {
 
       case 'refunded':
         // No additional financial impact - already refunded
-        console.log(`ℹ️ No additional financial impact for refunded invoice deletion`);
+        console.log(
+          `ℹ️ No additional financial impact for refunded invoice deletion`,
+        );
         break;
 
       default:
         console.log(`⚠️ Unknown payment status: ${paymentStatus}`);
     }
 
-    console.log(`📊 FINANCIAL IMPACT SUMMARY FOR DELETED INVOICE ${invoice.id}:`);
-    console.log(`   - Admin Commission: ${paymentStatus === 'paid' ? `-${order.commissionAmount} SAR (REVERSED)` : '0 SAR'}`);
-    console.log(`   - Provider Earnings: ${paymentStatus === 'paid' ? `-${order.providerAmount} SAR (REVERSED)` : '0 SAR'}`);
-    console.log(`   - Company Revenue: ${paymentStatus === 'paid' ? `-${invoice.totalAmount} SAR (REVERSED)` : '0 SAR'}`);
+    console.log(
+      `📊 FINANCIAL IMPACT SUMMARY FOR DELETED INVOICE ${invoice.id}:`,
+    );
+    console.log(
+      `   - Admin Commission: ${paymentStatus === 'paid' ? `-${order.commissionAmount} SAR (REVERSED)` : '0 SAR'}`,
+    );
+    console.log(
+      `   - Provider Earnings: ${paymentStatus === 'paid' ? `-${order.providerAmount} SAR (REVERSED)` : '0 SAR'}`,
+    );
+    console.log(
+      `   - Company Revenue: ${paymentStatus === 'paid' ? `-${invoice.totalAmount} SAR (REVERSED)` : '0 SAR'}`,
+    );
   }
 
   /**
    * Handle financial impact when restoring a deleted invoice
    */
-  private async handleRestoreFinancialImpact(invoice: any, adminId: number): Promise<void> {
+  private async handleRestoreFinancialImpact(
+    invoice: any,
+    adminId: number,
+  ): Promise<void> {
     const order = invoice.order;
     const paymentStatus = invoice.paymentStatus;
 
-    console.log(`💰 HANDLING FINANCIAL IMPACT FOR RESTORED INVOICE ${invoice.id}`);
+    console.log(
+      `💰 HANDLING FINANCIAL IMPACT FOR RESTORED INVOICE ${invoice.id}`,
+    );
     console.log(`   - Payment Status: ${paymentStatus}`);
     console.log(`   - Total Amount: ${invoice.totalAmount} SAR`);
     console.log(`   - Commission: ${order.commissionAmount} SAR`);
@@ -1296,10 +1452,18 @@ export class InvoicesService {
     switch (paymentStatus) {
       case 'paid':
         // CRITICAL: Re-apply financial commitments
-        console.log(`🚨 RE-APPLYING FINANCIAL COMMITMENTS FOR RESTORED PAID INVOICE`);
-        console.log(`   - Commission earned: +${order.commissionAmount} SAR (RESTORED)`);
-        console.log(`   - Provider earnings: +${order.providerAmount} SAR (RESTORED)`);
-        console.log(`   - Company revenue: +${invoice.totalAmount} SAR (RESTORED)`);
+        console.log(
+          `🚨 RE-APPLYING FINANCIAL COMMITMENTS FOR RESTORED PAID INVOICE`,
+        );
+        console.log(
+          `   - Commission earned: +${order.commissionAmount} SAR (RESTORED)`,
+        );
+        console.log(
+          `   - Provider earnings: +${order.providerAmount} SAR (RESTORED)`,
+        );
+        console.log(
+          `   - Company revenue: +${invoice.totalAmount} SAR (RESTORED)`,
+        );
 
         // Here you would typically:
         // 1. Re-create commission records
@@ -1311,27 +1475,35 @@ export class InvoicesService {
         // Update order status back to paid
         await this.prisma.order.update({
           where: { id: order.id },
-          data: { status: 'paid' }
+          data: { status: 'paid' },
         });
 
-        console.log(`✅ Financial commitments restored for restored paid invoice`);
+        console.log(
+          `✅ Financial commitments restored for restored paid invoice`,
+        );
         break;
 
       case 'pending':
         // No immediate financial impact - ready for payment
-        console.log(`ℹ️ No immediate financial impact for restored pending invoice`);
+        console.log(
+          `ℹ️ No immediate financial impact for restored pending invoice`,
+        );
         console.log(`ℹ️ Invoice ready for payment processing`);
         break;
 
       case 'failed':
         // No immediate financial impact - payment failed
-        console.log(`ℹ️ No immediate financial impact for restored failed invoice`);
+        console.log(
+          `ℹ️ No immediate financial impact for restored failed invoice`,
+        );
         console.log(`ℹ️ Invoice restored but payment still failed`);
         break;
 
       case 'refunded':
         // No immediate financial impact - already refunded
-        console.log(`ℹ️ No immediate financial impact for restored refunded invoice`);
+        console.log(
+          `ℹ️ No immediate financial impact for restored refunded invoice`,
+        );
         console.log(`ℹ️ Invoice restored but refund status maintained`);
         break;
 
@@ -1339,21 +1511,36 @@ export class InvoicesService {
         console.log(`⚠️ Unknown payment status: ${paymentStatus}`);
     }
 
-    console.log(`📊 FINANCIAL IMPACT SUMMARY FOR RESTORED INVOICE ${invoice.id}:`);
-    console.log(`   - Admin Commission: ${paymentStatus === 'paid' ? `+${order.commissionAmount} SAR (RESTORED)` : '0 SAR'}`);
-    console.log(`   - Provider Earnings: ${paymentStatus === 'paid' ? `+${order.providerAmount} SAR (RESTORED)` : '0 SAR'}`);
-    console.log(`   - Company Revenue: ${paymentStatus === 'paid' ? `+${invoice.totalAmount} SAR (RESTORED)` : '0 SAR'}`);
-    console.log(`   - Status: ${paymentStatus === 'paid' ? 'Financial commitments restored' : 'No financial impact'}`);
+    console.log(
+      `📊 FINANCIAL IMPACT SUMMARY FOR RESTORED INVOICE ${invoice.id}:`,
+    );
+    console.log(
+      `   - Admin Commission: ${paymentStatus === 'paid' ? `+${order.commissionAmount} SAR (RESTORED)` : '0 SAR'}`,
+    );
+    console.log(
+      `   - Provider Earnings: ${paymentStatus === 'paid' ? `+${order.providerAmount} SAR (RESTORED)` : '0 SAR'}`,
+    );
+    console.log(
+      `   - Company Revenue: ${paymentStatus === 'paid' ? `+${invoice.totalAmount} SAR (RESTORED)` : '0 SAR'}`,
+    );
+    console.log(
+      `   - Status: ${paymentStatus === 'paid' ? 'Financial commitments restored' : 'No financial impact'}`,
+    );
   }
 
   /**
    * Handle financial impact when reactivating a failed invoice
    */
-  private async handleReactivateFinancialImpact(invoice: any, adminId: number): Promise<void> {
+  private async handleReactivateFinancialImpact(
+    invoice: any,
+    adminId: number,
+  ): Promise<void> {
     const order = invoice.order;
     const paymentStatus = invoice.paymentStatus;
 
-    console.log(`💰 HANDLING FINANCIAL IMPACT FOR REACTIVATED INVOICE ${invoice.id}`);
+    console.log(
+      `💰 HANDLING FINANCIAL IMPACT FOR REACTIVATED INVOICE ${invoice.id}`,
+    );
     console.log(`   - Previous Status: ${paymentStatus}`);
     console.log(`   - New Status: pending`);
     console.log(`   - Total Amount: ${invoice.totalAmount} SAR`);
@@ -1365,11 +1552,15 @@ export class InvoicesService {
     // 2. Invoice is back to pending state
     // 3. Financial calculations will happen when marked as paid again
 
-    console.log(`ℹ️ Reactivating failed invoice - no immediate financial impact`);
+    console.log(
+      `ℹ️ Reactivating failed invoice - no immediate financial impact`,
+    );
     console.log(`ℹ️ Invoice will be eligible for payment again`);
     console.log(`ℹ️ Financial calculations will occur when marked as paid`);
 
-    console.log(`📊 FINANCIAL IMPACT SUMMARY FOR REACTIVATED INVOICE ${invoice.id}:`);
+    console.log(
+      `📊 FINANCIAL IMPACT SUMMARY FOR REACTIVATED INVOICE ${invoice.id}:`,
+    );
     console.log(`   - Admin Commission: 0 SAR (pending payment)`);
     console.log(`   - Provider Earnings: 0 SAR (pending payment)`);
     console.log(`   - Company Revenue: 0 SAR (pending payment)`);
@@ -1386,7 +1577,7 @@ export class InvoicesService {
 
     const deletedInvoices = await this.prisma.invoice.findMany({
       where: {
-        isDeleted: true
+        isDeleted: true,
       },
       include: {
         order: {
@@ -1399,33 +1590,33 @@ export class InvoicesService {
                 id: true,
                 name: true,
                 email: true,
-                phone: true
-              }
+                phone: true,
+              },
             },
             provider: {
               select: {
                 id: true,
                 name: true,
-                phone: true
-              }
+                phone: true,
+              },
             },
             service: {
               select: {
                 id: true,
                 titleAr: true,
                 titleEn: true,
-                description: true
-              }
-            }
-          }
-        }
+                description: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
-        deletedAt: 'desc'
-      }
+        deletedAt: 'desc',
+      },
     });
 
-    return deletedInvoices.map(invoice => ({
+    return deletedInvoices.map((invoice) => ({
       id: invoice.id,
       orderId: invoice.orderId,
       totalAmount: invoice.totalAmount,
@@ -1440,8 +1631,8 @@ export class InvoicesService {
         status: invoice.order.status,
         user: invoice.order.user,
         provider: invoice.order.provider,
-        service: invoice.order.service
-      }
+        service: invoice.order.service,
+      },
     }));
   }
 }

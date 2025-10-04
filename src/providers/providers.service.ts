@@ -774,7 +774,8 @@ export class ProvidersService {
         {
           serviceId: service.id,
           serviceTitle: service.titleEn,
-          serviceDescription: service.description,
+          serviceDescriptionAr: service.descriptionAr,
+          serviceDescriptionEn: service.descriptionEn,
           serviceImage: service.image,
           quantity: 1,
           unitPrice: order.providerAmount,
@@ -797,7 +798,8 @@ export class ProvidersService {
         {
           serviceId: service.id,
           serviceTitle: service.titleEn,
-          serviceDescription: service.description,
+          serviceDescriptionAr: service.descriptionAr,
+          serviceDescriptionEn: service.descriptionEn,
           serviceImage: service.image,
           quantity: order.quantity,
           unitPrice: unitPrice,
@@ -872,7 +874,8 @@ export class ProvidersService {
             {
               serviceId: service.id,
               serviceTitle: service.titleEn,
-              serviceDescription: service.description,
+              serviceDescriptionAr: service.descriptionAr,
+              serviceDescriptionEn: service.descriptionEn,
               serviceImage: service.image,
               quantity: order.quantity,
               unitPrice: order.providerAmount / order.quantity,
@@ -979,7 +982,8 @@ export class ProvidersService {
             {
               serviceId: service.id,
               serviceTitle: service.titleEn,
-              serviceDescription: service.description,
+              serviceDescriptionAr: service.descriptionAr,
+              serviceDescriptionEn: service.descriptionEn,
               serviceImage: service.image,
               quantity: order.quantity,
               unitPrice: order.providerAmount / order.quantity,
@@ -1087,7 +1091,8 @@ export class ProvidersService {
             {
               serviceId: service.id,
               serviceTitle: service.titleEn,
-              serviceDescription: service.description,
+              serviceDescriptionAr: service.descriptionAr,
+              serviceDescriptionEn: service.descriptionEn,
               serviceImage: service.image,
               quantity: order.quantity,
               unitPrice: order.providerAmount / order.quantity,
@@ -1476,7 +1481,10 @@ export class ProvidersService {
         message_ar: 'تم حذف الحساب بنجاح',
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       if (error instanceof PrismaClientKnownRequestError) {
@@ -1639,7 +1647,8 @@ export class ProvidersService {
         service: {
           id: ps.service.id,
           title: ps.service.titleEn,
-          description: ps.service.description,
+          descriptionAr: ps.service.descriptionAr,
+          descriptionEn: ps.service.descriptionEn,
           image: ps.service.image,
           commission: ps.service.commission,
           categoryId: ps.service.categoryId || 0,
@@ -1657,7 +1666,8 @@ export class ProvidersService {
         service: {
           id: offer.service.id,
           title: offer.service.titleEn,
-          description: offer.service.description,
+          descriptionAr: offer.service.descriptionAr,
+          descriptionEn: offer.service.descriptionEn,
         },
       }));
 
@@ -1698,7 +1708,8 @@ export class ProvidersService {
         service: {
           id: order.service.id,
           title: order.service.titleEn,
-          description: order.service.description,
+          descriptionAr: order.service.descriptionAr,
+          descriptionEn: order.service.descriptionEn,
         },
       }));
 
@@ -2017,7 +2028,8 @@ export class ProvidersService {
           id: service.id,
           titleAr: service.titleAr,
           titleEn: service.titleEn,
-          description: service.description,
+          descriptionAr: service.descriptionAr,
+          descriptionEn: service.descriptionEn,
           image: service.image,
           commission: service.commission,
           whatsapp: service.whatsapp,
@@ -2103,7 +2115,8 @@ export class ProvidersService {
           id: service.id,
           titleAr: service.titleAr,
           titleEn: service.titleEn,
-          description: service.description,
+          descriptionAr: service.descriptionAr,
+          descriptionEn: service.descriptionEn,
           image: service.image,
           commission: service.commission,
           whatsapp: service.whatsapp,

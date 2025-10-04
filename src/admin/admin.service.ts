@@ -114,7 +114,8 @@ export class AdminService {
         id: service.id,
         titleEn: service.titleEn,
         titleAr: service.titleAr,
-        description: service.description,
+        descriptionAr: service.descriptionAr,
+        descriptionEn: service.descriptionEn,
         price: service.commission,
         category: service.category
           ? {
@@ -2058,7 +2059,8 @@ export class AdminService {
           id: service.id,
           titleEn: service.titleEn,
           titleAr: service.titleAr,
-          description: service.description,
+          descriptionAr: service.descriptionAr,
+          descriptionEn: service.descriptionEn,
           price: service.commission,
           category: service.category
             ? {

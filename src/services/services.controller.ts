@@ -112,7 +112,8 @@ export class ServicesController {
    * Body: {
    *   "titleAr": "خدمة الصيانة",
    *   "titleEn": "Maintenance Service",
-   *   "description": "Professional maintenance services",
+   *   "descriptionAr": "خدمات صيانة احترافية",
+   *   "descriptionEn": "Professional maintenance services",
    *   "commission": 10,
    *   "serviceType": "NORMAL",
    *   "categoryIds": [1, 2, 3]
