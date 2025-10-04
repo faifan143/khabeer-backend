@@ -159,7 +159,8 @@ export class ServicesService {
     const services = data.categoryIds.map((categoryId) => ({
       titleAr: data.titleAr,
       titleEn: data.titleEn,
-      description: data.description,
+      descriptionAr: data.descriptionAr,
+      descriptionEn: data.descriptionEn,
       commission: data.commission,
       whatsapp: data.whatsapp,
       serviceType: data.serviceType || 'NORMAL',
