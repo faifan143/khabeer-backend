@@ -58,7 +58,7 @@ export class AuthService {
   private storeRegistrationData(
     phoneNumber: string,
     data: any,
-    expiresInMinutes: number = 10,
+    expiresInMinutes: number = 50,
   ): void {
     const expiresAt = Date.now() + expiresInMinutes * 60 * 1000;
 

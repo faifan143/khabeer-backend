@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateServiceDto } from './dto/create-service.dto';
+import { CreateBulkServiceDto } from './dto/create-bulk-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 
 @Injectable()
@@ -141,6 +142,44 @@ export class ServicesService {
       include: {
         category: true,
       },
+    });
+  }
+
+  async createBulk(data: CreateBulkServiceDto & { image: string }) {
+    // Validate service type constraints for each category
+    for (const categoryId of data.categoryIds) {
+      const serviceData = {
+        ...data,
+        categoryId,
+      };
+      this.validateServiceTypeConstraints(serviceData);
+    }
+
+    // Create services for each category
+    const services = data.categoryIds.map((categoryId) => ({
+      titleAr: data.titleAr,
+      titleEn: data.titleEn,
+      description: data.description,
+      commission: data.commission,
+      whatsapp: data.whatsapp,
+      serviceType: data.serviceType || 'NORMAL',
+      categoryId: categoryId,
+      image: data.image,
+    }));
+
+    // Use transaction to ensure all services are created or none
+    return this.prisma.$transaction(async (tx) => {
+      const createdServices: any[] = [];
+      for (const serviceData of services) {
+        const service = await tx.service.create({
+          data: serviceData,
+          include: {
+            category: true,
+          },
+        });
+        createdServices.push(service);
+      }
+      return createdServices;
     });
   }
 

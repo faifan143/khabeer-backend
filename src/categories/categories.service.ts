@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { CreateBulkCategoryDto } from './dto/create-bulk-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAllPublic() {
     return this.prisma.category.findMany({
@@ -13,11 +14,11 @@ export class CategoriesService {
         id: true,
         titleAr: true,
         titleEn: true,
-        state: true
+        state: true,
       },
       orderBy: {
-        id: 'asc'
-      }
+        id: 'asc',
+      },
     });
   }
 
@@ -37,6 +38,26 @@ export class CategoriesService {
     return this.prisma.category.create({ data });
   }
 
+  async createBulk(data: CreateBulkCategoryDto & { image: string }) {
+    // Create categories for each state
+    const categories = data.states.map((state) => ({
+      titleAr: data.titleAr,
+      titleEn: data.titleEn,
+      state: state,
+      image: data.image,
+    }));
+
+    // Use transaction to ensure all categories are created or none
+    return this.prisma.$transaction(async (tx) => {
+      const createdCategories: any[] = [];
+      for (const categoryData of categories) {
+        const category = await tx.category.create({ data: categoryData });
+        createdCategories.push(category);
+      }
+      return createdCategories;
+    });
+  }
+
   async update(id: number, data: UpdateCategoryDto & { image?: string }) {
     return this.prisma.category.update({ where: { id }, data });
   }
@@ -47,10 +68,10 @@ export class CategoriesService {
       // First, get all services in this category
       const services = await tx.service.findMany({
         where: { categoryId: id },
-        select: { id: true }
+        select: { id: true },
       });
 
-      const serviceIds = services.map(s => s.id);
+      const serviceIds = services.map((s) => s.id);
 
       // Delete all related records for services in this category
       if (serviceIds.length > 0) {
@@ -58,40 +79,40 @@ export class CategoriesService {
         await tx.invoice.deleteMany({
           where: {
             order: {
-              serviceId: { in: serviceIds }
-            }
-          }
+              serviceId: { in: serviceIds },
+            },
+          },
         });
 
         // Then delete all related orders
         await tx.order.deleteMany({
-          where: { serviceId: { in: serviceIds } }
+          where: { serviceId: { in: serviceIds } },
         });
 
         // Delete all related provider services
         await tx.providerService.deleteMany({
-          where: { serviceId: { in: serviceIds } }
+          where: { serviceId: { in: serviceIds } },
         });
 
         // Delete all related offers
         await tx.offer.deleteMany({
-          where: { serviceId: { in: serviceIds } }
+          where: { serviceId: { in: serviceIds } },
         });
       }
 
       // Delete all services in this category
       await tx.service.deleteMany({
-        where: { categoryId: id }
+        where: { categoryId: id },
       });
 
       // Delete all provider category associations
       await tx.providerCategory.deleteMany({
-        where: { categoryId: id }
+        where: { categoryId: id },
       });
 
       // Finally delete the category
       return tx.category.delete({
-        where: { id }
+        where: { id },
       });
     });
   }

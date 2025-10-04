@@ -4,9 +4,12 @@ import {
   IsOptional,
   IsNotEmpty,
   IsIn,
+  IsArray,
+  ArrayMinSize,
+  IsInt,
 } from 'class-validator';
 
-export class CreateServiceDto {
+export class CreateBulkServiceDto {
   @IsString()
   @IsNotEmpty()
   titleAr: string;
@@ -32,7 +35,9 @@ export class CreateServiceDto {
   @IsIn(['NORMAL', 'KHABEER'])
   serviceType?: string;
 
-  @IsNumber()
-  @IsNotEmpty()
-  categoryId: number;
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one category ID must be provided' })
+  @IsInt({ each: true })
+  @IsNotEmpty({ each: true })
+  categoryIds: number[];
 }

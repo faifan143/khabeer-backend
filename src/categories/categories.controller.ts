@@ -15,6 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { CreateBulkCategoryDto } from './dto/create-bulk-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -77,6 +78,48 @@ export class CategoriesController {
       data.image = fileResult.url;
     }
     return this.categoriesService.create(data);
+  }
+
+  /**
+   * Create categories for multiple states at once
+   *
+   * @example
+   * POST /categories/bulk
+   * Body: {
+   *   "titleAr": "خدمة الصيانة",
+   *   "titleEn": "Maintenance Service",
+   *   "states": ["Muscat", "Salalah", "Sohar"]
+   * }
+   * FormData: image file (optional)
+   *
+   * This will create 3 separate categories, one for each state
+   */
+  @Post('bulk')
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
+  @Roles('ADMIN')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${uniqueSuffix}${ext}`);
+        },
+      }),
+    }),
+  )
+  async createBulk(
+    @Body() createBulkCategoryDto: CreateBulkCategoryDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const data = { ...createBulkCategoryDto, image: '' };
+    if (file) {
+      const fileResult = await this.filesService.handleUploadedFile(file);
+      data.image = fileResult.url;
+    }
+    return this.categoriesService.createBulk(data);
   }
 
   @Put(':id')
