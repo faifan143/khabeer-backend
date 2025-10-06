@@ -126,8 +126,8 @@ export class AuthService {
         };
       }
 
-      // SubAdmin login - check database
-      if (email && !phone) {
+      // SubAdmin login - check database (email provided and no phone or empty phone)
+      if (email && (!phone || phone === '')) {
         const subAdmin = await this.prisma.subAdmin.findUnique({
           where: { email },
         });

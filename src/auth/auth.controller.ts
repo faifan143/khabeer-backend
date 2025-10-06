@@ -84,7 +84,7 @@ export class AuthController {
   @Post('login')
   @ApiOperation({
     summary:
-      'Login with phone number and password. Type field required to distinguish between user and provider accounts with same phone number.',
+      'Login with email/password for admins or phone/password for users and providers. Type field required for regular users.',
   })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({
@@ -93,15 +93,37 @@ export class AuthController {
   })
   async login(@Body() body: LoginDto) {
     try {
-      // Validate that phone is provided (both users and providers login by phone)
-      if (!body.phone) {
-        throw new BadRequestException('Phone number is required for login');
+      // Admin login - email and password only
+      if (body.email && !body.phone && !body.type) {
+        const user = await this.authService.validateUser({
+          email: body.email,
+          phone: '', // Empty phone for admin login
+          password: body.password,
+          type: 'USER' as any, // Dummy type for admin login
+        });
+
+        if (!user) {
+          throw new BadRequestException('Invalid admin credentials');
+        }
+
+        // Use FCM-enabled login if FCM token is provided
+        if (body.fcm) {
+          return this.authService.loginWithFCM(user, body.fcm);
+        }
+
+        return this.authService.login(user);
       }
 
-      // Validate type is provided
+      // Regular user/provider login - phone and type required
+      if (!body.phone) {
+        throw new BadRequestException(
+          'Phone number is required for user/provider login',
+        );
+      }
+
       if (!body.type) {
         throw new BadRequestException(
-          'Account type (USER or PROVIDER) is required',
+          'Account type (USER or PROVIDER) is required for regular login',
         );
       }
 
@@ -114,6 +136,7 @@ export class AuthController {
       const normalizedBody = {
         ...body,
         phone: normalizedPhone,
+        type: body.type,
       };
 
       const user = await this.authService.validateUser(normalizedBody);
@@ -140,6 +163,10 @@ export class AuthController {
       }
       // Re-throw BadRequestException (for invalid credentials) as-is
       if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // Re-throw ForbiddenException as-is
+      if (error instanceof ForbiddenException) {
         throw error;
       }
       // For any other errors, throw invalid credentials

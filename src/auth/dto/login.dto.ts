@@ -8,7 +8,7 @@ export enum LoginType {
 
 export class LoginDto {
   @ApiProperty({
-    description: 'Email address (optional)',
+    description: 'Email address (required for admin login, optional for regular users)',
     required: false,
   })
   @IsOptional()
@@ -17,11 +17,12 @@ export class LoginDto {
 
   @ApiProperty({
     description:
-      'Phone number for login (required for both users and providers). Can be sent with or without + prefix (e.g., "+96812345678" or "96812345678")',
-    required: true,
+      'Phone number for login (required for users and providers, optional for admin). Can be sent with or without + prefix (e.g., "+96812345678" or "96812345678")',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  phone: string;
+  phone?: string;
 
   @ApiProperty({ description: 'User password' })
   @IsString()
@@ -29,12 +30,13 @@ export class LoginDto {
 
   @ApiProperty({
     description:
-      'Account type - USER or PROVIDER (required to distinguish between user and provider accounts with same phone number)',
+      'Account type - USER or PROVIDER (required for regular users, optional for admin)',
     enum: LoginType,
-    required: true,
+    required: false,
   })
+  @IsOptional()
   @IsEnum(LoginType)
-  type: LoginType;
+  type?: LoginType;
 
   @ApiProperty({
     description: 'FCM token for push notifications',
