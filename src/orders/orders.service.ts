@@ -1098,27 +1098,11 @@ export class OrdersService {
     createOrderDto: CreateOrderMultipleServicesDto,
     userId: number,
   ) {
-    console.log('🔍 createMultipleServices - Input:', {
-      createOrderDto,
-      userId,
-    });
-
     // Validate provider exists and is active
     const provider = await this.prisma.provider.findUnique({
       where: { id: createOrderDto.providerId },
       include: { providerServices: true },
     });
-
-    console.log(
-      '🔍 Provider found:',
-      provider
-        ? {
-            id: provider.id,
-            isActive: provider.isActive,
-            isVerified: provider.isVerified,
-          }
-        : 'NOT FOUND',
-    );
 
     if (!provider) {
       console.log('❌ Provider not found for ID:', createOrderDto.providerId);
@@ -1132,7 +1116,6 @@ export class OrdersService {
 
     // Validate all services exist and provider offers them
     const serviceIds = createOrderDto.services.map((s) => s.serviceId);
-    console.log('🔍 Service IDs requested:', serviceIds);
 
     const services = await this.prisma.service.findMany({
       where: { id: { in: serviceIds } },
@@ -1147,15 +1130,6 @@ export class OrdersService {
         serviceType: true,
       },
     });
-
-    console.log(
-      '🔍 Services found:',
-      services.map((s) => ({
-        id: s.id,
-        titleEn: s.titleEn,
-        serviceType: s.serviceType,
-      })),
-    );
 
     if (services.length !== serviceIds.length) {
       console.log(
@@ -1185,21 +1159,6 @@ export class OrdersService {
     // Check if provider offers all services
     const providerServices = provider.providerServices.filter(
       (ps) => serviceIds.includes(ps.serviceId) && ps.isActive,
-    );
-
-    console.log(
-      '🔍 Provider services:',
-      provider.providerServices.map((ps) => ({
-        serviceId: ps.serviceId,
-        isActive: ps.isActive,
-      })),
-    );
-    console.log(
-      '🔍 Matching provider services:',
-      providerServices.map((ps) => ({
-        serviceId: ps.serviceId,
-        isActive: ps.isActive,
-      })),
     );
 
     if (providerServices.length !== serviceIds.length) {
@@ -1357,6 +1316,8 @@ export class OrdersService {
       const serviceNames = serviceBreakdown
         .map((s: any) => `${s.serviceTitle} (${s.quantity})`)
         .join(', ');
+
+      console.log('🔍 Service Breakdown:', serviceBreakdown);
       if (result.user) {
         // Use the first service image for multiple services notification
         const firstServiceImage = serviceBreakdown[0]?.serviceImage;
