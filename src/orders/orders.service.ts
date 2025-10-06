@@ -51,6 +51,14 @@ export class OrdersService {
 
     const service = await this.prisma.service.findUnique({
       where: { id: createOrderDto.serviceId },
+      include: {
+        category: {
+          select: {
+            titleAr: true,
+            titleEn: true,
+          },
+        },
+      },
     });
 
     if (!service) {
@@ -133,7 +141,16 @@ export class OrdersService {
       include: {
         user: true,
         provider: true,
-        service: true,
+        service: {
+          include: {
+            category: {
+              select: {
+                titleAr: true,
+                titleEn: true,
+              },
+            },
+          },
+        },
         invoice: true,
       },
     });
@@ -146,6 +163,10 @@ export class OrdersService {
         order.service.titleEn,
         order.user.name,
         order.service.image, // Pass service image
+        order.service.titleAr,
+        order.service.titleEn,
+        order.service.category.titleAr,
+        order.service.category.titleEn,
       );
     } catch (error) {
       console.error('Failed to send new order notification:', error);
@@ -1128,6 +1149,12 @@ export class OrdersService {
         image: true,
         commission: true,
         serviceType: true,
+        category: {
+          select: {
+            titleAr: true,
+            titleEn: true,
+          },
+        },
       },
     });
 
@@ -1225,6 +1252,8 @@ export class OrdersService {
         totalPrice: serviceTotal,
         commission: service.commission,
         commissionAmount: commission,
+        serviceTypeEn: service.category.titleEn,
+        serviceTypeAr: service.category.titleAr,
       });
 
       if (offer) {
@@ -1314,7 +1343,7 @@ export class OrdersService {
     // Send notification to provider about new order
     try {
       const serviceNames = serviceBreakdown
-        .map((s: any) => `${s.serviceTitle} (${s.quantity})`)
+        .map((s: any) => `${s.serviceTitleEn} (${s.quantity})`)
         .join(', ');
 
       console.log('🔍 Service Breakdown:', serviceBreakdown);
@@ -1327,6 +1356,10 @@ export class OrdersService {
           serviceNames,
           result.user.name,
           firstServiceImage, // Pass first service image
+          serviceBreakdown[0]?.serviceTitleAr,
+          serviceBreakdown[0]?.serviceTitleEn,
+          serviceBreakdown[0]?.serviceTypeAr,
+          serviceBreakdown[0]?.serviceTypeEn,
         );
       }
     } catch (error) {

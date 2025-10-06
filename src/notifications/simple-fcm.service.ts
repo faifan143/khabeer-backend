@@ -4,329 +4,381 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as admin from 'firebase-admin';
 
 export interface FCMNotificationPayload {
-    title?: string;
-    body?: string;
-    imageUrl?: string;
-    data?: Record<string, string>;
-    type?: string;
-    isDataOnly?: boolean; // For new order requests - data only, no notification
+  title?: string;
+  body?: string;
+  imageUrl?: string;
+  data?: Record<string, string>;
+  type?: string;
+  isDataOnly?: boolean; // For new order requests - data only, no notification
 }
 
 export interface FCMResult {
-    success: boolean;
-    messageId?: string;
-    error?: string;
+  success: boolean;
+  messageId?: string;
+  error?: string;
 }
 
 @Injectable()
 export class SimpleFCMService {
-    private readonly logger = new Logger(SimpleFCMService.name);
-    private firebaseApp: admin.app.App;
+  private readonly logger = new Logger(SimpleFCMService.name);
+  private firebaseApp: admin.app.App;
 
-    constructor(
-        private configService: ConfigService,
-        private prisma: PrismaService
-    ) {
-        this.initializeFirebase();
-    }
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+  ) {
+    this.initializeFirebase();
+  }
 
-    private initializeFirebase() {
-        try {
-            // Check if Firebase is already initialized
-            if (admin.apps.length === 0) {
-                const serviceAccount = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT');
+  private initializeFirebase() {
+    try {
+      // Check if Firebase is already initialized
+      if (admin.apps.length === 0) {
+        const serviceAccount = this.configService.get<string>(
+          'FIREBASE_SERVICE_ACCOUNT',
+        );
 
-                if (!serviceAccount) {
-                    this.logger.error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
-                    return;
-                }
-
-                const serviceAccountJson = JSON.parse(serviceAccount);
-
-                this.firebaseApp = admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccountJson),
-                    projectId: serviceAccountJson.project_id,
-                });
-
-                this.logger.log('Firebase Admin SDK initialized successfully');
-            } else {
-                this.firebaseApp = admin.app();
-                this.logger.log('Firebase Admin SDK already initialized');
-            }
-        } catch (error) {
-            this.logger.error('Failed to initialize Firebase Admin SDK:', error);
+        if (!serviceAccount) {
+          this.logger.error(
+            'FIREBASE_SERVICE_ACCOUNT environment variable is not set',
+          );
+          return;
         }
+
+        const serviceAccountJson = JSON.parse(serviceAccount);
+
+        this.firebaseApp = admin.initializeApp({
+          credential: admin.credential.cert(serviceAccountJson),
+          projectId: serviceAccountJson.project_id,
+        });
+
+        this.logger.log('Firebase Admin SDK initialized successfully');
+      } else {
+        this.firebaseApp = admin.app();
+        this.logger.log('Firebase Admin SDK already initialized');
+      }
+    } catch (error) {
+      this.logger.error('Failed to initialize Firebase Admin SDK:', error);
     }
+  }
 
-    async sendToUser(userId: number, payload: FCMNotificationPayload): Promise<FCMResult> {
-        try {
-            if (!this.firebaseApp) {
-                throw new Error('Firebase Admin SDK not initialized');
-            }
+  async sendToUser(
+    userId: number,
+    payload: FCMNotificationPayload,
+  ): Promise<FCMResult> {
+    try {
+      if (!this.firebaseApp) {
+        throw new Error('Firebase Admin SDK not initialized');
+      }
 
-            // Get user's FCM token
-            const user = await this.prisma.user.findUnique({
-                where: { id: userId },
-                select: { fcm: true, name: true }
-            });
+      // Get user's FCM token
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { fcm: true, name: true },
+      });
 
-            if (!user || !user.fcm) {
-                return {
-                    success: false,
-                    error: 'User not found or no FCM token available'
-                };
-            }
+      if (!user || !user.fcm) {
+        return {
+          success: false,
+          error: 'User not found or no FCM token available',
+        };
+      }
 
-            const message: admin.messaging.Message = {
-                token: user.fcm,
+      const message: admin.messaging.Message = {
+        token: user.fcm,
 
-                data: payload.data,
+        data: payload.data,
+      };
 
-            };
+      const response = await this.firebaseApp.messaging().send(message);
 
-            const response = await this.firebaseApp.messaging().send(message);
+      this.logger.log(
+        `Message sent successfully to user ${user.name} (ID: ${userId}), Message ID: ${response}`,
+      );
 
-            this.logger.log(`Message sent successfully to user ${user.name} (ID: ${userId}), Message ID: ${response}`);
+      return {
+        success: true,
+        messageId: response,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to send message to user ${userId}:`, error);
 
-            return {
-                success: true,
-                messageId: response,
-            };
-        } catch (error) {
-            this.logger.error(`Failed to send message to user ${userId}:`, error);
-
-            return {
-                success: false,
-                error: error.message,
-            };
-        }
+      return {
+        success: false,
+        error: error.message,
+      };
     }
+  }
 
-    async sendToProvider(providerId: number, payload: FCMNotificationPayload): Promise<FCMResult> {
-        try {
-            if (!this.firebaseApp) {
-                throw new Error('Firebase Admin SDK not initialized');
-            }
+  async sendToProvider(
+    providerId: number,
+    payload: FCMNotificationPayload,
+  ): Promise<FCMResult> {
+    try {
+      if (!this.firebaseApp) {
+        throw new Error('Firebase Admin SDK not initialized');
+      }
 
-            // Get provider's FCM token
-            const provider = await this.prisma.provider.findUnique({
-                where: { id: providerId },
-                select: { fcm: true, name: true }
-            });
+      // Get provider's FCM token
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId },
+        select: { fcm: true, name: true },
+      });
 
-            if (!provider || !provider.fcm) {
-                return {
-                    success: false,
-                    error: 'Provider not found or no FCM token available'
-                };
-            }
+      if (!provider || !provider.fcm) {
+        return {
+          success: false,
+          error: 'Provider not found or no FCM token available',
+        };
+      }
 
-            const message: admin.messaging.Message = {
-                token: provider.fcm,
-                data: payload.data,
-            };
+      const message: admin.messaging.Message = {
+        token: provider.fcm,
+        data: payload.data,
+      };
 
-            // Add notification only if not data-only
-            if (!payload.isDataOnly && payload.title && payload.body) {
-                message.notification = {
-                    title: payload.title,
-                    body: payload.body,
-                    imageUrl: payload.imageUrl,
-                };
-                message.android = {
-                    notification: {
-                        sound: 'default',
-                        priority: 'high',
-                    },
-                };
-                message.apns = {
-                    payload: {
-                        aps: {
-                            sound: 'default',
-                            badge: 1,
-                        },
-                    },
-                };
-            }
+      // Add notification only if not data-only
+      if (!payload.isDataOnly && payload.title && payload.body) {
+        message.notification = {
+          title: payload.title,
+          body: payload.body,
+          imageUrl: payload.imageUrl,
+        };
+        message.android = {
+          notification: {
+            sound: 'default',
+            priority: 'high',
+          },
+        };
+        message.apns = {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+            },
+          },
+        };
+      }
 
-            const response = await this.firebaseApp.messaging().send(message);
+      const response = await this.firebaseApp.messaging().send(message);
 
-            this.logger.log(`Message sent successfully to provider ${provider.name} (ID: ${providerId}), Message ID: ${response}`);
+      this.logger.log(
+        `Message sent successfully to provider ${provider.name} (ID: ${providerId}), Message ID: ${response}`,
+      );
 
-            return {
-                success: true,
-                messageId: response,
-            };
-        } catch (error) {
-            this.logger.error(`Failed to send message to provider ${providerId}:`, error);
+      return {
+        success: true,
+        messageId: response,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to send message to provider ${providerId}:`,
+        error,
+      );
 
-            return {
-                success: false,
-                error: error.message,
-            };
-        }
+      return {
+        success: false,
+        error: error.message,
+      };
     }
+  }
 
-    /**
-     * Send new order request notification to provider (data-only)
-     */
-    async sendNewOrderRequestToProvider(providerId: number, orderId: string, callerName: string, callerPhone: string, serviceType: string): Promise<FCMResult> {
-        try {
-            if (!this.firebaseApp) {
-                throw new Error('Firebase Admin SDK not initialized');
-            }
+  /**
+   * Send new order request notification to provider (data-only)
+   */
+  async sendNewOrderRequestToProvider(
+    providerId: number,
+    orderId: string,
+    callerName: string,
+    callerPhone: string,
+    serviceTitleAr: string,
+    serviceTitleEn: string,
+    serviceTypeAr: string,
+    serviceTypeEn: string,
+  ): Promise<FCMResult> {
+    try {
+      if (!this.firebaseApp) {
+        throw new Error('Firebase Admin SDK not initialized');
+      }
 
-            // Get provider's FCM token
-            const provider = await this.prisma.provider.findUnique({
-                where: { id: providerId },
-                select: { fcm: true, name: true }
-            });
+      // Get provider's FCM token
+      const provider = await this.prisma.provider.findUnique({
+        where: { id: providerId },
+        select: { fcm: true, name: true },
+      });
 
-            if (!provider || !provider.fcm) {
-                return {
-                    success: false,
-                    error: 'Provider not found or no FCM token available'
-                };
-            }
+      if (!provider || !provider.fcm) {
+        return {
+          success: false,
+          error: 'Provider not found or no FCM token available',
+        };
+      }
 
-            const message: admin.messaging.Message = {
-                token: provider.fcm,
-                data: {
-                    type: 'call',
-                    caller_name: callerName,
-                    caller_phone: callerPhone,
-                    order_id: orderId,
-                    service_type: serviceType
-                }
-            };
+      const message: admin.messaging.Message = {
+        token: provider.fcm,
+        data: {
+          type: 'call',
+          caller_name: callerName,
+          caller_phone: callerPhone,
+          order_id: orderId,
+          serviceTitleAr: serviceTitleAr,
+          serviceTitleEn: serviceTitleEn,
+          service_type_ar: serviceTypeAr,
+          service_type_en: serviceTypeEn,
+        },
+      };
 
-            const response = await this.firebaseApp.messaging().send(message);
+      const response = await this.firebaseApp.messaging().send(message);
 
-            this.logger.log(`New order request sent to provider ${provider.name} (ID: ${providerId}), Message ID: ${response}`);
+      this.logger.log(
+        `New order request sent to provider ${provider.name} (ID: ${providerId}), Message ID: ${response}`,
+      );
 
-            return {
-                success: true,
-                messageId: response,
-            };
-        } catch (error) {
-            this.logger.error(`Failed to send new order request to provider ${providerId}:`, error);
+      return {
+        success: true,
+        messageId: response,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to send new order request to provider ${providerId}:`,
+        error,
+      );
 
-            return {
-                success: false,
-                error: error.message,
-            };
-        }
+      return {
+        success: false,
+        error: error.message,
+      };
     }
+  }
 
-    async sendToAllUsers(payload: FCMNotificationPayload): Promise<{ success: boolean; sentCount: number; totalCount: number }> {
-        try {
-            if (!this.firebaseApp) {
-                throw new Error('Firebase Admin SDK not initialized');
-            }
+  async sendToAllUsers(
+    payload: FCMNotificationPayload,
+  ): Promise<{ success: boolean; sentCount: number; totalCount: number }> {
+    try {
+      if (!this.firebaseApp) {
+        throw new Error('Firebase Admin SDK not initialized');
+      }
 
-            // Get all users with FCM tokens
-            const users = await this.prisma.user.findMany({
-                where: { fcm: { not: null } },
-                select: { id: true, fcm: true, name: true }
-            });
+      // Get all users with FCM tokens
+      const users = await this.prisma.user.findMany({
+        where: { fcm: { not: null } },
+        select: { id: true, fcm: true, name: true },
+      });
 
-            if (users.length === 0) {
-                return { success: false, sentCount: 0, totalCount: 0 };
-            }
+      if (users.length === 0) {
+        return { success: false, sentCount: 0, totalCount: 0 };
+      }
 
-            const tokens = users.map(user => user.fcm).filter((token): token is string => token !== null);
-            const message: admin.messaging.MulticastMessage = {
-                tokens,
-                notification: {
-                    title: payload.title,
-                    body: payload.body,
-                    imageUrl: payload.imageUrl,
-                },
-                data: payload.data,
-                android: {
-                    notification: {
-                        sound: 'default',
-                        priority: 'high',
-                    },
-                },
-                apns: {
-                    payload: {
-                        aps: {
-                            sound: 'default',
-                            badge: 1,
-                        },
-                    },
-                },
-            };
+      const tokens = users
+        .map((user) => user.fcm)
+        .filter((token): token is string => token !== null);
+      const message: admin.messaging.MulticastMessage = {
+        tokens,
+        notification: {
+          title: payload.title,
+          body: payload.body,
+          imageUrl: payload.imageUrl,
+        },
+        data: payload.data,
+        android: {
+          notification: {
+            sound: 'default',
+            priority: 'high',
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+            },
+          },
+        },
+      };
 
-            const response = await this.firebaseApp.messaging().sendEachForMulticast(message);
+      const response = await this.firebaseApp
+        .messaging()
+        .sendEachForMulticast(message);
 
-            this.logger.log(`Multicast message sent to users. Success: ${response.successCount}, Failure: ${response.failureCount}`);
+      this.logger.log(
+        `Multicast message sent to users. Success: ${response.successCount}, Failure: ${response.failureCount}`,
+      );
 
-            return {
-                success: response.successCount > 0,
-                sentCount: response.successCount,
-                totalCount: tokens.length
-            };
-        } catch (error) {
-            this.logger.error('Failed to send multicast message to users:', error);
-            return { success: false, sentCount: 0, totalCount: 0 };
-        }
+      return {
+        success: response.successCount > 0,
+        sentCount: response.successCount,
+        totalCount: tokens.length,
+      };
+    } catch (error) {
+      this.logger.error('Failed to send multicast message to users:', error);
+      return { success: false, sentCount: 0, totalCount: 0 };
     }
+  }
 
-    async sendToAllProviders(payload: FCMNotificationPayload): Promise<{ success: boolean; sentCount: number; totalCount: number }> {
-        try {
-            if (!this.firebaseApp) {
-                throw new Error('Firebase Admin SDK not initialized');
-            }
+  async sendToAllProviders(
+    payload: FCMNotificationPayload,
+  ): Promise<{ success: boolean; sentCount: number; totalCount: number }> {
+    try {
+      if (!this.firebaseApp) {
+        throw new Error('Firebase Admin SDK not initialized');
+      }
 
-            // Get all providers with FCM tokens
-            const providers = await this.prisma.provider.findMany({
-                where: { fcm: { not: null } },
-                select: { id: true, fcm: true, name: true }
-            });
+      // Get all providers with FCM tokens
+      const providers = await this.prisma.provider.findMany({
+        where: { fcm: { not: null } },
+        select: { id: true, fcm: true, name: true },
+      });
 
-            if (providers.length === 0) {
-                return { success: false, sentCount: 0, totalCount: 0 };
-            }
+      if (providers.length === 0) {
+        return { success: false, sentCount: 0, totalCount: 0 };
+      }
 
-            const tokens = providers.map(provider => provider.fcm).filter((token): token is string => token !== null);
-            const message: admin.messaging.MulticastMessage = {
-                tokens,
-                notification: {
-                    title: payload.title,
-                    body: payload.body,
-                    imageUrl: payload.imageUrl,
-                },
-                data: payload.data,
-                android: {
-                    notification: {
-                        sound: 'default',
-                        priority: 'high',
-                    },
-                },
-                apns: {
-                    payload: {
-                        aps: {
-                            sound: 'default',
-                            badge: 1,
-                        },
-                    },
-                },
-            };
+      const tokens = providers
+        .map((provider) => provider.fcm)
+        .filter((token): token is string => token !== null);
+      const message: admin.messaging.MulticastMessage = {
+        tokens,
+        notification: {
+          title: payload.title,
+          body: payload.body,
+          imageUrl: payload.imageUrl,
+        },
+        data: payload.data,
+        android: {
+          notification: {
+            sound: 'default',
+            priority: 'high',
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+            },
+          },
+        },
+      };
 
-            const response = await this.firebaseApp.messaging().sendEachForMulticast(message);
+      const response = await this.firebaseApp
+        .messaging()
+        .sendEachForMulticast(message);
 
-            this.logger.log(`Multicast message sent to providers. Success: ${response.successCount}, Failure: ${response.failureCount}`);
+      this.logger.log(
+        `Multicast message sent to providers. Success: ${response.successCount}, Failure: ${response.failureCount}`,
+      );
 
-            return {
-                success: response.successCount > 0,
-                sentCount: response.successCount,
-                totalCount: tokens.length
-            };
-        } catch (error) {
-            this.logger.error('Failed to send multicast message to providers:', error);
-            return { success: false, sentCount: 0, totalCount: 0 };
-        }
+      return {
+        success: response.successCount > 0,
+        sentCount: response.successCount,
+        totalCount: tokens.length,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Failed to send multicast message to providers:',
+        error,
+      );
+      return { success: false, sentCount: 0, totalCount: 0 };
     }
+  }
 }
