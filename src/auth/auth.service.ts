@@ -1489,4 +1489,23 @@ export class AuthService {
       };
     }
   }
+
+  async deleteAccount(userId: number) {
+    try {
+      const user = await this.usersService.findById(userId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      await this.usersService.remove(userId);
+      return {
+        success: true,
+        message: 'Account deleted successfully',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error deleting account');
+    }
+  }
 }

@@ -1,36 +1,31 @@
 import {
-  Controller,
-  Post,
-  Body,
-  Request,
-  UseGuards,
-  UploadedFile,
-  UseInterceptors,
   BadRequestException,
-  UnauthorizedException,
-  Get,
+  Body,
+  Controller,
+  Delete,
   ForbiddenException,
+  Get,
+  Post,
+  Request,
+  UnauthorizedException,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { ComprehensiveAuthGuard } from './comprehensive-auth.guard';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto, RegisterType } from './dto/register.dto';
-import {
-  PhoneLoginDto,
-  PhoneRegistrationDto,
-  PhoneLoginResponseDto,
-  DirectPhoneLoginDto,
-} from './dto/phone-login.dto';
-import {
-  SendPasswordResetOtpDto,
-  ResetPasswordDto,
-  PasswordResetResponseDto,
-} from './dto/password-reset.dto';
 import { FileInterceptor } from '@nestjs/platform-express/multer';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { FilesService } from 'src/files/files.service';
+import { AuthService } from './auth.service';
+import { ComprehensiveAuthGuard } from './comprehensive-auth.guard';
+import { LoginDto } from './dto/login.dto';
+import {
+  PasswordResetResponseDto,
+  ResetPasswordDto,
+  SendPasswordResetOtpDto,
+} from './dto/password-reset.dto';
+import { RegisterType } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @ApiTags('Authentication')
@@ -174,62 +169,6 @@ export class AuthController {
     }
   }
 
-  // @Post('phone/login')
-  // @ApiOperation({ summary: 'Phone login without OTP (optional password)' })
-  // @ApiResponse({ status: 200, description: 'Login successful', type: PhoneLoginResponseDto })
-  // @ApiResponse({ status: 400, description: 'Invalid credentials' })
-  // async phoneLogin(@Body() directPhoneLoginDto: DirectPhoneLoginDto) {
-  //   return this.authService.phoneLogin(directPhoneLoginDto);
-  // }
-
-  // @Post('phone/register/send-otp')
-  // @ApiOperation({ summary: 'Send OTP for phone-based registration' })
-  // @ApiResponse({ status: 200, description: 'OTP sent successfully' })
-  // @ApiResponse({ status: 400, description: 'Invalid phone number' })
-  // async sendPhoneRegistrationOtp(@Body() phoneLoginDto: PhoneLoginDto) {
-  //   return this.authService.sendPhoneLoginOtp({ ...phoneLoginDto, purpose: 'registration' });
-  // }
-
-  // @Post('phone/register')
-  // @UseInterceptors(FileInterceptor('image'))
-  // @ApiOperation({ summary: 'Register with phone verification (OTP optional)' })
-  // @ApiResponse({ status: 200, description: 'Registration successful' })
-  // @ApiResponse({ status: 400, description: 'Invalid data or OTP' })
-  // async registerWithPhone(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
-  //   console.log('Phone register body:', body);
-
-  //   // Validate required fields (OTP is now optional)
-  //   if (!body.phoneNumber || !body.name || !body.password) {
-  //     throw new BadRequestException('Phone number, name, and password are required');
-  //   }
-
-  //   // Normalize multipart data
-  //   const registerData: RegisterDto & { phoneNumber: string; otp?: string } = {
-  //     registerType: body.registerType || RegisterType.USER, // Allow both user and provider registration
-  //     name: Array.isArray(body.name) ? body.name[0] : body.name,
-  //     email: Array.isArray(body.email) ? body.email[0] : body.email || '',
-  //     password: Array.isArray(body.password) ? body.password[0] : body.password,
-  //     phoneNumber: Array.isArray(body.phoneNumber) ? body.phoneNumber[0] : body.phoneNumber,
-  //     otp: Array.isArray(body.otp) ? body.otp[0] : body.otp, // Optional now
-  //     role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
-  //     address: Array.isArray(body.address) ? body.address[0] : body.address || '',
-  //     phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
-  //     state: Array.isArray(body.state) ? body.state[0] : body.state || '',
-  //     isActive: body.isActive === 'true' || body.isActive === true,
-  //     officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
-  //     description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-  //     serviceIds: this.parseServiceIds(body.serviceIds)
-  //   };
-
-  //   // Handle file upload
-  //   if (file) {
-  //     const uploadResult = await this.filesService.handleUploadedFile(file);
-  //     registerData.image = uploadResult.url;
-  //   }
-
-  //   return this.authService.registerWithPhone(registerData);
-  // }
-
   @Post('phone/password-reset/send-otp')
   @ApiOperation({ summary: 'Send OTP for password reset' })
   @ApiResponse({
@@ -265,59 +204,6 @@ export class AuthController {
       body.newPassword,
     );
   }
-
-  // @Post('register')
-  // @UseInterceptors(FileInterceptor('image'))
-  // @ApiOperation({ summary: 'Register with phone (users) or email (providers) and password' })
-  // @ApiResponse({ status: 200, description: 'Registration successful' })
-  // @ApiResponse({ status: 400, description: 'Invalid data' })
-  // async register(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
-  //   console.log('Register body:', body);
-
-  //   // Validate required fields manually
-  //   if (!body.password || !body.name) {
-  //     throw new BadRequestException('Password and name are required');
-  //   }
-
-  //   // Determine registration type based on role or description
-  //   let registerType = 'user';
-  //   if (body.description || body.role === 'PROVIDER') {
-  //     registerType = 'provider';
-  //     if (!body.email) {
-  //       throw new BadRequestException('Email is required for provider registration');
-  //     }
-  //   } else {
-  //     if (!body.phone) {
-  //       throw new BadRequestException('Phone number is required for user registration');
-  //     }
-  //   }
-
-  //   // Normalize multipart data (some parsers send fields as arrays)
-  //   const registerData: RegisterDto = {
-  //     registerType: registerType as any,
-  //     name: Array.isArray(body.name) ? body.name[0] : body.name,
-  //     email: Array.isArray(body.email) ? body.email[0] : body.email,
-  //     password: Array.isArray(body.password) ? body.password[0] : body.password,
-  //     role: Array.isArray(body.role) ? body.role[0] : body.role || 'USER',
-  //     address: Array.isArray(body.address) ? body.address[0] : body.address || '',
-  //     phone: Array.isArray(body.phone) ? body.phone[0] : body.phone || '',
-  //     state: Array.isArray(body.state) ? body.state[0] : body.state || '',
-  //     isActive: body.isActive === 'true' || body.isActive === true,
-  //     officialDocuments: Array.isArray(body.officialDocuments) ? body.officialDocuments[0] : body.officialDocuments,
-  //     description: Array.isArray(body.description) ? body.description[0] : body.description || '',
-  //     serviceIds: this.parseServiceIds(body.serviceIds)
-  //   };
-
-  //   // Handle file upload
-  //   if (file) {
-  //     const fileResult = await this.filesService.handleUploadedFile(file);
-  //     registerData.image = fileResult.url;
-  //   } else {
-  //     registerData.image = '';
-  //   }
-
-  //   return this.authService.register(registerData);
-  // }
 
   @Post('register/initiate')
   @UseInterceptors(
@@ -498,14 +384,11 @@ export class AuthController {
     return this.authService.checkRegistrationStatus(body.phoneNumber);
   }
 
-  // @Post('register/clear-data')
-  // @ApiOperation({ summary: 'Clear registration data for a phone number' })
-  // @ApiResponse({ status: 200, description: 'Registration data cleared' })
-  // @ApiResponse({ status: 400, description: 'Phone number required' })
-  // async clearRegistrationData(@Body() body: { phoneNumber: string }) {
-  //   if (!body.phoneNumber) {
-  //     throw new BadRequestException('Phone number is required');
-  //   }
-  //   return this.authService.clearRegistrationData(body.phoneNumber);
-  // }
+  @Delete('delete-account')
+  @UseGuards(ComprehensiveAuthGuard)
+  @ApiOperation({ summary: 'Delete user account' })
+  @ApiResponse({ status: 200, description: 'Account deleted successfully' })
+  async deleteAccount(@Request() req) {
+    return this.authService.deleteAccount(req.user.userId);
+  }
 }
