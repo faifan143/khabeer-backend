@@ -1608,13 +1608,20 @@ export class AdminService {
         updateData.providerId = parseInt(updateData.providerId, 10);
       }
 
+      // Only update isActive if it's provided in the request
+      const updatePayload: any = {
+        ...updateData,
+        updatedAt: new Date(),
+      };
+
+      // Only set isActive if it's explicitly provided
+      if (updateData.isActive !== undefined) {
+        updatePayload.isActive = updateData.isActive == 'true';
+      }
+
       const updatedBanner = await this.prisma.adBanner.update({
         where: { id },
-        data: {
-          ...updateData,
-          isActive: updateData.isActive == 'true',
-          updatedAt: new Date(),
-        },
+        data: updatePayload,
       });
 
       return updatedBanner;
