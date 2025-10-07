@@ -1493,16 +1493,212 @@ export class AuthService {
   async deleteAccount(userId: number) {
     try {
       const user = await this.usersService.findById(userId);
-      if (!user) {
+      const provider = await this.providersService.findById(userId);
+      if (!user && !provider) {
         throw new NotFoundException('User not found');
       }
-      await this.usersService.remove(userId);
+      if (provider) {
+        // Check for unpaid commissions before allowing deletion
+        const unpaidInvoices = await this.prisma.invoice.findMany({
+          where: {
+            isDeleted: false,
+            paymentStatus: { in: ['pending', 'unpaid'] }, // Check both statuses for consistency
+            order: {
+              providerId: userId,
+            },
+          },
+          include: {
+            order: {
+              select: {
+                id: true,
+                commissionAmount: true,
+                totalAmount: true,
+                orderDate: true,
+                bookingId: true,
+              },
+            },
+          },
+        });
+
+        if (unpaidInvoices.length > 0) {
+          const totalUnpaidCommission = unpaidInvoices.reduce(
+            (sum, invoice) => sum + invoice.order.commissionAmount,
+            0,
+          );
+          const totalUnpaidAmount = unpaidInvoices.reduce(
+            (sum, invoice) => sum + invoice.totalAmount,
+            0,
+          );
+
+          throw new BadRequestException(
+            `Cannot delete account. Provider has ${unpaidInvoices.length} unpaid invoice(s) with total commission of ${totalUnpaidCommission} SAR and total amount of ${totalUnpaidAmount} SAR. Please settle all outstanding payments before deleting the account.`,
+          );
+        }
+        // Clean delete of provider and all related data with no password required
+        await this.prisma.$transaction(async (tx) => {
+          // Delete provider ratings (where provider is being rated)
+          await tx.providerRating.deleteMany({
+            where: { providerId: userId },
+          });
+
+          // Delete offers
+          await tx.offer.deleteMany({
+            where: { providerId: userId },
+          });
+
+          // Delete provider services
+          await tx.providerService.deleteMany({
+            where: { providerId: userId },
+          });
+
+          // Delete provider categories
+          await tx.providerCategory.deleteMany({
+            where: { providerId: userId },
+          });
+
+          // Delete location tracking
+          await tx.locationTracking.deleteMany({
+            where: { providerId: userId },
+          });
+
+          // Delete active connections
+          await tx.activeConnection.deleteMany({
+            where: {
+              OR: [
+                { userId: userId, userType: 'PROVIDER' },
+                {
+                  orderId: {
+                    in: await tx.order
+                      .findMany({
+                        where: { providerId: userId },
+                        select: { id: true },
+                      })
+                      .then((orders) => orders.map((o) => o.id)),
+                  },
+                },
+              ],
+            },
+          });
+
+          // Delete orders (this will cascade to invoices and location tracking)
+          await tx.order.deleteMany({
+            where: { providerId: userId },
+          });
+
+          // Delete provider verification
+          await tx.providerVerification.deleteMany({
+            where: { providerId: userId },
+          });
+
+          // Delete provider join requests
+          await tx.providerJoinRequest.deleteMany({
+            where: { providerId: userId },
+          });
+
+          // Finally delete the provider
+          await tx.provider.delete({
+            where: { id: userId },
+          });
+        });
+      } else {
+        // Check for pending orders that might affect commission payments
+        const pendingOrders = await this.prisma.order.findMany({
+          where: {
+            userId: userId,
+            status: { in: ['pending', 'accepted', 'in_progress'] },
+          },
+          include: {
+            invoice: {
+              select: {
+                id: true,
+                paymentStatus: true,
+                totalAmount: true,
+              },
+            },
+          },
+        });
+
+        if (pendingOrders.length > 0) {
+          const pendingOrdersWithUnpaidInvoices = pendingOrders.filter(
+            (order) =>
+              order.invoice &&
+              ['pending', 'unpaid'].includes(order.invoice.paymentStatus),
+          );
+
+          if (pendingOrdersWithUnpaidInvoices.length > 0) {
+            const totalPendingAmount = pendingOrdersWithUnpaidInvoices.reduce(
+              (sum, order) => sum + (order.invoice?.totalAmount || 0),
+              0,
+            );
+
+            throw new BadRequestException(
+              `Cannot delete account. User has ${pendingOrdersWithUnpaidInvoices.length} pending order(s) with unpaid invoices totaling ${totalPendingAmount} SAR. Please complete or cancel all pending orders before deleting the account.`,
+            );
+          }
+        }
+
+        // Clean delete of user and all related data with no password required
+        await this.prisma.$transaction(async (tx) => {
+          // Delete user locations
+          await tx.userLocation.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Delete provider ratings (where user is rating)
+          await tx.providerRating.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Delete location tracking
+          await tx.locationTracking.deleteMany({
+            where: {
+              orderId: {
+                in: await tx.order
+                  .findMany({ where: { userId: userId }, select: { id: true } })
+                  .then((orders) => orders.map((o) => o.id)),
+              },
+            },
+          });
+
+          // Delete active connections
+          await tx.activeConnection.deleteMany({
+            where: {
+              OR: [
+                { userId: userId, userType: 'USER' },
+                {
+                  orderId: {
+                    in: await tx.order
+                      .findMany({
+                        where: { userId: userId },
+                        select: { id: true },
+                      })
+                      .then((orders) => orders.map((o) => o.id)),
+                  },
+                },
+              ],
+            },
+          });
+
+          // Delete orders (this will cascade to invoices)
+          await tx.order.deleteMany({
+            where: { userId: userId },
+          });
+
+          // Finally delete the user
+          await tx.user.delete({
+            where: { id: userId },
+          });
+        });
+      }
       return {
         success: true,
         message: 'Account deleted successfully',
       };
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Error deleting account');
