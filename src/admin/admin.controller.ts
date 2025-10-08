@@ -503,6 +503,13 @@ export class AdminController {
     return this.adminService.getAdBanners();
   }
 
+  @Get('ad-banners/:id')
+  async getAdBanner(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AdBannerResponseDto> {
+    return this.adminService.getAdBanner(id);
+  }
+
   @Post('ad-banners')
   @UseInterceptors(
     FileInterceptor('image', {

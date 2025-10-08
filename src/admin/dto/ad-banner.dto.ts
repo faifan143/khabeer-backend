@@ -67,14 +67,8 @@ export class UpdateAdBannerDto {
   providerId?: number;
 
   @IsOptional()
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value === 'true';
-    }
-    return Boolean(value);
-  })
-  @IsBoolean()
-  isActive?: boolean;
+  @IsString()
+  isActive?: string;
 }
 
 export class AdBannerResponseDto {

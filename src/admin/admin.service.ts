@@ -1542,6 +1542,22 @@ export class AdminService {
     }
   }
 
+  async getAdBanner(id: number) {
+    try {
+      const banner = await this.prisma.adBanner.findUnique({
+        where: { id },
+      });
+
+      if (!banner) {
+        throw new NotFoundException('Ad banner not found');
+      }
+
+      return banner;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getActiveAdBanners(limit: number = 10) {
     try {
       const banners = await this.prisma.adBanner.findMany({
@@ -1611,7 +1627,7 @@ export class AdminService {
       linkType?: string;
       externalLink?: string;
       providerId?: number;
-      isActive?: boolean | string;
+      isActive?: string;
     },
   ) {
     try {
@@ -1645,22 +1661,48 @@ export class AdminService {
         updatedAt: new Date(),
       };
 
-      // Handle isActive conversion properly - DTO should have already transformed it, but let's be safe
+      // Handle isActive conversion properly - Force proper boolean conversion
       if (updateData.isActive !== undefined) {
+        // More robust conversion logic
         if (typeof updateData.isActive === 'string') {
-          updatePayload.isActive = updateData.isActive === 'true';
+          updatePayload.isActive = updateData.isActive.toLowerCase() === 'true';
+        } else if (typeof updateData.isActive === 'boolean') {
+          updatePayload.isActive = updateData.isActive;
         } else {
+          // Handle other types (numbers, etc.)
           updatePayload.isActive = Boolean(updateData.isActive);
         }
         console.log(
           '🔍 updateAdBanner - Final isActive value:',
           updatePayload.isActive,
+          'original:',
+          updateData.isActive,
         );
+      } else {
+        console.log('🔍 updateAdBanner - isActive not provided in request');
       }
+
+      console.log('🔍 updateAdBanner - Final update payload:', updatePayload);
 
       const updatedBanner = await this.prisma.adBanner.update({
         where: { id },
         data: updatePayload,
+      });
+
+      console.log('🔍 updateAdBanner - Updated banner from DB:', {
+        id: updatedBanner.id,
+        isActive: updatedBanner.isActive,
+        updatedAt: updatedBanner.updatedAt,
+      });
+
+      // Double-check by fetching the banner again
+      const verifyBanner = await this.prisma.adBanner.findUnique({
+        where: { id },
+      });
+      console.log('🔍 updateAdBanner - Verification fetch:', {
+        id: verifyBanner?.id,
+        isActive: verifyBanner?.isActive,
+        updatedAt: verifyBanner?.updatedAt,
       });
 
       return updatedBanner;
