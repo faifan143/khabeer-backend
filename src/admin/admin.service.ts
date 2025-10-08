@@ -491,6 +491,19 @@ export class AdminService {
             },
           },
         },
+        providerCategories: {
+          include: {
+            category: {
+              select: {
+                id: true,
+                titleAr: true,
+                titleEn: true,
+                state: true,
+                image: true,
+              },
+            },
+          },
+        },
         joinRequests: {
           where: { status: 'pending' },
           select: {
@@ -512,6 +525,7 @@ export class AdminService {
         _count: {
           select: {
             providerServices: true,
+            providerCategories: true,
             orders: true,
             ratings: true,
           },
