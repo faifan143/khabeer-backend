@@ -385,7 +385,7 @@ export class AuthController {
   }
 
   @Delete('delete-account')
-  @UseGuards(ComprehensiveAuthGuard)
+  @UseGuards(JwtAuthGuard, ComprehensiveAuthGuard)
   @ApiOperation({ summary: 'Delete user account' })
   @ApiResponse({ status: 200, description: 'Account deleted successfully' })
   async deleteAccount(@Request() req) {
