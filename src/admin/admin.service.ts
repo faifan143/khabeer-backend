@@ -1626,6 +1626,14 @@ export class AdminService {
       // Convert string values to proper types
       const updateData: any = { ...data };
 
+      console.log('🔍 updateAdBanner - Raw data received:', data);
+      console.log(
+        '🔍 updateAdBanner - isActive value:',
+        data.isActive,
+        'type:',
+        typeof data.isActive,
+      );
+
       // Convert providerId from string to number if present
       if (updateData.providerId && typeof updateData.providerId === 'string') {
         updateData.providerId = parseInt(updateData.providerId, 10);
@@ -1637,8 +1645,18 @@ export class AdminService {
         updatedAt: new Date(),
       };
 
-      updatePayload.isActive =
-        updateData.isActive == true || updateData.isActive == 'true';
+      // Handle isActive conversion properly - DTO should have already transformed it, but let's be safe
+      if (updateData.isActive !== undefined) {
+        if (typeof updateData.isActive === 'string') {
+          updatePayload.isActive = updateData.isActive === 'true';
+        } else {
+          updatePayload.isActive = Boolean(updateData.isActive);
+        }
+        console.log(
+          '🔍 updateAdBanner - Final isActive value:',
+          updatePayload.isActive,
+        );
+      }
 
       const updatedBanner = await this.prisma.adBanner.update({
         where: { id },

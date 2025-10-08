@@ -561,6 +561,14 @@ export class AdminController {
     @Body() body: UpdateAdBannerDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<AdBannerResponseDto> {
+    console.log('🔍 Controller - Raw body received:', body);
+    console.log(
+      '🔍 Controller - isActive value:',
+      body.isActive,
+      'type:',
+      typeof body.isActive,
+    );
+
     const data: any = { ...body };
     if (file) {
       const options = {
