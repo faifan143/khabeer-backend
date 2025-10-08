@@ -1251,7 +1251,16 @@ export class AdminService {
       take: limit,
       include: {
         user: {
-          select: { id: true, name: true, email: true, phone: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            latitude: true,
+            longitude: true,
+            address: true,
+            state: true,
+          },
         },
         provider: {
           select: { id: true, name: true, email: true, phone: true },
