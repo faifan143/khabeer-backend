@@ -1637,11 +1637,8 @@ export class AdminService {
         updatedAt: new Date(),
       };
 
-      // Only set isActive if it's explicitly provided
-      if (updateData.isActive !== undefined) {
-        updatePayload.isActive = updateData.isActive;
-      }
-      console.log('updatePayload => ', updatePayload);
+      updatePayload.isActive =
+        updateData.isActive == true || updateData.isActive == 'true';
 
       const updatedBanner = await this.prisma.adBanner.update({
         where: { id },
