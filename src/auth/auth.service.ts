@@ -1536,6 +1536,10 @@ export class AuthService {
         }
         // Clean delete of provider and all related data with no password required
         await this.prisma.$transaction(async (tx) => {
+          // Get provider phone and email for cleanup
+          const providerPhone = provider.phone;
+          const providerEmail = provider.email;
+
           // Delete provider ratings (where provider is being rated)
           await tx.providerRating.deleteMany({
             where: { providerId: userId },
@@ -1595,6 +1599,27 @@ export class AuthService {
             where: { providerId: userId },
           });
 
+          // Delete ad banners created by this provider
+          await tx.adBanner.deleteMany({
+            where: { providerId: userId },
+          });
+
+          // Delete OTPs associated with provider phone
+          await tx.otp.deleteMany({
+            where: { phoneNumber: providerPhone },
+          });
+
+          // Delete SMS logs associated with provider phone
+          await tx.smsLog.deleteMany({
+            where: { phoneNumber: providerPhone },
+          });
+
+          // Update invoices that were marked as deleted by this provider
+          await tx.invoice.updateMany({
+            where: { deletedBy: userId },
+            data: { deletedBy: null },
+          });
+
           // Finally delete the provider
           await tx.provider.delete({
             where: { id: userId },
@@ -1639,6 +1664,10 @@ export class AuthService {
 
         // Clean delete of user and all related data with no password required
         await this.prisma.$transaction(async (tx) => {
+          // Get user phone and email for cleanup
+          const userPhone = user.phone;
+          const userEmail = user.email;
+
           // Delete user locations
           await tx.userLocation.deleteMany({
             where: { userId: userId },
@@ -1682,6 +1711,22 @@ export class AuthService {
           // Delete orders (this will cascade to invoices)
           await tx.order.deleteMany({
             where: { userId: userId },
+          });
+
+          // Delete OTPs associated with user phone
+          await tx.otp.deleteMany({
+            where: { phoneNumber: userPhone },
+          });
+
+          // Delete SMS logs associated with user phone
+          await tx.smsLog.deleteMany({
+            where: { phoneNumber: userPhone },
+          });
+
+          // Update invoices that were marked as deleted by this user
+          await tx.invoice.updateMany({
+            where: { deletedBy: userId },
+            data: { deletedBy: null },
           });
 
           // Finally delete the user
