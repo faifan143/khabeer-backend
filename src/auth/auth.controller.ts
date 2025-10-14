@@ -389,6 +389,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Delete user account' })
   @ApiResponse({ status: 200, description: 'Account deleted successfully' })
   async deleteAccount(@Request() req) {
-    return this.authService.deleteAccount(req.user.userId);
+    return this.authService.deleteAccount(req.user.userId, req.user.role);
   }
 }

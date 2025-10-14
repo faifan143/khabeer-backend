@@ -1490,14 +1490,18 @@ export class AuthService {
     }
   }
 
-  async deleteAccount(userId: number) {
+  async deleteAccount(userId: number, role: string) {
     try {
-      const user = await this.usersService.findById(userId);
-      const provider = await this.providersService.findById(userId);
-      if (!user && !provider) {
-        throw new NotFoundException('User not found');
-      }
-      if (provider) {
+      // Use direct Prisma lookups to avoid throwing NotFound from services
+      const [user, provider] = await Promise.all([
+        this.prisma.user.findUnique({ where: { id: userId } }),
+        this.prisma.provider.findUnique({ where: { id: userId } }),
+      ]);
+
+      if (role === 'PROVIDER') {
+        if (!provider) {
+          throw new NotFoundException('Account not found');
+        }
         // Check for unpaid commissions before allowing deletion
         const unpaidInvoices = await this.prisma.invoice.findMany({
           where: {
@@ -1534,6 +1538,13 @@ export class AuthService {
             `Cannot delete account. Provider has ${unpaidInvoices.length} unpaid invoice(s) with total commission of ${totalUnpaidCommission} SAR and total amount of ${totalUnpaidAmount} SAR. Please settle all outstanding payments before deleting the account.`,
           );
         }
+        // Determine whether another user shares the same phone; if yes, do not delete phone-based artifacts
+        const userWithSamePhone = provider.phone
+          ? await this.prisma.user.findFirst({
+              where: { phone: provider.phone },
+            })
+          : null;
+
         // Clean delete of provider and all related data with no password required
         await this.prisma.$transaction(async (tx) => {
           // Get provider phone and email for cleanup
@@ -1604,15 +1615,13 @@ export class AuthService {
             where: { providerId: userId },
           });
 
-          // Delete OTPs associated with provider phone
-          await tx.otp.deleteMany({
-            where: { phoneNumber: providerPhone },
-          });
-
-          // Delete SMS logs associated with provider phone
-          await tx.smsLog.deleteMany({
-            where: { phoneNumber: providerPhone },
-          });
+          // Delete OTPs/SMS linked to provider phone only if no user shares same phone
+          if (!userWithSamePhone) {
+            await tx.otp.deleteMany({ where: { phoneNumber: providerPhone } });
+            await tx.smsLog.deleteMany({
+              where: { phoneNumber: providerPhone },
+            });
+          }
 
           // Update invoices that were marked as deleted by this provider
           await tx.invoice.updateMany({
@@ -1625,7 +1634,10 @@ export class AuthService {
             where: { id: userId },
           });
         });
-      } else {
+      } else if (role === 'USER') {
+        if (!user) {
+          throw new NotFoundException('Account not found');
+        }
         // Check for pending orders that might affect commission payments
         const pendingOrders = await this.prisma.order.findMany({
           where: {
@@ -1661,6 +1673,12 @@ export class AuthService {
             );
           }
         }
+        // Determine whether a provider shares the same phone; if yes, do not delete phone-based artifacts
+        const providerWithSamePhone = user.phone
+          ? await this.prisma.provider.findFirst({
+              where: { phone: user.phone },
+            })
+          : null;
 
         // Clean delete of user and all related data with no password required
         await this.prisma.$transaction(async (tx) => {
@@ -1713,15 +1731,11 @@ export class AuthService {
             where: { userId: userId },
           });
 
-          // Delete OTPs associated with user phone
-          await tx.otp.deleteMany({
-            where: { phoneNumber: userPhone },
-          });
-
-          // Delete SMS logs associated with user phone
-          await tx.smsLog.deleteMany({
-            where: { phoneNumber: userPhone },
-          });
+          // Delete OTPs/SMS linked to user phone only if no provider shares same phone
+          if (!providerWithSamePhone) {
+            await tx.otp.deleteMany({ where: { phoneNumber: userPhone } });
+            await tx.smsLog.deleteMany({ where: { phoneNumber: userPhone } });
+          }
 
           // Update invoices that were marked as deleted by this user
           await tx.invoice.updateMany({
@@ -1734,6 +1748,9 @@ export class AuthService {
             where: { id: userId },
           });
         });
+      } else {
+        // For any other roles, block deletion to avoid accidental cross-role deletions
+        throw new ForbiddenException('Unsupported role for account deletion');
       }
       return {
         success: true,
