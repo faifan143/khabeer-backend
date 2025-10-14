@@ -242,6 +242,7 @@ export class SmsService {
           expiresAt: {
             gt: new Date(),
           },
+          isUsed: false, // Only find unused OTPs
         },
         orderBy: {
           createdAt: 'desc',
