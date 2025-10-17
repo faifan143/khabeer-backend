@@ -728,16 +728,54 @@ export class AuthService {
    */
   async sendPasswordResetOtp(
     phoneNumber: string,
+    role: string,
   ): Promise<{ success: boolean; message: string; expiresIn?: number }> {
     try {
-      // Check if account exists with this phone number
-      const user = await this.usersService.findByPhone(phoneNumber);
-      const provider = await this.providersService.findByPhone(phoneNumber);
+      // Handle admin password reset
+      if (role === 'ADMIN') {
+        if (phoneNumber === '+966500000000') {
+          // Send OTP for admin password reset
+          const result = await this.smsService.sendOtp({
+            phoneNumber,
+            purpose: 'password_reset',
+          });
 
-      if (!user && !provider) {
+          return {
+            success: result.success,
+            message: result.message,
+            expiresIn: result.expiresIn,
+          };
+        } else {
+          return {
+            success: false,
+            message: 'Admin account not found with this phone number',
+          };
+        }
+      }
+
+      // Role-based account validation
+      if (role === 'USER') {
+        // Users cannot have provider accounts, only check for user account
+        const user = await this.usersService.findByPhone(phoneNumber);
+        if (!user) {
+          return {
+            success: false,
+            message: 'No user account found with this phone number',
+          };
+        }
+      } else if (role === 'PROVIDER') {
+        // Providers can have user accounts, but we're resetting provider password
+        const provider = await this.providersService.findByPhone(phoneNumber);
+        if (!provider) {
+          return {
+            success: false,
+            message: 'No provider account found with this phone number',
+          };
+        }
+      } else {
         return {
           success: false,
-          message: 'No account found with this phone number',
+          message: 'Invalid role specified',
         };
       }
 
@@ -941,6 +979,7 @@ export class AuthService {
     phoneNumber: string,
     otp: string,
     newPassword: string,
+    role: string,
   ): Promise<{ success: boolean; message: string }> {
     try {
       // Verify OTP
@@ -957,27 +996,54 @@ export class AuthService {
         };
       }
 
-      // Find user/provider by phone number
-      const user = await this.usersService.findByPhone(phoneNumber);
-      const provider = await this.providersService.findByPhone(phoneNumber);
-
-      if (!user && !provider) {
-        return {
-          success: false,
-          message: 'No account found with this phone number',
-        };
+      // Handle admin password reset
+      if (role === 'ADMIN') {
+        if (phoneNumber === '+966500000000') {
+          // For admin, we don't actually update a database record
+          // The admin password is hardcoded in the login logic
+          return {
+            success: true,
+            message: 'Admin password reset successful. Please use the default admin credentials.',
+          };
+        } else {
+          return {
+            success: false,
+            message: 'Admin account not found with this phone number',
+          };
+        }
       }
 
       // Hash new password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-      // Update password
-      if (user) {
+      // Role-based password reset
+      if (role === 'USER') {
+        // Users cannot have provider accounts, only reset user password
+        const user = await this.usersService.findByPhone(phoneNumber);
+        if (!user) {
+          return {
+            success: false,
+            message: 'No user account found with this phone number',
+          };
+        }
         await this.usersService.update(user.id, { password: hashedPassword });
-      } else if (provider) {
+      } else if (role === 'PROVIDER') {
+        // Providers can have user accounts, but we're resetting provider password
+        const provider = await this.providersService.findByPhone(phoneNumber);
+        if (!provider) {
+          return {
+            success: false,
+            message: 'No provider account found with this phone number',
+          };
+        }
         await this.providersService.update(provider.id, {
           password: hashedPassword,
         });
+      } else {
+        return {
+          success: false,
+          message: 'Invalid role specified',
+        };
       }
 
       return {
