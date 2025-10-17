@@ -184,8 +184,8 @@ export class AuthController {
     status: 429,
     description: 'Too many OTP requests, please wait',
   })
-  async sendPasswordResetOtp(@Body() body: SendPasswordResetOtpDto , @Request() req) {
-    return this.authService.sendPasswordResetOtp(body.phoneNumber, req.user.role);
+  async sendPasswordResetOtp(@Body() body: SendPasswordResetOtpDto) {
+    return this.authService.sendPasswordResetOtp(body.phoneNumber, body.role);
   }
 
   @Post('phone/password-reset')
@@ -197,12 +197,12 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Invalid OTP or data' })
   @ApiResponse({ status: 404, description: 'Account not found' })
-  async resetPasswordWithPhone(@Body() body: ResetPasswordDto , @Request() req) {
+  async resetPasswordWithPhone(@Body() body: ResetPasswordDto) {
     return this.authService.resetPasswordWithPhone(
       body.phoneNumber,
       body.otp,
       body.newPassword,
-      req.user.role,
+      body.role,
     );
   }
 

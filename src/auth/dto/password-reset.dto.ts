@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MinLength, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, Matches, IsIn } from 'class-validator';
 
 export class SendPasswordResetOtpDto {
     @ApiProperty({
@@ -13,6 +13,18 @@ export class SendPasswordResetOtpDto {
         message: 'Phone number must be in international format (e.g., +963998419872)'
     })
     phoneNumber: string;
+
+    @ApiProperty({
+        description: 'Account type for password reset',
+        example: 'USER',
+        enum: ['USER', 'PROVIDER']
+    })
+    @IsString()
+    @IsNotEmpty()
+    @IsIn(['USER', 'PROVIDER'], {
+        message: 'Role must be either USER or PROVIDER'
+    })
+    role: string;
 }
 
 export class ResetPasswordDto {
@@ -50,6 +62,18 @@ export class ResetPasswordDto {
         message: 'Password must be at least 6 characters long'
     })
     newPassword: string;
+
+    @ApiProperty({
+        description: 'Account type for password reset',
+        example: 'USER',
+        enum: ['USER', 'PROVIDER']
+    })
+    @IsString()
+    @IsNotEmpty()
+    @IsIn(['USER', 'PROVIDER'], {
+        message: 'Role must be either USER or PROVIDER'
+    })
+    role: string;
 }
 
 export class PasswordResetResponseDto {
