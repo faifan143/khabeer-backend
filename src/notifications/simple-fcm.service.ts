@@ -142,7 +142,7 @@ export class SimpleFCMService {
         message.notification = {
           title: payload.title,
           body: payload.body,
-          imageUrl: payload.imageUrl,
+          ...(payload.imageUrl && { imageUrl: payload.imageUrl }),
         };
         message.android = {
           notification: {
@@ -277,7 +277,7 @@ export class SimpleFCMService {
         notification: {
           title: payload.title,
           body: payload.body,
-          imageUrl: payload.imageUrl,
+          ...(payload.imageUrl && { imageUrl: payload.imageUrl }),
         },
         data: payload.data,
         android: {
@@ -341,7 +341,7 @@ export class SimpleFCMService {
         notification: {
           title: payload.title,
           body: payload.body,
-          imageUrl: payload.imageUrl,
+          ...(payload.imageUrl && { imageUrl: payload.imageUrl }),
         },
         data: payload.data,
         android: {

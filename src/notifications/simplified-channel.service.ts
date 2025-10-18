@@ -37,7 +37,7 @@ export class SimplifiedChannelService {
       const payload = {
         title,
         body: message,
-        imageUrl: absoluteImageUrl, // Use absolute URL
+        ...(absoluteImageUrl && { imageUrl: absoluteImageUrl }), // Only include imageUrl if it has a valid value
         data: {
           topic,
           ...(imageUrl && { imageUrl: absoluteImageUrl }), // Only include imageUrl if it exists

@@ -63,7 +63,7 @@ export class FCMService {
                 notification: {
                     title: payload.title,
                     body: payload.body,
-                    imageUrl: payload.imageUrl,
+                    ...(payload.imageUrl && { imageUrl: payload.imageUrl }),
                 },
                 data: payload.data,
                 android: {
@@ -183,7 +183,7 @@ export class FCMService {
                 notification: {
                     title: payload.title,
                     body: payload.body,
-                    imageUrl: payload.imageUrl,
+                    ...(payload.imageUrl && { imageUrl: payload.imageUrl }),
                 },
                 data: payload.data,
                 android: {
