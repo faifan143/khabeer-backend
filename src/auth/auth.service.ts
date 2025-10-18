@@ -1661,7 +1661,16 @@ export class AuthService {
             },
           });
 
-          // Delete orders (this will cascade to invoices and location tracking)
+          // Delete invoices first (to avoid foreign key constraint violation)
+          await tx.invoice.deleteMany({
+            where: {
+              order: {
+                providerId: userId,
+              },
+            },
+          });
+
+          // Delete orders (after invoices are deleted)
           await tx.order.deleteMany({
             where: { providerId: userId },
           });
@@ -1792,7 +1801,16 @@ export class AuthService {
             },
           });
 
-          // Delete orders (this will cascade to invoices)
+          // Delete invoices first (to avoid foreign key constraint violation)
+          await tx.invoice.deleteMany({
+            where: {
+              order: {
+                userId: userId,
+              },
+            },
+          });
+
+          // Delete orders (after invoices are deleted)
           await tx.order.deleteMany({
             where: { userId: userId },
           });
