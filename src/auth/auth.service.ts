@@ -1736,60 +1736,25 @@ export class AuthService {
         if (!user) {
           throw new NotFoundException('Account not found');
         }
-        // Check for pending orders and unpaid invoices before allowing deletion
+        // Check for pending orders before allowing deletion
+        // Note: Users are NOT responsible for invoice payments - that's between provider and admin
         const pendingOrders = await this.prisma.order.findMany({
           where: {
             userId: userId,
             status: { in: ['pending', 'accepted', 'in_progress'] },
           },
-          include: {
-            invoice: {
-              select: {
-                id: true,
-                paymentStatus: true,
-                totalAmount: true,
-              },
-            },
+          select: {
+            id: true,
+            status: true,
+            bookingId: true,
+            orderDate: true,
           },
         });
 
-        // Check for any unpaid invoices (regardless of order status)
-        const unpaidInvoices = await this.prisma.invoice.findMany({
-          where: {
-            isDeleted: false,
-            paymentStatus: { in: ['pending', 'unpaid'] },
-            order: {
-              userId: userId,
-            },
-          },
-          include: {
-            order: {
-              select: {
-                id: true,
-                status: true,
-                bookingId: true,
-                orderDate: true,
-              },
-            },
-          },
-        });
-
-        // First check for pending orders
+        // Only check for pending orders - users are not responsible for invoice payments
         if (pendingOrders.length > 0) {
           throw new BadRequestException(
             `Cannot delete account. User has ${pendingOrders.length} pending order(s) (${pendingOrders.map(o => o.status).join(', ')}). Please complete or cancel all pending orders before deleting the account.`,
-          );
-        }
-
-        // Then check for unpaid invoices
-        if (unpaidInvoices.length > 0) {
-          const totalUnpaidAmount = unpaidInvoices.reduce(
-            (sum, invoice) => sum + invoice.totalAmount,
-            0,
-          );
-
-          throw new BadRequestException(
-            `Cannot delete account. User has ${unpaidInvoices.length} unpaid invoice(s) totaling ${totalUnpaidAmount} SAR. Please settle all outstanding payments before deleting the account.`,
           );
         }
         // Determine whether a provider shares the same phone; if yes, do not delete phone-based artifacts
