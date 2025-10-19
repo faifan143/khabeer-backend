@@ -115,7 +115,7 @@ export class AuthService {
       const { email, phone, password, type } = loginData;
 
       // Admin login - hardcoded credentials
-      if (email === 'admin@khabeer.com' && password === 'admin123') {
+      if (email === 'admin@khabeer.com' && password === 'AbdMkb@2025') {
         return {
           id: 0,
           email: 'admin@khabeer.com',
